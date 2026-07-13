@@ -942,6 +942,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #helpBtn rect, svg#shared-oudSvg #helpBtn text { pointer-events:auto !important; }
   svg#shared-oudSvg #svgContactBtn rect{ pointer-events:auto; }
   svg#shared-oudSvg #svgContactBtn text{ pointer-events:none; }
+  svg#shared-oudSvg #svgRatingBtn rect{ pointer-events:auto; cursor:pointer; }
+  svg#shared-oudSvg #svgRatingBtn text{ pointer-events:none; }
   svg#shared-oudSvg #oudNotesLayer rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #chordHighlightLayer rect{ pointer-events:auto; cursor:pointer; }
   /* مكون مشغل الصوت (audio-player وملحقاته) معرّف مرة واحدة بالقسم المشترك بالأسفل */
@@ -1594,6 +1596,41 @@ input[type="radio"] {
     <img id="westernGuideImg" src="" alt="دليل السلم" style="display:block;width:100%;height:auto;border-radius:8px;background:#fff;padding:10px;box-sizing:border-box;">
   </div>
 </div>
+
+<!-- ===== مودال التقييم ===== -->
+<div class="maqam-guide-modal" id="ratingModal" style="display:none">
+  <div class="maqam-guide-container" style="max-width:420px;">
+    <div style="text-align:left;margin-bottom:4px;">
+      <button class="mit-close" id="ratingModalClose">✕</button>
+    </div>
+    <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#3a2a12;margin:0 0 4px;font-size:1.25rem;font-weight:800;">قيّم الموقع</h3>
+    <p style="text-align:center;color:#888;font-size:.85rem;margin:0 0 22px;font-family:'Cairo',sans-serif;">رأيك يهمنا ويساعد الآخرين</p>
+
+    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:20px;background:#eafbf1;border-radius:10px;padding:12px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
+    <div id="ratingLoadingMsg" style="text-align:center;color:#aaa;font-size:.85rem;margin-bottom:16px;font-family:'Cairo',sans-serif;">جاري تحميل التقييمات...</div>
+
+    <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:10px;margin-bottom:4px;"></div>
+    <div id="ratingStarsHint" style="text-align:center;color:#aaa;font-size:.8rem;margin-bottom:26px;font-family:'Cairo',sans-serif;display:none;">اضغط على النجوم لإرسال تقييمك</div>
+
+    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:6px;padding:12px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
+
+    <div style="border-top:1px solid #eee;margin:22px 0;"></div>
+
+    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:16px;">
+      <div id="ratingAvgNumber" style="font-size:2.2rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</div>
+      <div id="ratingAvgStars" style="color:#f0ad2e;font-size:1.3rem;margin:4px 0;"></div>
+      <div id="ratingAvgCount" style="color:#888;font-size:.85rem;font-family:'Cairo',sans-serif;"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .rating-star { font-size:2.6rem; color:#ddd; transition:color .15s; }
+  .rating-star.filled { color:#f0ad2e; }
+  .rating-star-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .rating-star-wrap.locked { cursor:default; }
+  .rating-star-num { font-size:.75rem; color:#999; font-weight:700; font-family:'Cairo',sans-serif; }
+</style>
 
 <script>
 /* =====================================================================
@@ -2733,8 +2770,15 @@ function buildOudStatic(){
   const handShiftAdjust = window.isLeftHanded ? 0 : 25; // إزاحة بسيطة موحدة باتجاه الزند بوضع اليمين بس
   const visionX = OUD.VISUAL_NUT_X - 220 + handShiftAdjust;
   const visionY = neckYBotAtNut + 20 + Math.round(visionSize * 0.12);
-  const btnX2 = visionX - visionSize - gap * 2;
-  const boxX2 = btnX2 - visionSize - gap;
+  const lineH = 46;
+  const btnW = visionSize * 0.65, btnH = lineH * 2 + 30, btnR = 18;
+  // ٤ عناصر متباعدة بالتساوي (نفس قيمة gap بين كل وحدة والثانية): [نصوص الحقوق] - [تواصل] - [تقييم] - [شعار الرؤية]
+  // ملاحظة: صورة شعار الرؤية فيها هامش فاضي داخلي (الشعار الفعلي أصغر من الصندوق المعلن 280×280)، فنعوّض عنه هنا عشان تكون المسافة البصرية متساوية فعلياً لا المسافة النظرية بس
+  const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
+  const copyrightTextMaxW = 258; // أطول سطر بنصوص الحقوق فعلياً (نستخدمه بدل عرض الزر لضمان تباعد صحيح)
+  const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
+  const btnX2 = ratingBtnX2 - gap - btnW;
+  const boxX2 = btnX2 - gap - copyrightTextMaxW - gap;
   const visionImg = el('image', {
     x: visionX, y: visionY,
     width: visionSize, height: visionSize,
@@ -2759,8 +2803,6 @@ function buildOudStatic(){
   }
   oudSvg.setAttribute('viewBox', `${minX} ${minY} ${maxX-minX} ${maxY-minY}`);
 
-  const lineH = 46;
-  const btnW = visionSize * 0.65, btnH = lineH * 2 + 30, btnR = 18;
   const btnX = btnX2;
   const btnY = visionY + (visionSize - btnH) / 2;
   const visionMidY = visionY + visionSize / 2;
@@ -2782,9 +2824,27 @@ function buildOudStatic(){
   contactG.appendChild(btnText);
   oudFooterGroup.appendChild(contactG);
 
-  // الكتابة على يسار زر تواصل
-  const cpOffset = window.isLeftHanded ? 22 : (-296 + handShiftAdjust*0.35);
-  const cpRightX = btnX - gap - btnW + cpOffset;
+  // زر التقييم (بنفس حجم زر تواصل بالضبط)، بين زر تواصل وشعار الرؤية
+  const ratingBtnX = ratingBtnX2;
+  const ratingG = el('g', { id:'svgRatingBtn', style:'cursor:pointer; pointer-events:auto;' });
+  const ratingRect = el('rect', {
+    x: ratingBtnX, y: btnY, width: btnW, height: btnH, rx: btnR,
+    fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
+  });
+  const ratingText = el('text', {
+    x: ratingBtnX + btnW/2, y: btnY + btnH/2 + 10,
+    'text-anchor':'middle', 'dominant-baseline':'middle',
+    'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
+    'font-size':'32', 'font-weight':'800', fill:'#1b1410'
+  });
+  ratingText.textContent = '⭐ تقييم';
+  ratingG.appendChild(ratingRect);
+  ratingG.appendChild(ratingText);
+  oudFooterGroup.appendChild(ratingG);
+
+  // الكتابة تبدأ من أول موقع الحقوق الجديد (بدون إزاحات قديمة كانت محسوبة لتخطيط الثلاث عناصر السابق)
+  const cpHandOffset = window.isLeftHanded ? 322 : 0; // تعويض تجريبي خاص بوضع اليسار (الانعكاس يتصرف مختلف مع هالنص تحديداً)
+  const cpRightX = boxX2 + cpHandOffset;
 
   const copyrightG = el('g', {});
 
@@ -2827,12 +2887,16 @@ function buildOudStatic(){
   oudFooterGroup.appendChild(copyrightG);
   g2.appendChild(oudFooterGroup);
 
+  // ربط النقر بزر التقييم (يفتح مودال التقييم، ويوقف أي صوت شغال أول)
+  ratingG.addEventListener('click', () => {
+    if (typeof window.openRatingModal === 'function') window.openRatingModal();
+  });
+
   // ربط النقر بصفحة التواصل
   contactG.addEventListener('click', () => {
     document.getElementById('shared-stopBtn').click();
     if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
-    if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
-    // حفظ الصفحة الحالية
+    if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();    // حفظ الصفحة الحالية
     const active = document.querySelector('.site-page.active');
     window._lastPageBeforeSocial = active ? active.id : 'page-circle';
     // إخفاء التبويبات
@@ -3455,7 +3519,7 @@ playBtn.addEventListener('click', () => {
     return;
   }
   window.stopAnySustainedNote();
-  if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+  if (playerState === 'stopped' && typeof window.resetChordPlayer === 'function') window.resetChordPlayer(); // ننضّف أي كورد شغال بالخلفية بس وقت بدء تشغيل جديد، مو بكل ضغطة (عشان ما يعطّل زر الإيقاف أثناء الإيقاف المؤقت)
   if(playerState === 'stopped') startPlaying();
   else if(playerState === 'playing') pausePlaying();
   else if(playerState === 'paused') resumePlaying();
@@ -4487,7 +4551,7 @@ if (westernGuideBtn && westernGuideModal) {
     document.getElementById('shared-playBtn').addEventListener('click', () => {
       if(!window.isArabicMode) return;
       if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
-      if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+      if (arPlayerState === 'stopped' && typeof window.resetChordPlayer === 'function') window.resetChordPlayer(); // ننضّف أي كورد شغال بالخلفية بس وقت بدء تشغيل جديد، مو بكل ضغطة
       if(arPlayerState==='stopped') arStartPlay();
       else if(arPlayerState==='playing') arPause();
       else if(arPlayerState==='paused') arResume();
@@ -4829,6 +4893,141 @@ document.getElementById('shared-playBtn').onclick = async function() {
     // (التهيئة الأساسية صارت أعلى بالملف، تدعم استرجاع آخر اختيار محفوظ للجلسة)
 
 })();
+</script>
+
+<!-- ===== ميزة التقييم (Firebase) ===== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCsbKVXkMzR2zY2IFoxHE5kJSLuu23XXzI",
+    authDomain: "magamat-ratings.firebaseapp.com",
+    projectId: "magamat-ratings",
+    storageBucket: "magamat-ratings.firebasestorage.app",
+    messagingSenderId: "849519733050",
+    appId: "1:849519733050:web:0999f1844fe78028d14803"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const RATINGS_COLLECTION = 'ratings';
+  const LOCALSTORAGE_KEY = 'magamatUserHasRated';
+
+  function buildRatingStars(){
+    const row = document.getElementById('ratingStarsRow');
+    row.innerHTML = '';
+    for (let i = 1; i <= 5; i++){
+      const wrap = document.createElement('div');
+      wrap.className = 'rating-star-wrap';
+      wrap.dataset.value = i;
+      const star = document.createElement('span');
+      star.className = 'rating-star';
+      star.textContent = '☆';
+      const num = document.createElement('span');
+      num.className = 'rating-star-num';
+      num.textContent = i;
+      wrap.appendChild(star);
+      wrap.appendChild(num);
+      row.appendChild(wrap);
+    }
+  }
+
+  function fillStarsVisual(value){
+    document.querySelectorAll('#ratingStarsRow .rating-star-wrap').forEach(wrap => {
+      const v = parseInt(wrap.dataset.value);
+      const star = wrap.querySelector('.rating-star');
+      star.textContent = v <= value ? '★' : '☆';
+      star.classList.toggle('filled', v <= value);
+    });
+  }
+
+  async function loadAverageRating(){
+    try {
+      const snap = await getDocs(collection(db, RATINGS_COLLECTION));
+      let total = 0, count = 0;
+      snap.forEach(doc => {
+        const val = doc.data().value;
+        if (typeof val === 'number') { total += val; count++; }
+      });
+      const avg = count > 0 ? (total / count) : 0;
+      document.getElementById('ratingAvgNumber').textContent = count > 0 ? avg.toFixed(1) : '-';
+      const roundedStars = Math.round(avg);
+      document.getElementById('ratingAvgStars').textContent = '★'.repeat(roundedStars) + '☆'.repeat(5 - roundedStars);
+      document.getElementById('ratingAvgCount').textContent = count > 0 ? `من ${count} تقييم` : 'لا توجد تقييمات بعد';
+      document.getElementById('ratingAverageDisplay').style.display = 'block';
+      document.getElementById('ratingLoadingMsg').style.display = 'none';
+    } catch(err) {
+      document.getElementById('ratingLoadingMsg').textContent = 'تعذّر تحميل التقييمات حالياً';
+      console.error('Rating load error:', err);
+    }
+  }
+
+  let isSubmittingRating = false; // حماية فورية (متزامنة) من ضغطتين سريعتين قبل ما يخلص أول اتصال بقاعدة البيانات
+
+  async function submitRating(value){
+    try {
+      await addDoc(collection(db, RATINGS_COLLECTION), { value, timestamp: Date.now() });
+      localStorage.setItem(LOCALSTORAGE_KEY, 'true');
+      fillStarsVisual(value);
+      document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
+      document.getElementById('ratingStarsHint').style.display = 'none';
+      document.getElementById('ratingThankYou').style.display = 'block';
+      loadAverageRating(); // نحدّث المعدل فوراً ليعكس التقييم الجديد
+    } catch(err) {
+      isSubmittingRating = false; // نسمح بإعادة المحاولة لو فشل الإرسال فعلياً
+      alert('حصل خطأ أثناء إرسال تقييمك، حاول مرة ثانية.');
+      console.error('Rating submit error:', err);
+    }
+  }
+
+  function setupRatingUI(){
+    buildRatingStars();
+    const alreadyRated = localStorage.getItem(LOCALSTORAGE_KEY) === 'true';
+    if (alreadyRated) {
+      document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
+    } else {
+      document.getElementById('ratingStarsHint').style.display = 'block';
+      document.querySelectorAll('#ratingStarsRow .rating-star-wrap').forEach(wrap => {
+        wrap.addEventListener('click', () => {
+          if (isSubmittingRating) return; // حماية فورية: نمنع أي ضغطة ثانية لحظياً، قبل حتى ما نتحقق من localStorage
+          if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') return; // حماية إضافية (تقييم سابق من جلسة قديمة)
+          isSubmittingRating = true;
+          submitRating(parseInt(wrap.dataset.value));
+        });
+      });
+    }
+  }
+
+  function openRatingModal(){
+    // نوقف أي صوت شغال (سلم، مقام، أو كورد) قبل ما نفتح صفحة التقييم
+    if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+    if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+    const stopBtnEl = document.getElementById('shared-stopBtn');
+    if (stopBtnEl && !stopBtnEl.disabled) stopBtnEl.click();
+    document.getElementById('ratingModal').style.display = 'flex';
+    document.getElementById('ratingLoadingMsg').style.display = 'block';
+    document.getElementById('ratingAverageDisplay').style.display = 'none';
+    loadAverageRating();
+  }
+  window.openRatingModal = openRatingModal; // نعرّضها لـwindow عشان زر التقييم (اللي يُعاد رسمه بالـSVG) يقدر يستدعيها
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setupRatingUI();
+    document.getElementById('ratingModalClose').addEventListener('click', () => {
+      document.getElementById('ratingModal').style.display = 'none';
+    });
+    document.getElementById('ratingModal').addEventListener('click', (e) => {
+      if (e.target.id === 'ratingModal') document.getElementById('ratingModal').style.display = 'none';
+    });
+    // زر تواصل بصفحة التقييم يوديك لنفس صفحة التواصل الداخلية بالموقع
+    document.getElementById('ratingContactLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('ratingModal').style.display = 'none';
+      const contactBtn = document.getElementById('svgContactBtn');
+      if (contactBtn) contactBtn.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+    });
+  });
 </script>
 
 </body>
