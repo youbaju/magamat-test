@@ -4582,6 +4582,7 @@ if (westernGuideBtn && westernGuideModal) {
       maqamIntervalsBtn.style.display = '';
       void maqamIntervalsBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
       maqamIntervalsBtn.style.opacity = '0.999';
+      maqamIntervalsBtn.style.willChange = 'transform'; // يشجع Safari يحط الزر بطبقة رسم منفصلة، بدون ما يلمس transform الفعلي (المستخدم للتوسيط بالجوال)
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { maqamIntervalsBtn.style.opacity = '1'; });
       });
@@ -4640,6 +4641,7 @@ if (westernGuideBtn && westernGuideModal) {
           maqamGuideBtn.style.display = 'none';
         }
         maqamGuideBtn.style.opacity = '0.999';
+        maqamGuideBtn.style.willChange = 'transform'; // نفس التقنية الآمنة للزر الثاني
         void maqamGuideBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
         requestAnimationFrame(() => {
           requestAnimationFrame(() => { maqamGuideBtn.style.opacity = '1'; });
