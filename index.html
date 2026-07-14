@@ -803,6 +803,7 @@ flex-shrink: 0;
     justify-content: center;
     padding-top: 4px;
   }
+  #ratingModal{ padding-top: 0; } /* نرفع محتوى صفحة التقييم لأعلى شوي (مساحة أكبر فاضية تحتها من باقي المودالات) */
   .maqam-guide-container{
     background: #fff;
     border-radius: 12px;
@@ -1617,9 +1618,11 @@ input[type="radio"] {
 
     <div style="border-top:1px solid #eee;margin:6px 0;"></div>
 
-    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:8px 10px;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;">
-      <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</span>
-      <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
+    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:8px 10px;flex-direction:column;align-items:center;gap:2px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:9px;">
+        <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</span>
+        <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
+      </div>
       <span id="ratingAvgCount" style="color:#555;font-size:.85rem;font-family:'Cairo',sans-serif;font-weight:700;"></span>
     </div>
   </div>
