@@ -1601,23 +1601,23 @@ input[type="radio"] {
 <!-- ===== مودال التقييم ===== -->
 <div class="maqam-guide-modal" id="ratingModal" style="display:none">
   <div class="maqam-guide-container" style="max-width:420px;">
-    <div style="text-align:left;margin-bottom:2px;">
+    <div style="text-align:left;margin-bottom:0;">
       <button class="mit-close" id="ratingModalClose">✕</button>
     </div>
-    <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#2b1608;margin:0 0 4px;font-size:1.3rem;font-weight:800;">قيّم الموقع</h3>
-    <p style="text-align:center;color:#666;font-size:.9rem;margin:0 0 10px;font-family:'Cairo',sans-serif;font-weight:600;">رأيك يهمنا ويساعد الآخرين</p>
+    <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#2b1608;margin:0 0 2px;font-size:1.3rem;font-weight:800;">قيّم الموقع</h3>
+    <p style="text-align:center;color:#666;font-size:.9rem;margin:0 0 6px;font-family:'Cairo',sans-serif;font-weight:600;">رأيك يهمنا ويساعد الآخرين</p>
 
-    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:10px;background:#eafbf1;border-radius:10px;padding:8px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
-    <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:8px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
+    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:6px;background:#eafbf1;border-radius:10px;padding:7px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
+    <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
-    <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:2px;"></div>
-    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:10px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لإرسال تقييمك</div>
+    <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
+    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لإرسال تقييمك</div>
 
-    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:9px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
+    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:7px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
 
-    <div style="border-top:1px solid #eee;margin:10px 0;"></div>
+    <div style="border-top:1px solid #eee;margin:6px 0;"></div>
 
-    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:9px 10px;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;">
+    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:8px 10px;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;">
       <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</span>
       <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
       <span id="ratingAvgCount" style="color:#555;font-size:.85rem;font-family:'Cairo',sans-serif;font-weight:700;"></span>
@@ -1640,9 +1640,10 @@ input[type="radio"] {
 </style>
 
 <style>
-  .rating-star { font-size:2.6rem; color:#ddd; transition:color .15s; }
+  .rating-star { font-size:2.6rem; color:#bbb; transition:color .15s; }
   .rating-star.filled { color:#f0ad2e; }
-  .rating-star-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .rating-star-wrap { display:flex; flex-direction:column; align-items:center; gap:0; cursor:pointer; }
+  .rating-star-num { margin-top:-10px; }
   .rating-star-wrap.locked { cursor:default; }
   .rating-star-num { font-size:.8rem; color:#777; font-weight:700; font-family:'Cairo',sans-serif; }
 </style>
