@@ -810,6 +810,7 @@ flex-shrink: 0;
     width: 94vw;
     max-width: 700px;
     max-height: 96vh;
+    max-height: 96dvh; /* وحدة أحدث تتعامل صح مع شريط عنوان Safari المتغير الارتفاع، خصوصاً بالوضع الأفقي */
     overflow-y: auto;
     box-shadow: 0 4px 24px rgba(0,0,0,.2);
     font-family: 'Cairo', sans-serif;
@@ -1603,32 +1604,38 @@ input[type="radio"] {
     <div style="text-align:left;margin-bottom:2px;">
       <button class="mit-close" id="ratingModalClose">✕</button>
     </div>
-    <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#3a2a12;margin:0 0 2px;font-size:1.15rem;font-weight:800;">قيّم الموقع</h3>
-    <p style="text-align:center;color:#888;font-size:.8rem;margin:0 0 10px;font-family:'Cairo',sans-serif;">رأيك يهمنا ويساعد الآخرين</p>
+    <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#2b1608;margin:0 0 4px;font-size:1.3rem;font-weight:800;">قيّم الموقع</h3>
+    <p style="text-align:center;color:#666;font-size:.9rem;margin:0 0 10px;font-family:'Cairo',sans-serif;font-weight:600;">رأيك يهمنا ويساعد الآخرين</p>
 
-    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:.9rem;margin-bottom:10px;background:#eafbf1;border-radius:10px;padding:8px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
-    <div id="ratingLoadingMsg" style="text-align:center;color:#aaa;font-size:.8rem;margin-bottom:8px;font-family:'Cairo',sans-serif;">جاري تحميل التقييمات...</div>
+    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:10px;background:#eafbf1;border-radius:10px;padding:8px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
+    <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:8px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
     <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:2px;"></div>
-    <div id="ratingStarsHint" style="text-align:center;color:#aaa;font-size:.75rem;margin-bottom:10px;font-family:'Cairo',sans-serif;display:none;">اضغط على النجوم لإرسال تقييمك</div>
+    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:10px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لإرسال تقييمك</div>
 
-    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:9px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.85rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
+    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:9px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
 
     <div style="border-top:1px solid #eee;margin:10px 0;"></div>
 
-    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:8px 10px;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
-      <span id="ratingAvgNumber" style="font-size:1.3rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</span>
-      <span id="ratingAvgStars" style="color:#f0ad2e;font-size:.95rem;"></span>
-      <span id="ratingAvgCount" style="color:#888;font-size:.75rem;font-family:'Cairo',sans-serif;"></span>
+    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:9px 10px;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;">
+      <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:800;color:#2b1608;font-family:'Cairo',sans-serif;">-</span>
+      <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
+      <span id="ratingAvgCount" style="color:#555;font-size:.85rem;font-family:'Cairo',sans-serif;font-weight:700;"></span>
     </div>
   </div>
 </div>
 
 <style>
-  /* بالشاشات القصيرة جداً (وضع أفقي بالجوال)، نضغط رؤوس النجوم وحجمها أكثر عشان يظل كل المحتوى ظاهر بدون تمرير */
+  /* بالشاشات القصيرة جداً (وضع أفقي بالجوال)، نرفع المحتوى لأعلى الشاشة تماماً ونضغط كل المسافات والخطوط أكثر */
   @media (max-height: 420px) {
-    #ratingModal .rating-star { font-size: 1.8rem; }
-    #ratingModal .maqam-guide-container { padding: 6px; }
+    #ratingModal { padding-top: 0 !important; align-items: flex-start; }
+    #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; }
+    #ratingModal .rating-star { font-size: 1.6rem; }
+    #ratingModal h3 { font-size: 1.05rem !important; margin-bottom: 1px !important; }
+    #ratingModal p { font-size: .78rem !important; margin-bottom: 5px !important; }
+    #ratingContactLink { padding: 6px !important; font-size: .78rem !important; }
+    #ratingModal div[style*="border-top"] { margin: 5px 0 !important; }
+    #ratingAverageDisplay { padding: 5px 8px !important; }
   }
 </style>
 
@@ -1637,7 +1644,7 @@ input[type="radio"] {
   .rating-star.filled { color:#f0ad2e; }
   .rating-star-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
   .rating-star-wrap.locked { cursor:default; }
-  .rating-star-num { font-size:.75rem; color:#999; font-weight:700; font-family:'Cairo',sans-serif; }
+  .rating-star-num { font-size:.8rem; color:#777; font-weight:700; font-family:'Cairo',sans-serif; }
 </style>
 
 <script>
