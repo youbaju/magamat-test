@@ -4336,6 +4336,19 @@ if (westernGuideBtn && westernGuideModal) {
       { q: 22, file: 'sounds/oud/Re8.wav'  },  // فا دييز
       { q: 23, file: 'sounds/oud/Re9.wav'  },  // صول نصف بيمول
       { q: 24, file: 'sounds/oud/Sol0.wav' },  // صول جواب
+      // ===== الأوكتاف الثاني (جواب) =====
+      { q: 28, file: 'sounds/oud/La0J.wav' },  // لا جواب
+      { q: 30, file: 'sounds/oud/La2J.wav' },  // سي بيمول جواب
+      { q: 32, file: 'sounds/oud/La4J.wav' },  // سي جواب
+      { q: 34, file: 'sounds/oud/La6J.wav' },  // دو جواب
+      { q: 36, file: 'sounds/oud/La8J.wav' },  // دو دييز جواب
+      { q: 38, file: 'sounds/oud/Re0J.wav' },  // رى جواب
+      { q: 40, file: 'sounds/oud/Re2J.wav' },  // مي بيمول جواب
+      { q: 42, file: 'sounds/oud/Re4J.wav' },  // مي جواب
+      { q: 44, file: 'sounds/oud/Re6J.wav' },  // فا جواب
+      { q: 46, file: 'sounds/oud/Re8J.wav' },  // فا دييز جواب
+      { q: 47, file: 'sounds/oud/Re9J.wav' },  // صول نصف بيمول جواب
+      { q: 48, file: 'sounds/oud/Sol0J.wav' }, // صول جواب جواب
     ];
 
     const oudBuffers = {};
@@ -4363,17 +4376,20 @@ if (westernGuideBtn && westernGuideModal) {
       console.log('Oud samples loaded:', Object.keys(oudBuffers).length, '/', OUD_SAMPLES.length);
     }
 
-    // إيجاد أقرب sample للنغمة المطلوبة
+    // إيجاد أقرب sample للنغمة المطلوبة — يبحث بالمدى الكامل (كل العينات المتاحة
+    // بأي أوكتاف)، مباشرة وبدون أي التفاف/تدوير وهمي. التسريع المطلوب (playbackRate)
+    // دايماً يساوي 2^((الموضع المطلوب - موضع العينة الحقيقي)/24)، بغض النظر عن
+    // الأوكتاف — فمافي أي "توفير" من محاولة لف الموضع؛ الأقرب فعلياً بالأرقام
+    // الخام هو الأقرب صوتياً ومدةً.
     function findClosestSample(quartersFromSol) {
-      // نعامل الأرباع كدورية — نحول للنطاق 0-24
-      const q = ((quartersFromSol % 25) + 25) % 25;
       let closest = OUD_SAMPLES[0];
-      let minDist = 999;
+      let minDist = Infinity;
       OUD_SAMPLES.forEach(s => {
-        const dist = Math.abs(s.q - q);
+        const dist = Math.abs(s.q - quartersFromSol);
         if (dist < minDist) { minDist = dist; closest = s; }
       });
-      return { sample: closest, dist: minDist, normalizedQ: q };
+      const quarterDiff = quartersFromSol - closest.q;
+      return { sample: closest, dist: minDist, quarterDiff };
     }
 
     // متغير عالمي للنوتة المشغّلة حالياً
@@ -4396,18 +4412,10 @@ if (westernGuideBtn && westernGuideModal) {
         loadOudSamples().then(() => playArNoteContinuous(quartersFromSol, rect, origFill));
         return;
       }
-      const octaves = Math.floor(quartersFromSol / 24);
-      const qInOctave = quartersFromSol - octaves * 24;
-      let closest = OUD_SAMPLES[0];
-      let minDist = 999;
-      OUD_SAMPLES.forEach(s => {
-        const dist = Math.abs(s.q - qInOctave);
-        if (dist < minDist) { minDist = dist; closest = s; }
-      });
+      const { sample: closest, quarterDiff } = findClosestSample(quartersFromSol);
       const buf = oudBuffers[closest.file];
       if (!buf) return;
 
-      const quarterDiff = qInOctave - closest.q + octaves * 24;
       const playbackRate = Math.pow(2, quarterDiff / 24);
 
       const ctx2 = getAudioContext();
@@ -4460,19 +4468,11 @@ if (westernGuideBtn && westernGuideModal) {
         return;
       }
 
-      // حساب الأوكتاف والنغمة داخل الأوكتاف
-      const octaves = Math.floor(quartersFromSol / 24);
-      const qInOctave = quartersFromSol - octaves * 24;
-      let closest = OUD_SAMPLES[0];
-      let minDist = 999;
-      OUD_SAMPLES.forEach(s => {
-        const dist = Math.abs(s.q - qInOctave);
-        if (dist < minDist) { minDist = dist; closest = s; }
-      });
+      // إيجاد أقرب عينة فعلية بالمدى الكامل (كل الأوكتافات المتاحة)
+      const { sample: closest, quarterDiff } = findClosestSample(quartersFromSol);
       const buf = oudBuffers[closest.file];
       if (!buf) { playArNoteSynth(quartersFromSol); return; }
 
-      const quarterDiff = qInOctave - closest.q + octaves * 24;
       const playbackRate = Math.pow(2, quarterDiff / 24);
 
       const source = ctx2.createBufferSource();
@@ -4527,10 +4527,11 @@ if (westernGuideBtn && westernGuideModal) {
       const isDesc = arStepIdx >= currentDegrees.length;
       const maqName = maqamSelect.value;
       drawArabicMaqam(HARF_LIST[currentDegrees[0]], MAQAM_INTERVALS[maqName] || [], degIdx, maqName, isDesc, quarters);
-      // تعويض أوكتاف: لو كل السلم يبدأ من أوكتاف مرتفع (الجذر نفسه ٢٤ فأكثر، ما فيه نغمة "منخفضة" بالسلسلة كمرجع)
-      // نظام العينات يحتاج ربع إضافي (٢٤) للحصول على الأوكتاف الصحيح فعلياً
-      const rootIsHighOctave = currentDegrees[0] >= 24;
-      playArNote(rootIsHighOctave ? quarters + 24 : quarters);
+      // ملاحظة: تعويض الأوكتاف اليدوي (+24) اللي كان هنا سابقاً أُزيل — كان ضرورياً
+      // بس مع الخوارزمية القديمة المحدودة بأوكتاف واحد، والحين findClosestSample
+      // تبحث بالمدى الكامل وتحسب الأوكتاف الصحيح تلقائياً، فالتعويض اليدوي صار
+      // يضيف أوكتاف زائد فوق الصحيح.
+      playArNote(quarters);
       // اهتزاز الوتر المقابل للنغمة
       const { s: strIdx } = getStringFret(quarters);
       if (typeof window.vibrateString === 'function') window.vibrateString(strIdx);
