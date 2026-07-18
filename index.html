@@ -1680,9 +1680,11 @@ input[type="radio"] {
     <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:6px;background:#eafbf1;border-radius:10px;padding:7px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
     <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
-    <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+      <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
+      <button type="button" id="ratingConfirmBtn" disabled style="display:block;margin:0;padding:5px 12px;background:#bbb;color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.7rem;cursor:not-allowed;transition:background .15s;white-space:nowrap;">✓ تأكيد التقييم</button>
+    </div>
     <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لاختيار تقييمك</div>
-    <button type="button" id="ratingConfirmBtn" style="display:none;margin:0 auto 8px auto;padding:8px 22px;background:#1f7a4d;color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;">✓ تأكيد التقييم</button>
 
     <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:7px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
 
@@ -1709,6 +1711,8 @@ input[type="radio"] {
     #ratingContactLink { padding: 6px !important; font-size: .78rem !important; }
     #ratingModal div[style*="border-top"] { margin: 5px 0 !important; }
     #ratingAverageDisplay { padding: 4px 8px !important; }
+    #ratingConfirmBtn { padding: 3px 10px !important; font-size: .62rem !important; margin: 0 !important; }
+    #ratingStarsHint { font-size: .68rem !important; margin-bottom: 2px !important; }
   }
 </style>
 
@@ -5100,7 +5104,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
       fillStarsVisual(value);
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
       document.getElementById('ratingStarsHint').style.display = 'none';
-      document.getElementById('ratingConfirmBtn').style.display = 'none';
+      setConfirmBtnEnabled(document.getElementById('ratingConfirmBtn'), false);
       document.getElementById('ratingThankYou').style.display = 'block';
       loadAverageRating(); // نحدّث المعدل فوراً ليعكس التقييم الجديد
     } catch(err) {
@@ -5111,27 +5115,37 @@ document.getElementById('shared-playBtn').onclick = async function() {
   }
 
   function setupRatingUI(){
+    console.log('[RATING-DEBUG] setupRatingUI() started');
     buildRatingStars();
     selectedRatingValue = null;
     const confirmBtn = document.getElementById('ratingConfirmBtn');
-    confirmBtn.style.display = 'none';
+    console.log('[RATING-DEBUG] confirmBtn found:', confirmBtn);
+    setConfirmBtnEnabled(confirmBtn, false);
     const alreadyRated = localStorage.getItem(LOCALSTORAGE_KEY) === 'true';
+    console.log('[RATING-DEBUG] alreadyRated:', alreadyRated);
     if (alreadyRated) {
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
+      setConfirmBtnEnabled(confirmBtn, false); // ظاهر للجميع، بس معطّل لأن التقييم مقفول
     } else {
       document.getElementById('ratingStarsHint').style.display = 'block';
-      document.querySelectorAll('#ratingStarsRow .rating-star-wrap').forEach(wrap => {
+      const wraps = document.querySelectorAll('#ratingStarsRow .rating-star-wrap');
+      console.log('[RATING-DEBUG] star wraps count:', wraps.length);
+      wraps.forEach(wrap => {
         wrap.addEventListener('click', () => {
-          if (isSubmittingRating) return; // حماية فورية أثناء إرسال سابق شغال
-          if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') return; // حماية إضافية (تقييم سابق من جلسة قديمة)
+          console.log('[RATING-DEBUG] star clicked, value:', wrap.dataset.value);
+          if (isSubmittingRating) { console.log('[RATING-DEBUG] blocked: isSubmittingRating'); return; }
+          if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') { console.log('[RATING-DEBUG] blocked: already rated in storage'); return; }
           // بس نختار وننعرض بصرياً — ما نرسل شي لقاعدة البيانات إلا بعد تأكيد المستخدم
           selectedRatingValue = parseInt(wrap.dataset.value);
           fillStarsVisual(selectedRatingValue);
-          confirmBtn.style.display = 'block';
+          setConfirmBtnEnabled(confirmBtn, true);
+          console.log('[RATING-DEBUG] confirmBtn enabled, selectedRatingValue:', selectedRatingValue);
           document.getElementById('ratingStarsHint').textContent = 'اضغط "تأكيد التقييم" لإرسال تقييمك، أو اختر نجمة ثانية للتعديل';
         });
       });
       confirmBtn.addEventListener('click', () => {
+        console.log('[RATING-DEBUG] confirm button clicked');
+        if (confirmBtn.disabled) return; // الزر معطّل، ما فيه نجمة مختارة بعد
         if (isSubmittingRating) return;
         if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') return;
         if (!selectedRatingValue) return; // ما اختار نجمة أصلاً
@@ -5139,6 +5153,12 @@ document.getElementById('shared-playBtn').onclick = async function() {
         submitRating(selectedRatingValue);
       });
     }
+  }
+
+  function setConfirmBtnEnabled(btn, enabled){
+    btn.disabled = !enabled;
+    btn.style.background = enabled ? '#1f7a4d' : '#bbb';
+    btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
   }
 
   function openRatingModal(){
