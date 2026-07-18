@@ -1720,6 +1720,7 @@ input[type="radio"] {
     #ratingModal div[style*="border-top"] { margin: 2px 0 !important; }
     #ratingAverageDisplay { padding: 2px 8px !important; }
     #ratingStarsWrap { margin-bottom: 0 !important; }
+    #ratingStarsWrap.submitted { display: none !important; }
     #ratingConfirmBtn { padding: 3px 10px !important; margin: 0 !important; }
     #ratingStarsHint { margin-bottom: 1px !important; }
     #ratingThankYou { padding: 3px !important; margin-bottom: 2px !important; }
@@ -5129,6 +5130,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
       document.getElementById('ratingStarsHint').style.display = 'none';
       setConfirmBtnEnabled(document.getElementById('ratingConfirmBtn'), false);
+      document.getElementById('ratingStarsWrap').classList.add('submitted'); // يتحكم CSS بإخفائه بالوضع الأفقي فقط
       document.getElementById('ratingThankYou').style.display = 'block';
       loadAverageRating(); // نحدّث المعدل فوراً ليعكس التقييم الجديد
     } catch(err) {
