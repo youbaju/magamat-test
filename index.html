@@ -1677,25 +1677,31 @@ input[type="radio"] {
     <h3 style="text-align:center;font-family:'Cairo',sans-serif;color:#2b1608;margin:0 0 2px;font-size:1.3rem;font-weight:800;">قيّم الموقع</h3>
     <p style="text-align:center;color:#666;font-size:.9rem;margin:0 0 6px;font-family:'Cairo',sans-serif;font-weight:600;">رأيك يهمنا ويساعد الآخرين</p>
 
-    <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:6px;background:#eafbf1;border-radius:10px;padding:7px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
-    <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
+    <div id="ratingSplitWrap" style="display:flex;flex-direction:column;">
+      <div id="ratingColLeft" style="flex:1;min-width:0;">
+        <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:6px;background:#eafbf1;border-radius:10px;padding:7px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
+        <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
-    <div id="ratingStarsWrap" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
-      <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
-      <button type="button" id="ratingConfirmBtn" disabled style="display:block;margin:0;padding:5px 12px;background:#bbb;color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.7rem;cursor:not-allowed;transition:background .15s;white-space:nowrap;">✓ تأكيد التقييم</button>
-    </div>
-    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لاختيار تقييمك</div>
-
-    <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:7px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
-
-    <div style="border-top:1px solid #eee;margin:6px 0;"></div>
-
-    <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:7px 10px;flex-direction:column;align-items:center;gap:0;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:9px;">
-        <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:400;color:#2b1608;font-family:'Segoe UI',Arial,Helvetica,sans-serif;line-height:1.4;display:inline-block;">-</span>
-        <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
+        <div id="ratingStarsWrap" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
+          <button type="button" id="ratingConfirmBtn" disabled style="display:block;margin:0;padding:5px 12px;background:#bbb;color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.7rem;cursor:not-allowed;transition:background .15s;white-space:nowrap;">✓ تأكيد التقييم</button>
+        </div>
+        <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لاختيار تقييمك</div>
       </div>
-      <span id="ratingAvgCount" style="color:#555;font-size:.85rem;font-family:'Cairo',sans-serif;font-weight:700;"></span>
+
+      <div id="ratingColRight" style="flex:1;min-width:0;">
+        <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:7px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
+
+        <div style="border-top:1px solid #eee;margin:6px 0;"></div>
+
+        <div id="ratingAverageDisplay" style="display:none;text-align:center;background:#fdf6ec;border-radius:12px;padding:7px 10px;flex-direction:column;align-items:center;gap:0;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:9px;">
+            <span id="ratingAvgNumber" style="font-size:1.9rem;font-weight:400;color:#2b1608;font-family:'Segoe UI',Arial,Helvetica,sans-serif;line-height:1.4;display:inline-block;">-</span>
+            <span id="ratingAvgStars" style="color:#f0ad2e;font-size:1.2rem;"></span>
+          </div>
+          <span id="ratingAvgCount" style="color:#555;font-size:.85rem;font-family:'Cairo',sans-serif;font-weight:700;"></span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1704,9 +1710,11 @@ input[type="radio"] {
   /* بالشاشات القصيرة جداً (وضع أفقي بالجوال)، نرفع المحتوى لأعلى الشاشة تماماً ونضغط كل المسافات والخطوط أكثر */
   @media (max-height: 420px) {
     #ratingModal { padding-top: 0 !important; align-items: flex-start; }
-    #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; }
+    #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; max-width: 640px; }
     #ratingModal h3 { margin: 0 !important; }
     #ratingModal p { margin: 0 0 2px !important; }
+    #ratingSplitWrap { flex-direction: row !important; align-items: flex-start !important; gap: 10px !important; }
+    #ratingColLeft, #ratingColRight { flex: 1 1 0 !important; min-width: 0 !important; }
     #ratingContactLink { padding: 3px !important; margin-top: 0 !important; }
     #ratingModal div[style*="border-top"] { margin: 2px 0 !important; }
     #ratingAverageDisplay { padding: 2px 8px !important; }
