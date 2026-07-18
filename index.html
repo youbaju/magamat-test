@@ -276,7 +276,8 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .repeat-btn{ width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: .8rem !important; }
   .audio-time{ font-size: .58rem !important; min-width: 56px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .6rem !important; }
-  #shared-speedSelect  { flex: 1 1 0 !important; min-width: 0 !important; font-size: .6rem !important; }
+  .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
+  .speed-bpm-value { font-size: .58rem !important; min-width: 26px !important; }
   .tuning-row { justify-content: flex-end !important; flex-wrap: wrap !important; gap: 4px !important; }
   .tuning-row label { font-size: .6rem !important; color: #111 !important; font-weight: 700 !important; white-space: nowrap !important; flex-shrink: 0 !important; }
   .tuning-select { font-size: .6rem !important; padding: 1px 2px !important; }
@@ -395,6 +396,52 @@ flex-shrink: 0;
   outline: none;
   cursor: pointer;
   direction: rtl;
+}
+
+.speed-slider-inline {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.speed-step-btn {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 5px;
+  border: 1px solid #b8d4ea;
+  background: #fff;
+  color: #2a6a8a;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background .12s, transform .08s;
+}
+.speed-step-btn:hover { background: #eef6fa; }
+.speed-step-btn:active { transform: scale(0.9); background: #dcedf5; }
+.speed-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: #2a6a8a;
+  height: 3px;
+  cursor: pointer;
+}
+.speed-bpm-value {
+  font-size: .65rem;
+  font-weight: 700;
+  color: #1a3a52;
+  background: #eef6fa;
+  border: 1px solid #b8d4ea;
+  border-radius: 5px;
+  padding: 2px 5px;
+  min-width: 30px;
+  text-align: center;
+  flex: 0 0 auto;
 }
 
 
@@ -1336,14 +1383,13 @@ input[type="radio"] {
         <option value="-2">ناقص تون كامل (392 Hz)</option>
         <option value="-3">ناقص تون ونصف (370 Hz)</option>
       </select>
-      <label for="shared-speedSelect">السرعة : </label>
-      <select class="tuning-select" id="shared-speedSelect">
-        <option value="2000">بطيء جداً</option>
-        <option value="1600">بطيء</option>
-        <option value="1400" selected>عادي</option>
-        <option value="900">سريع</option>
-        <option value="600">سريع جداً</option>
-      </select>
+      <label for="shared-speedRange">السرعة : </label>
+      <div class="speed-slider-inline">
+        <button type="button" class="speed-step-btn" id="shared-speedMinus" aria-label="إنقاص السرعة">−</button>
+        <input type="range" class="speed-range" id="shared-speedRange" min="20" max="165" value="43" step="1">
+        <button type="button" class="speed-step-btn" id="shared-speedPlus" aria-label="زيادة السرعة">+</button>
+        <span class="speed-bpm-value" id="shared-speedBpmValue">43</span>
+      </div>
     </div>
   </div>
 </div>
@@ -4304,10 +4350,31 @@ if (westernGuideBtn && westernGuideModal) {
     }
     let arRepeat = false;
     let currentDegrees = [];
-    window.AR_STEP_MS = 1400;
-    document.getElementById('shared-speedSelect').addEventListener('change', function() {
-      window.AR_STEP_MS = parseInt(this.value);
-    });
+
+    // تحويل BPM إلى مللي ثانية بين كل نغمة والثانية (كل نغمة = ربع واحد بالمترونوم)
+    function bpmToStepMs(bpm) { return Math.round(60000 / bpm); }
+
+    const DEFAULT_BPM = 43; // يعادل تقريباً السرعة "عادي" القديمة (1400ms)
+    window.AR_STEP_MS = bpmToStepMs(DEFAULT_BPM);
+
+    (function setupSpeedSlider() {
+      const range = document.getElementById('shared-speedRange');
+      const bpmValue = document.getElementById('shared-speedBpmValue');
+      const minusBtn = document.getElementById('shared-speedMinus');
+      const plusBtn = document.getElementById('shared-speedPlus');
+      if (!range) return; // حماية لو العنصر مو موجود بصفحة معينة
+
+      function applyBpm(bpm) {
+        bpm = Math.max(parseInt(range.min), Math.min(parseInt(range.max), bpm));
+        range.value = bpm;
+        bpmValue.textContent = bpm;
+        window.AR_STEP_MS = bpmToStepMs(bpm);
+      }
+
+      range.addEventListener('input', () => applyBpm(parseInt(range.value)));
+      minusBtn.addEventListener('click', () => applyBpm(parseInt(range.value) - 1));
+      plusBtn.addEventListener('click', () => applyBpm(parseInt(range.value) + 1));
+    })();
 
     function buildArSequence(degrees) {
       const maqName = maqamSelect.value;
