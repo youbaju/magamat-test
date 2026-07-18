@@ -1680,7 +1680,7 @@ input[type="radio"] {
     <div id="ratingThankYou" style="display:none;text-align:center;color:#1f7a4d;font-weight:800;font-size:1rem;margin-bottom:6px;background:#eafbf1;border-radius:10px;padding:7px;font-family:'Cairo',sans-serif;">✅ شكراً على تقييمك!</div>
     <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+    <div id="ratingStarsWrap" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
       <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
       <button type="button" id="ratingConfirmBtn" disabled style="display:block;margin:0;padding:5px 12px;background:#bbb;color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.7rem;cursor:not-allowed;transition:background .15s;white-space:nowrap;">✓ تأكيد التقييم</button>
     </div>
@@ -1705,14 +1705,27 @@ input[type="radio"] {
   @media (max-height: 420px) {
     #ratingModal { padding-top: 0 !important; align-items: flex-start; }
     #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; }
-    #ratingModal .rating-star { font-size: 1.6rem; }
-    #ratingModal h3 { font-size: 1.05rem !important; margin-bottom: 1px !important; }
-    #ratingModal p { font-size: .78rem !important; margin-bottom: 5px !important; }
-    #ratingContactLink { padding: 6px !important; font-size: .78rem !important; }
-    #ratingModal div[style*="border-top"] { margin: 5px 0 !important; }
+    #ratingModal h3 { margin: 0 0 1px !important; }
+    #ratingModal p { margin: 0 0 3px !important; }
+    #ratingContactLink { padding: 4px !important; margin-top: 0 !important; }
+    #ratingModal div[style*="border-top"] { margin: 3px 0 !important; }
+    #ratingAverageDisplay { padding: 3px 8px !important; }
+    #ratingConfirmBtn { padding: 3px 10px !important; margin: 0 !important; }
+    #ratingStarsHint { margin-bottom: 2px !important; }
+    #ratingThankYou { padding: 4px !important; margin-bottom: 3px !important; }
+    #ratingLoadingMsg { margin-bottom: 2px !important; }
+  }
+
+  @media (max-width: 600px) {
+    #ratingModal .maqam-guide-container { padding: 6px 10px; }
+    #ratingModal h3 { margin: 0 0 1px !important; }
+    #ratingModal p { margin: 0 0 3px !important; }
+    #ratingStarsHint { margin-bottom: 2px !important; }
+    #ratingContactLink { padding: 4px !important; margin-top: 0 !important; }
+    #ratingModal div[style*="border-top"] { margin: 3px 0 !important; }
     #ratingAverageDisplay { padding: 4px 8px !important; }
-    #ratingConfirmBtn { padding: 3px 10px !important; font-size: .62rem !important; margin: 0 !important; }
-    #ratingStarsHint { font-size: .68rem !important; margin-bottom: 2px !important; }
+    #ratingThankYou { padding: 4px !important; margin-bottom: 3px !important; }
+    #ratingLoadingMsg { margin-bottom: 2px !important; }
   }
 </style>
 
@@ -5104,7 +5117,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
       fillStarsVisual(value);
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
       document.getElementById('ratingStarsHint').style.display = 'none';
-      setConfirmBtnEnabled(document.getElementById('ratingConfirmBtn'), false);
+      document.getElementById('ratingStarsWrap').style.display = 'none';
       document.getElementById('ratingThankYou').style.display = 'block';
       loadAverageRating(); // نحدّث المعدل فوراً ليعكس التقييم الجديد
     } catch(err) {
