@@ -1498,8 +1498,8 @@ input[type="radio"] {
     <div class="help-section">
       <h3>١١. تقييم الموقع</h3>
       <p>يقدر أي زائر يقيّم الموقع بنجوم من ١ إلى ٥، ويشوف المعدل العام لكل التقييمات.</p>
-      <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (جنب زر "تواصل" وشعار رؤية ٢٠٣٠).</p>
-      <p>🔹 <strong>إرسال تقييمك:</strong> اضغط على عدد النجوم اللي تعبّر عن رأيك — يُسجَّل تقييمك فوراً بمجرد الضغطة (بدون زر "إرسال" منفصل)، وتظهر رسالة شكر تأكيدية.</p>
+      <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (بجانب زر "تواصل" وشعار رؤية ٢٠٣٠).</p>
+      <p>🔹 <strong>إرسال تقييمك:</strong> اضغط على عدد النجوم اللي تعبّر عن رأيك (تقدر تغيّر اختيارك قبل التأكيد بالضغط على نجمة ثانية)، ثم اضغط زر <strong>"✓ تأكيد التقييم"</strong> لإرسال تقييمك فعلياً — بهالطريقة ما ينحفظ تقييم بالخطأ لو ضغطت نجمة غلط. بعد التأكيد تظهر رسالة شكر تأكيدية.</p>
       <p>🔹 <strong>تقييم واحد لكل زائر:</strong> بعد إرسال تقييمك، ما تقدر ترسل تقييم ثاني من نفس الجهاز/المتصفح (النجوم تصير مقفلة)، عشان يضل المعدل العام دقيق ويعكس رأي كل زائر مرة وحدة بس.</p>
       <p>🔹 <strong>عندك ملاحظة أو اقتراح؟</strong> فيه رابط "تواصل معنا" داخل صفحة التقييم يوديك مباشرة لصفحة التواصل بالموقع، لو حبيت توضح رأيك بالتفصيل (خصوصاً لو كان تقييمك منخفض ولك سبب معيّن).</p>
       <p>🔹 <strong>المعدل العام:</strong> يظهر بأسفل صفحة التقييم للجميع — متوسط كل التقييمات المُرسلة، وعدد الأشخاص اللي قيّموا.</p>
@@ -1681,7 +1681,8 @@ input[type="radio"] {
     <div id="ratingLoadingMsg" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:5px;font-family:'Cairo',sans-serif;font-weight:600;">جاري تحميل التقييمات...</div>
 
     <div id="ratingStarsRow" style="display:flex;justify-content:center;gap:8px;margin-bottom:0;"></div>
-    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لإرسال تقييمك</div>
+    <div id="ratingStarsHint" style="text-align:center;color:#777;font-size:.85rem;margin-bottom:6px;font-family:'Cairo',sans-serif;font-weight:600;display:none;">اضغط على النجوم لاختيار تقييمك</div>
+    <button type="button" id="ratingConfirmBtn" style="display:none;margin:0 auto 8px auto;padding:8px 22px;background:#1f7a4d;color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;">✓ تأكيد التقييم</button>
 
     <a href="#" id="ratingContactLink" style="display:block;text-align:center;margin-top:2px;padding:7px;background:#eaf6fc;border:1.5px solid #3ab4e8;border-radius:10px;color:#1a5fa8;font-weight:700;text-decoration:none;font-size:.9rem;font-family:'Cairo',sans-serif;">عندك ملاحظة أو اقتراح؟ تواصل معنا 💬</a>
 
@@ -5090,6 +5091,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
   }
 
   let isSubmittingRating = false; // حماية فورية (متزامنة) من ضغطتين سريعتين قبل ما يخلص أول اتصال بقاعدة البيانات
+  let selectedRatingValue = null; // القيمة المختارة بس لسا ما اتأكدت بالإرسال
 
   async function submitRating(value){
     try {
@@ -5098,6 +5100,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
       fillStarsVisual(value);
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
       document.getElementById('ratingStarsHint').style.display = 'none';
+      document.getElementById('ratingConfirmBtn').style.display = 'none';
       document.getElementById('ratingThankYou').style.display = 'block';
       loadAverageRating(); // نحدّث المعدل فوراً ليعكس التقييم الجديد
     } catch(err) {
@@ -5109,6 +5112,9 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
   function setupRatingUI(){
     buildRatingStars();
+    selectedRatingValue = null;
+    const confirmBtn = document.getElementById('ratingConfirmBtn');
+    confirmBtn.style.display = 'none';
     const alreadyRated = localStorage.getItem(LOCALSTORAGE_KEY) === 'true';
     if (alreadyRated) {
       document.getElementById('ratingStarsRow').querySelectorAll('.rating-star-wrap').forEach(w => w.classList.add('locked'));
@@ -5116,11 +5122,21 @@ document.getElementById('shared-playBtn').onclick = async function() {
       document.getElementById('ratingStarsHint').style.display = 'block';
       document.querySelectorAll('#ratingStarsRow .rating-star-wrap').forEach(wrap => {
         wrap.addEventListener('click', () => {
-          if (isSubmittingRating) return; // حماية فورية: نمنع أي ضغطة ثانية لحظياً، قبل حتى ما نتحقق من localStorage
+          if (isSubmittingRating) return; // حماية فورية أثناء إرسال سابق شغال
           if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') return; // حماية إضافية (تقييم سابق من جلسة قديمة)
-          isSubmittingRating = true;
-          submitRating(parseInt(wrap.dataset.value));
+          // بس نختار وننعرض بصرياً — ما نرسل شي لقاعدة البيانات إلا بعد تأكيد المستخدم
+          selectedRatingValue = parseInt(wrap.dataset.value);
+          fillStarsVisual(selectedRatingValue);
+          confirmBtn.style.display = 'block';
+          document.getElementById('ratingStarsHint').textContent = 'اضغط "تأكيد التقييم" لإرسال تقييمك، أو اختر نجمة ثانية للتعديل';
         });
+      });
+      confirmBtn.addEventListener('click', () => {
+        if (isSubmittingRating) return;
+        if (localStorage.getItem(LOCALSTORAGE_KEY) === 'true') return;
+        if (!selectedRatingValue) return; // ما اختار نجمة أصلاً
+        isSubmittingRating = true;
+        submitRating(selectedRatingValue);
       });
     }
   }
