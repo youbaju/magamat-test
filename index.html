@@ -1710,11 +1710,12 @@ input[type="radio"] {
   /* بالشاشات القصيرة جداً (وضع أفقي بالجوال)، نرفع المحتوى لأعلى الشاشة تماماً ونضغط كل المسافات والخطوط أكثر */
   @media (max-height: 420px) {
     #ratingModal { padding-top: 0 !important; align-items: flex-start; }
-    #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; max-width: 640px; }
+    #ratingModal .maqam-guide-container { padding: 4px 8px; margin-top: 2px; max-height: 98dvh; max-height: 98vh; }
     #ratingModal h3 { margin: 0 !important; }
+    #ratingModal > .maqam-guide-container > div:first-child { margin: 0 !important; line-height: 1 !important; height: 16px !important; }
+    #ratingModal .mit-close { font-size: .85rem !important; padding: 0 !important; line-height: 1 !important; }
     #ratingModal p { margin: 0 0 2px !important; }
-    #ratingSplitWrap { flex-direction: row !important; align-items: flex-start !important; gap: 10px !important; }
-    #ratingColLeft, #ratingColRight { flex: 1 1 0 !important; min-width: 0 !important; }
+    #ratingSplitWrap { flex-direction: column !important; }
     #ratingContactLink { padding: 3px !important; margin-top: 0 !important; }
     #ratingModal div[style*="border-top"] { margin: 2px 0 !important; }
     #ratingAverageDisplay { padding: 2px 8px !important; }
