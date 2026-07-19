@@ -360,15 +360,12 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   border-radius: 50%;
   width: 36px; height: 36px;
   min-width: 36px; min-height: 36px;
-  font-size: 1.7rem;
-  font-weight: 900;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
-  text-shadow: 0 0 1px currentColor, 0 0 1px currentColor;
 }
 .repeat-btn:hover { background: #1a8abf; }
 .repeat-btn.active { background: #e8a83a; }
@@ -1376,7 +1373,14 @@ input[type="radio"] {
         <div class="audio-progress-bar" id="shared-progressFill"></div>
       </div>
       <div class="audio-time" id="shared-audioTime">0:00 / 0:00</div>
-      <button class="repeat-btn" id="shared-repeatBtn" title="تكرار">↻</button>
+      <button class="repeat-btn" id="shared-repeatBtn" title="تكرار">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="miter" style="width:80%;height:80%;">
+          <path d="m17 2 4 4-4 4"/>
+          <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+          <path d="m7 22-4-4 4-4"/>
+          <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </button>
     </div>
     <div class="tuning-row">
       <label for="shared-tuningSelect">الدوزان : </label>
