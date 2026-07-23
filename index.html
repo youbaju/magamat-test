@@ -838,6 +838,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #helpBtn { display: block; pointer-events: auto; cursor: pointer; }
   svg#shared-oudSvg #handBtnRight, svg#shared-oudSvg #handBtnLeft { pointer-events: auto !important; cursor: pointer; }
   svg#shared-oudSvg #handBtnRight *, svg#shared-oudSvg #handBtnLeft * { pointer-events: auto !important; }
+  svg#shared-oudSvg #stringCountBtn { pointer-events: auto !important; cursor: pointer; }
+  svg#shared-oudSvg #stringCountBtn * { pointer-events: auto !important; }
 
   /* ===== Modal دليل المقام ===== */
   .maqam-guide-modal{
@@ -992,6 +994,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #svgContactBtn rect{ pointer-events:auto; }
   svg#shared-oudSvg #svgContactBtn text{ pointer-events:none; }
   svg#shared-oudSvg #svgRatingBtn rect{ pointer-events:auto; cursor:pointer; }
+  svg#shared-oudSvg #stringCountBtn{ pointer-events:auto !important; cursor:pointer; }
+  svg#shared-oudSvg #stringCountBtn *{ pointer-events:auto !important; }
   svg#shared-oudSvg #svgRatingBtn text{ pointer-events:none; }
   svg#shared-oudSvg #oudNotesLayer rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #chordHighlightLayer rect{ pointer-events:auto; cursor:pointer; }
@@ -1426,7 +1430,8 @@ input[type="radio"] {
     <div class="help-section">
       <h3>٢. اختيار المقامات العربية</h3>
       <p>اضغط على زر <strong>☰ اختيار المقام</strong> لفتح القائمة. اختر الفصيلة ثم المقام ثم الحرف. عند اختيار المقام سيظهر محطه بشكل افتراضي في قائمة الحروف.</p>
-      <p>يوفر الموقع <strong>35 حرفاً</strong> مقسمة إلى أرباع التون — من <strong>صول قرار</strong> إلى <strong>دو جواب</strong> (الوتر الأول من الأسفل للعازف اليمين، والوتر الأول من الأعلى للعازف اليسار) — لتصوير أي مقام عربي عليه.</p>
+      <p>يوفر الموقع <strong>35 حرفاً</strong> مقسمة إلى أرباع التون — من <strong>صول قرار</strong> إلى <strong>دو جواب</strong> (الوتر الأول من الأسفل للعازف اليمين، والوتر الأول من الأعلى للعازف اليسار) — لتصوير أي مقام عربي عليه بوضع ٥ أوتار.</p>
+      <p>وبوضع ٦ أوتار، يوفر الموقع <strong>٤٥ حرفاً</strong> مقسمة إلى أرباع التون — من <strong>صول قرار</strong> إلى <strong>وتر الفا الشرار</strong> (الوتر الأول من الأسفل للعازف اليمين، والوتر الأول من الأعلى للعازف اليسار) — لتصوير أي مقام عربي عليه.</p>
       <div class="help-svg-wrap"><img src="data:image/png;base64,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" style="width:55%;border-radius:6px;display:block;margin:0 auto;" alt="قائمة المقامات"/></div>
     </div>
 
@@ -1441,7 +1446,7 @@ input[type="radio"] {
 
     <div class="help-section">
       <h3>٤. قراءة زند العود</h3>
-      <p>يُمثّل الزند أوتار العود الخمسة (فا، لا، رى، صول، دو) من الأعلى للأسفل. الأرقام فوق الزند تُمثّل الخطوط (الدساتين). المستطيلات الملونة تُشير إلى مواضع نوتات المقام.</p>
+      <p>يُمثّل الزند أوتار العود (فا، لا، رى، صول، دو — وبإضافة الوتر السادس "الشرار" لو فعّلته، راجع القسم ٩) من الأعلى للأسفل. الأرقام فوق الزند تُمثّل الخطوط (الدساتين). المستطيلات الملونة تُشير إلى مواضع نوتات المقام.</p>
       <p>⚠️ <strong>الخطوط البنية الرفيعة بين الخطوط المرقّمة تُمثّل أرباع التون</strong> — وهي الفارق الموسيقي الأساسي في المقامات العربية.</p>
 
       <div class="help-svg-wrap">
@@ -1478,7 +1483,19 @@ input[type="radio"] {
     </div>
 
     <div class="help-section">
-      <h3>٩. سماع نغمة فردية بالضغط عليها</h3>
+      <h3>٩. اختيار عدد الأوتار (٥ أو ٦)</h3>
+      <p>يدعم الموقع تمثيل العود التقليدي بـ<strong>٥ أوتار</strong> (فا، لا، رى، صول، دو)، أو بإضافة <strong>وتر سادس</strong> يسمى <strong>"الشرار"</strong> — وتر إضافي أرفع من وتر الدو، دوزانه فا (جواب الجواب)، شائع الاستخدام عند كثير من عازفي العود المعاصرين.</p>
+      <p>🔹 <strong>مكان الزر:</strong> جنب أيقونتي اختيار اليد (يمين/يسار)، فوق زند العود مباشرة — زر مكتوب عليه رقم الوضع الحالي ("٥ أوتار" أو "٦ أوتار").</p>
+      <p>🔹 <strong>التبديل:</strong> اضغط الزر لتبديل الوضع فوراً بنفس الصفحة (بدون إعادة تحميل). عند التبديل، <strong>يرجع كل إعداد للوضع الافتراضي تلقائياً</strong>: المقامات العربية، مقام الراست على محطّ الدو، اتجاه اليد اليمنى، الدوزان العالمي (440 هرتز)، والسرعة الافتراضية.</p>
+      <p>🔹 <strong>يتذكر آخر اختيار:</strong> المرة الجاية اللي تفتح فيها الموقع، الزر يبدأ تلقائياً بنفس آخر وضع اخترته (٥ أو ٦)، فما تحتاج تبدّل كل مرة لو كان عودك دايماً بنفس عدد الأوتار.</p>
+      <p>🔹 <strong>مدى الفريتات بالوضعين:</strong></p>
+      <p style="margin-right:18px;">- <strong>بوضع ٥ أوتار:</strong> كل وتر (فا، لا، رى، صول) يغطي من الفرس لفريت ٤.٥ بس، وينتقل الحرف بعدها للوتر التالي — <strong>ما عدا وتر الدو</strong> (آخر وتر)، اللي يمتد بلا حدود عملياً (يستوعب أي مقام مهما طال، حتى لو احتاج فريتات بعيدة جداً غير واقعية).</p>
+      <p style="margin-right:18px;">- <strong>بوضع ٦ أوتار:</strong> نفس القاعدة، بس الدو يصير محدوداً هو الثاني (فرس إلى فريت ٤.٥)، وينتقل الحرف بعده لوتر <strong>الشرار</strong> الجديد — وهو اللي يمتد بلا حدود عملياً هالمرة (لغاية فريت ١٣ لمقامات ممتدة جداً زي الدلنشين).</p>
+      <p style="margin-right:18px;">- <strong>الفايدة العملية:</strong> بدل ما تمتد أصابعك وهمياً لمسافات بعيدة جداً على وتر الدو (زي وضع ٥ أوتار)، الوتر السادس يوزّع الامتداد على وتر جديد أقرب لواقع العزف الحقيقي بعود بستة أوتار.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>١٠. سماع نغمة فردية بالضغط عليها</h3>
       <p>بالإضافة لتشغيل السلم أو المقام كاملاً بأزرار المشغل، يمكنك سماع أي نغمة منفردة مباشرة من على الزند، بتقنية <strong>صوت مستمر حقيقي</strong> (بدون أي تكرار أو تقطيع) يبدأ ويتوقف حسب ضغطاتك.</p>
       <p>🔹 <strong>البدء:</strong> اضغط على أي مستطيل نغمة (بالمقامات العربية أو السلالم الغربية) ليبدأ صوتها بالعزف مستمراً بدون توقف، ويتحول لونها للأخضر.</p>
       <p>🔹 <strong>الإيقاف:</strong> اضغط على <strong>نفس المستطيل مرة ثانية</strong> ليتوقف الصوت فوراً ويرجع لونها لطبيعتها.</p>
@@ -1489,7 +1506,7 @@ input[type="radio"] {
     </div>
 
     <div class="help-section">
-      <h3>١٠. كوردات السلالم الغربية</h3>
+      <h3>١١. كوردات السلالم الغربية</h3>
       <p>بالإضافة للسلالم نفسها، يوفر الموقع <strong>الكوردات السبعة</strong> (الدرجات الموسيقية) لكل سلم غربي — تظهر النغمات الثلاث المكوّنة لكل كورد معاً على زند العود، بأقرب وأسهل أوضاع للعزف.</p>
       <p>🔹 <strong>فتح قائمة الكوردات:</strong> اضغط زر <strong>"☰ اختر من الدائرة"</strong> فوق العود (بتبويب المقامات الغربية)، ثم اضغط تبويب <strong>"الكوردات"</strong> أعلى القائمة، بدل تبويب "دائرة الرابعات والخامسات".</p>
       <p>🔹 <strong>اختيار نوع السلم:</strong> داخل قائمة الكوردات نفسها، فيه صف أزرار (Major / Minor طبيعي / Minor توافقي / Minor ميلودي) يتيح لك التبديل بين الأنواع الأربعة مباشرة، وتتحدث الكوردات فوراً بدون ما تحتاج تغلق القائمة.</p>
@@ -1500,7 +1517,7 @@ input[type="radio"] {
     </div>
 
     <div class="help-section">
-      <h3>١١. تقييم الموقع</h3>
+      <h3>١٢. تقييم الموقع</h3>
       <p>يقدر أي زائر يقيّم الموقع بنجوم من ١ إلى ٥، ويشوف المعدل العام لكل التقييمات.</p>
       <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (بجانب زر "تواصل" وشعار رؤية ٢٠٣٠).</p>
       <p>🔹 <strong>إرسال تقييمك:</strong> اضغط على عدد النجوم اللي تعبّر عن رأيك (تقدر تغيّر اختيارك قبل التأكيد بالضغط على نجمة ثانية)، ثم اضغط زر <strong>"✓ تأكيد التقييم"</strong> لإرسال تقييمك فعلياً — بهالطريقة ما ينحفظ تقييم بالخطأ لو ضغطت نجمة غلط. بعد التأكيد تظهر رسالة شكر تأكيدية.</p>
@@ -1619,6 +1636,17 @@ input[type="radio"] {
       <option value="siJawab">سي جواب</option>
       <option value="doHafBimolJawab">دو نصف بيمول جواب</option>
       <option value="doJawab">دو جواب</option>
+      <!-- ===== مواضع 35-47 ===== -->
+      <option value="doHafDiazJawab">دو نصف دييز جواب</option>
+      <option value="doDiazJawab">دو دييز جواب</option>
+      <option value="reHafBimolJawab">رى نصف بيمول جواب</option>
+      <option value="reJawab">رى جواب</option>
+      <option value="reHafDiazJawab">رى نصف دييز جواب</option>
+      <option value="miBimolJawab">مي بيمول جواب</option>
+      <option value="miHafBimolJawab">مي نصف بيمول جواب</option>
+      <option value="miJawab">مي جواب</option>
+      <option value="miHafDiazJawab">مي نصف دييز جواب</option>
+      <option value="faJawab">فا جواب</option>
     </select>
     <button class="show-btn" id="showBtn" style="display:none">اظهار</button>
   </div>
@@ -1840,6 +1868,17 @@ window.isArabicMode = false;
         window._currentPlayingRect = null;
       }
       showPage(targetId);
+      // إعادة ضبط شاملة للافتراضي عند كل تبديل تبويب (بدون تذكّر آخر اختيار)
+      if (targetId === 'page-maqamat') {
+        sessionStorage.removeItem('oudArabicSelection');
+        if (typeof window.updateMaqam === 'function') {
+          window.updateMaqam('الراست');
+          document.querySelectorAll('input[name="maqam"]').forEach(r => { r.checked = (r.value === 'الراست'); });
+          if (typeof window.showMaqam === 'function') window.showMaqam();
+        }
+      } else if (targetId === 'page-circle') {
+        if (typeof window.selectRootAndType === 'function') window.selectRootAndType(0, 'major', null);
+      }
       currentPageLabel.textContent = btn.querySelector('.tab-title').textContent;
       closeTabsMenu();
     });
@@ -2084,6 +2123,7 @@ function selectRootAndType(root, scaleType, letterOverride){
   // STAGE 2/3 سيستدعون هنا: drawOudScale(), drawStaffScale()
   if (typeof renderAll === 'function') renderAll();
 }
+window.selectRootAndType = selectRootAndType; // تصدير صريح احتياطي عشان يقدر يوصلها كود بسكربت منفصل
 
 // فتح/إغلاق القائمة المنسدلة لاختيار المقام (الدائرة) أو الكوردات
 const circleDrawerEl = document.getElementById('c-circleWrap');
@@ -2437,6 +2477,12 @@ function updateNowPlaying(){
 /* =====================================================================
    STAGE 2: رقبة العود + رسم السلم ديناميكيًا على التقاطعات
 ===================================================================== */
+// نقرأ عدد الأوتار المحفوظ من آخر اختيار للمستخدم — ٦ أوتار افتراضياً لأول زيارة على الإطلاق
+window.oudStringMode = localStorage.getItem('oudStringCountPref')
+  ? parseInt(localStorage.getItem('oudStringCountPref'))
+  : 5; // مؤقتاً: نبقي ٥ (الوضع المستقر والمُتحقق منه بالكامل) كافتراضي، لين نتأكد من صحة رسم الستة أوتار بالكامل
+window.oudCurrentStringCount = window.oudStringMode; // متغيّر عالمي (window) يقدر يوصله أي <script> بالصفحة، بعكس OUD اللي محصور بنفس الـ<script> بس
+
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
   window.isLeftHanded = (sessionStorage.getItem('oudHandPref') === 'left');
@@ -2464,8 +2510,8 @@ const OUD = (function(){
   const WIDEN = 20;
   const FRET7_INDEX = 7;
   const FRET_COUNT = 12;
-  const STRING_COUNT = 5;
-  const STRING_TUNING = [5, 9, 2, 7, 0]; // فا(F)=5, لا(A)=9, ري(D)=2, صول(G)=7, دو(C)=0
+  let STRING_COUNT = (window.oudStringMode === 6) ? 6 : 5;
+  const STRING_TUNING = [5, 9, 2, 7, 0, 5]; // فا(F)=5, لا(A)=9, ري(D)=2, صول(G)=7, دو(C)=0, فا الشرار(F)=5
 
   function neckTopY(x){ const t=Math.max(0,Math.min(1,(NUT_X-x)/(NUT_X-NECK_END_X))); return NUT_TOP_Y-WIDEN*t; }
   function neckBottomY(x){ const t=Math.max(0,Math.min(1,(NUT_X-x)/(NUT_X-NECK_END_X))); return NUT_BOTTOM_Y+WIDEN*t; }
@@ -2476,8 +2522,9 @@ const OUD = (function(){
     return NUT_X-fullLen*(ratio/ratio12)*0.97;
   }
   function stringY(i,x){
-    const top=neckTopY(x)+37;
-    const bottom=neckBottomY(x)-37;
+    const margin = (STRING_COUNT === 6) ? 25 : 37; // بوضع ٦ أوتار نقلل الهامش عشان نعوّض تضييق المسافة الطبيعي (وتر إضافي بنفس المساحة)
+    const top=neckTopY(x)+margin;
+    const bottom=neckBottomY(x)-margin;
     const idx = (window.isLeftHanded) ? (STRING_COUNT-1-i) : i;
     return top+(bottom-top)*(idx/(STRING_COUNT-1));
   }
@@ -2491,17 +2538,23 @@ const OUD = (function(){
   }
   // تردد الصوت الفعلي (Hz) لأي نقطة، بدوزنة واقعية للعود (مي3 للوتر الأول المفتوح)
   // tuningOffsetSemitones: إزاحة اختيارية بالأنصاف (سالبة = أنزل)، تحاكي دوزان العازف الفعلي
-  const STRING_OPEN_MIDI = [53, 57, 62, 67, 72]; // F3 A3 D4 G4 C5 (فا بدل مي)
+  const STRING_OPEN_MIDI = [53, 57, 62, 67, 72, 77]; // F3 A3 D4 G4 C5 F5 (فا الشرار)
   function frequencyAt(stringIndex, fret, tuningOffsetSemitones){
     const offset = tuningOffsetSemitones || 0;
     const midi = STRING_OPEN_MIDI[stringIndex] + fret + offset;
     return 440 * Math.pow(2, (midi - 69) / 12);
   }
 
+  function setStringCount(n){
+    STRING_COUNT = n;
+    OUD.STRING_COUNT = n;
+    window.oudCurrentStringCount = n; // نحدّث المتغيّر العالمي اللي تقرأه سكربتات ثانية زي getStringFret
+  }
+
   return {
     NUT_X, VISUAL_NUT_X, NECK_END_X, NUT_TOP_Y, NUT_BOTTOM_Y, WIDEN,
     FRET7_INDEX, FRET_COUNT, STRING_COUNT, STRING_TUNING, STRING_OPEN_MIDI,
-    neckTopY, neckBottomY, fretX, stringY, getPoint, noteAt, frequencyAt
+    neckTopY, neckBottomY, fretX, stringY, getPoint, noteAt, frequencyAt, setStringCount
   };
 })();
 
@@ -2561,9 +2614,11 @@ window.applyOudHorizontalMirror = function(container){
 };
 const oudStatic = el('g', { id:'oudStatic' });
 const oudNotesLayer = el('g', { id:'oudNotesLayer' });
+const oudControlBtnsLayer = el('g', { id:'oudControlBtnsLayer' }); // طبقة الأزرار (يمين/يسار/عدد الأوتار) — فوق الكل دايماً، تضمن استقبال الضغطات
 oudSvg.appendChild(oudStatic);
 oudSvg.appendChild(oudNotesLayer);
 oudSvg.appendChild(chordHighlightLayer);
+oudSvg.appendChild(oudControlBtnsLayer);
 
 const arabicNum = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','١٠','١١','١٢','١٣'];
 
@@ -2616,9 +2671,9 @@ function buildOudStatic(){
   }
 
   // 4) الأوتار الخمسة (وتر فا مفرد، والأربعة الأسفل مزدوجة)
-  const stringColors = ['#5c3414','#9c5a18','#c98a2e','#7a7a7a','#3a3a3a'];
-  const stringWidths = [5.2, 4.6, 4.0, 3.4, 3.0];
-  const doubleOffset = [0, 5, 5, 5, 4];
+  const stringColors = ['#5c3414','#9c5a18','#c98a2e','#7a7a7a','#3a3a3a','#2a2a2a'];
+  const stringWidths = [5.2, 4.6, 4.0, 3.4, 3.0, 2.6];
+  const doubleOffset = [0, 5, 5, 5, 4, 4];
   window._doubleOffset = doubleOffset; // الإزاحة بين الوترين المزدوجين (0 = مفرد)
   const xStringStart = OUD.VISUAL_NUT_X;
   const xStringEnd = OUD.fretX(13);
@@ -2764,31 +2819,29 @@ function buildOudStatic(){
     const handScale = 1.45; // تكبير ٤٥٪ عن الحجم الأصلي
     const handW = 88 * handScale, handH = 66 * handScale, handR = 12 * handScale;
     const handGap = 14;
-    const hand1X = oldHelpBx - (handW/2 + handGap/2);
-    const hand2X = oldHelpBx + (handW/2 + handGap/2);
+    const groupShift = 20; // إزاحة يمينية بسيطة للمجموعة كاملة، عشان زر عدد الأوتار (الأبعد يساراً) ما ينقص من حافة الرسمة
+    const midXForBtns = (OUD.NUT_X + OUD.NECK_END_X) / 2;
+    const mirrorXForBtns = (x) => 2 * midXForBtns - x;
+    const naturalHand1X = oldHelpBx - (handW/2 + handGap/2) + groupShift;
+    const naturalHand2X = oldHelpBx + (handW/2 + handGap/2) + groupShift;
+    const naturalHand3X = naturalHand1X - (handW + handGap);
+    // بوضع اليمين (الافتراضي) نعكس المواضع (نفس منطق انعكاس الزند)، وبوضع اليسار نستخدمها كما هي
+    const hand1X = window.isLeftHanded ? naturalHand1X : mirrorXForBtns(naturalHand1X);
+    const hand2X = window.isLeftHanded ? naturalHand2X : mirrorXForBtns(naturalHand2X);
+    const hand3X = window.isLeftHanded ? naturalHand3X : mirrorXForBtns(naturalHand3X);
     const handY = oldHelpY + 25;
 
-    // رسم كف يد بسيط (راحة + ٤ أصابع + إبهام) بأشكال هندسية أساسية، قابل للعكس لتمثيل اليد اليسرى
+    // أيقونة اليد: إيموجي ✋ حقيقي بدل رسمة مخصصة، معكوس أفقياً لتمثيل اليد اليسرى
     function drawPalmShape(parent, cx, cy, mirrored, active){
-      const fill = active ? '#ffffff' : '#7a5230';
-      const s = mirrored ? -1 : 1; // يعكس جهة الإبهام لتمثيل اليد اليسرى
-      const palmW = 26 * handScale, palmH = 22 * handScale;
-      // الراحة
-      parent.appendChild(el('rect', {
-        x: cx - palmW/2, y: cy - 2*handScale, width: palmW, height: palmH, rx: 7*handScale,
-        fill: fill
-      }));
-      // خمسة أصابع بنفس الشكل بالضبط (نفس العرض، نفس تدوير الحواف)، بس بأطوال متدرجة طبيعية
-      const fingerW = 5.2 * handScale, fingerGap = 5.6 * handScale, fingerBaseY = cy - 2*handScale;
-      const fingerLens = [10, 15, 19, 18, 14].map(v => v * handScale); // إبهام، سبابة، وسطى، بنصر، خنصر
-      for (let i = 0; i < 5; i++) {
-        const fx = cx - palmW/2 + 3*handScale + i*fingerGap;
-        const flen = fingerLens[i];
-        parent.appendChild(el('rect', {
-          x: fx - fingerW/2, y: fingerBaseY - flen, width: fingerW, height: flen + 4*handScale, rx: 2.6*handScale,
-          fill: fill
-        }));
-      }
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', cx);
+      t.setAttribute('y', cy + 10*handScale);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Segoe UI Symbol',sans-serif");
+      t.setAttribute('font-size', String(26 * handScale));
+      if (mirrored) t.setAttribute('transform', `scale(-1,1) translate(${-2*cx},0)`);
+      t.textContent = '✋';
+      parent.appendChild(t);
     }
 
     function makeHandBtn(x, y, label, isLeft, btnId){
@@ -2840,15 +2893,55 @@ function buildOudStatic(){
       return hg;
     }
 
-    g2.appendChild(makeHandBtn(hand1X, handY, 'يمين', false, 'handBtnRight'));
-    g2.appendChild(makeHandBtn(hand2X, handY, 'يسار', true, 'handBtnLeft'));
+    oudControlBtnsLayer.appendChild(makeHandBtn(hand1X, handY, 'يمين', false, 'handBtnRight'));
+    oudControlBtnsLayer.appendChild(makeHandBtn(hand2X, handY, 'يسار', true, 'handBtnLeft'));
+
+    // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
+    function makeStringCountBtn(x, y){
+      const sg = el('g', { id: 'stringCountBtn', style: 'cursor:pointer;pointer-events:all;' });
+      sg.appendChild(el('rect', {
+        x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
+        fill: '#eaf6fc', stroke: '#2a6a8a', 'stroke-width': '2'
+      }));
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', x); t.setAttribute('y', y + 6*handScale);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
+      t.setAttribute('font-size', String(19 * handScale));
+      t.setAttribute('font-weight', '800');
+      t.setAttribute('fill', '#1a5fa8');
+      t.textContent = (OUD.STRING_COUNT === 6 ? '٦ أوتار' : '٥ أوتار');
+      sg.appendChild(t);
+      sg.addEventListener('click', () => {
+        const newCount = (OUD.STRING_COUNT === 6) ? 5 : 6;
+        localStorage.setItem('oudStringCountPref', String(newCount));
+        // إعادة ضبط شاملة لكل الإعدادات للوضع الافتراضي (زي ما اتفقنا: تبديل عدد الأوتار = بداية جديدة كاملة)
+        if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+        if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+        window.isLeftHanded = false;
+        sessionStorage.setItem('oudHandPref', 'right');
+        // نمسح كل الاختيارات المحفوظة (التبويب النشط، آخر مقام عربي، آخر سلم غربي) عشان الرجوع للافتراضي يكون شامل فعلاً
+        sessionStorage.removeItem('oudActiveTab');
+        sessionStorage.removeItem('oudArabicSelection');
+        sessionStorage.removeItem('oudWesternSelection');
+        document.body.classList.toggle('hand-left-mode', false);
+        const tuningSelect = document.getElementById('shared-tuningSelect');
+        if (tuningSelect) tuningSelect.value = '0';
+        const speedRange = document.getElementById('shared-speedRange');
+        if (speedRange) { speedRange.value = 43; speedRange.dispatchEvent(new Event('input')); }
+        OUD.setStringCount(newCount);
+        window.location.reload(); // أبسط وأضمن طريقة نضمن بيها رجوع كل شي (المقام، التبويب، الزند) للوضع الافتراضي بالكامل
+      });
+      return sg;
+    }
+    oudControlBtnsLayer.appendChild(makeStringCountBtn(hand3X, handY));
   }
 
-  const stringNames = ['فا','لا','رى','صول','دو'];
+  const stringNames = ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
   const rectSlope = (neckJointTopEndY - neckYTopAtNut) / (NECK_JOINT_END_X - OUD.VISUAL_NUT_X);
   const lineLen = 80;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < OUD.STRING_COUNT; i++) {
     const p = OUD.getPoint(i, 0);
     const x1 = OUD.VISUAL_NUT_X;
     const y1 = p.y;
@@ -3258,6 +3351,7 @@ buildOudStatic();
 // تعيد رسم العود بالكامل (الهيكل الثابت + النغمات الحالية) بعد تبديل اليد - تشتغل صح بالوضعين العربي والغربي
 window.redrawOudEverything = function(){
   while(oudStatic.firstChild) oudStatic.removeChild(oudStatic.firstChild);
+  while(oudControlBtnsLayer.firstChild) oudControlBtnsLayer.removeChild(oudControlBtnsLayer.firstChild);
   buildOudStatic();
   while(oudNotesLayer.firstChild) oudNotesLayer.removeChild(oudNotesLayer.firstChild);
   if (window.isArabicMode) {
@@ -3856,6 +3950,7 @@ if (westernGuideBtn && westernGuideModal) {
       });
       if (list.length) { maqamSelect.value = list[0]; setDefaultHarf(list[0]); }
     }
+    window.updateMaqam = updateMaqam; // نصدّرها للنطاق العام عشان يقدر يوصلها كود بسكربت منفصل (زي زر تبديل التبويب)
 
     function setDefaultHarf(maqam) {
       const idx = defaultHarf[maqam];
@@ -3996,8 +4091,29 @@ if (westernGuideBtn && westernGuideModal) {
       'miBimol','miHafBimol','mi','miHafDiaz',           // مواضع 10-19 → وتر لا
       'fa','faHafDiaz','faDiaz','solHafBimol','solJawab', // مواضع 20-24 → وتر رى
       'solHalfDiazJawab','laBimolJawab','laHafBimolJawab','laJawab','laHafDiazJawab',
-      'siBimolJawab','siHafBimolJawab','siJawab','doHafBimolJawab','doJawab' // مواضع 25-34 → امتداد جديد (وتر صول ثم دو)
+      'siBimolJawab','siHafBimolJawab','siJawab','doHafBimolJawab','doJawab', // مواضع 25-34 → وتر صول ثم دو
+      // ===== مواضع 35-47 → استكمال وتر الدو (بوضع ٥ أوتار) / بداية وتر الشرار (بوضع ٦ أوتار) =====
+      'doHafDiazJawab','doDiazJawab','reHafBimolJawab','reJawab','reHafDiazJawab',
+      'miBimolJawab','miHafBimolJawab','miJawab','miHafDiazJawab',
+      'faJawab','faHafDiazJawab','faDiazJawab','solHafBimolJawab',
+      // ===== مواضع 48-70 → امتداد جواب الجواب (لغاية فريت ١٣ على الشرار بوضع ٦ أوتار) =====
+      'solJawabJawab','solHalfDiazJawabJawab','laBimolJawabJawab','laHafBimolJawabJawab','laJawabJawab','laHafDiazJawabJawab',
+      'siBimolJawabJawab','siHafBimolJawabJawab','siJawabJawab','doHafBimolJawabJawab',
+      'doJawabJawab','doHafDiazJawabJawab','doDiazJawabJawab','reHafBimolJawabJawab','reJawabJawab','reHafDiazJawabJawab',
+      'miBimolJawabJawab','miHafBimolJawabJawab','miJawabJawab','miHafDiazJawabJawab',
+      'faJawabJawab','faHafDiazJawabJawab','faDiazJawabJawab'
     ];
+
+    // فلترة قائمة اختيار المحطّ حسب عدد الأوتار: ٣٥ حرف بوضع ٥ أوتار (حتى دو جواب)، ٤٥ حرف بوضع ٦ أوتار (حتى فا جواب)
+    (function filterHarfSelectByStringCount(){
+      const sel = document.getElementById('harf-select');
+      if (!sel) return;
+      const maxIdx = (window.oudCurrentStringCount === 6) ? 44 : 34;
+      Array.from(sel.options).forEach(opt => {
+        const idx = HARF_LIST.indexOf(opt.value);
+        opt.style.display = (idx >= 0 && idx > maxIdx) ? 'none' : '';
+      });
+    })();
 
     const HARF_DISPLAY = {
       'sol':'صول','solHalfDiaz':'صول نصف دييز','laBimol':'لا بيمول',
@@ -4010,7 +4126,21 @@ if (westernGuideBtn && westernGuideModal) {
       'faDiaz':'فا دييز','solHafBimol':'صول نصف بيمول','solJawab':'صول',
       'solHalfDiazJawab':'صول نصف دييز','laBimolJawab':'لا بيمول','laHafBimolJawab':'لا نصف بيمول',
       'laJawab':'لا','laHafDiazJawab':'لا نصف دييز','siBimolJawab':'سي بيمول',
-      'siHafBimolJawab':'سي نصف بيمول','siJawab':'سي','doHafBimolJawab':'دو نصف بيمول','doJawab':'دو'
+      'siHafBimolJawab':'سي نصف بيمول','siJawab':'سي','doHafBimolJawab':'دو نصف بيمول','doJawab':'دو',
+      // ===== مواضع 35-47 =====
+      'doHafDiazJawab':'دو نصف دييز','doDiazJawab':'دو دييز','reHafBimolJawab':'رى نصف بيمول',
+      'reJawab':'رى','reHafDiazJawab':'رى نصف دييز','miBimolJawab':'مي بيمول',
+      'miHafBimolJawab':'مي نصف بيمول','miJawab':'مي','miHafDiazJawab':'مي نصف دييز',
+      'faJawab':'فا','faHafDiazJawab':'فا نصف دييز','faDiazJawab':'فا دييز','solHafBimolJawab':'صول نصف بيمول',
+      // ===== مواضع 48-70 (جواب الجواب) =====
+      'solJawabJawab':'صول','solHalfDiazJawabJawab':'صول نصف دييز','laBimolJawabJawab':'لا بيمول',
+      'laHafBimolJawabJawab':'لا نصف بيمول','laJawabJawab':'لا','laHafDiazJawabJawab':'لا نصف دييز',
+      'siBimolJawabJawab':'سي بيمول','siHafBimolJawabJawab':'سي نصف بيمول','siJawabJawab':'سي',
+      'doHafBimolJawabJawab':'دو نصف بيمول','doJawabJawab':'دو','doHafDiazJawabJawab':'دو نصف دييز',
+      'doDiazJawabJawab':'دو دييز','reHafBimolJawabJawab':'رى نصف بيمول','reJawabJawab':'رى',
+      'reHafDiazJawabJawab':'رى نصف دييز','miBimolJawabJawab':'مي بيمول','miHafBimolJawabJawab':'مي نصف بيمول',
+      'miJawabJawab':'مي','miHafDiazJawabJawab':'مي نصف دييز','faJawabJawab':'فا',
+      'faHafDiazJawabJawab':'فا نصف دييز','faDiazJawabJawab':'فا دييز'
     };
 
     // القاعدة: كل وتر يستوعب 9 أرباع (دستان 0 إلى 4.5) ثم ينتقل للوتر التالي
@@ -4030,6 +4160,12 @@ if (westernGuideBtn && westernGuideModal) {
       // وتر صول: مفتوح عند quartersFromSol=24
       if (quartersFromSol <= 33) return { s: 3, q: quartersFromSol - 24 };
       // وتر دو: مفتوح عند quartersFromSol=34
+      // بوضع ٦ أوتار، وتر الدو محدود لفريت ٤.٥ (٩ أرباع) مثل باقي الأوتار الوسطى، وبعدها ينتقل لوتر الشرار
+      if (window.oudCurrentStringCount === 6) {
+        if (quartersFromSol <= 43) return { s: 4, q: quartersFromSol - 34 };
+        // وتر الشرار (فا جواب الجواب): مفتوح عند quartersFromSol=44، بلا حدود بعدها
+        return { s: 5, q: quartersFromSol - 44 };
+      }
       return { s: 4, q: quartersFromSol - 34 };
     }
 
@@ -4061,9 +4197,12 @@ if (westernGuideBtn && westernGuideModal) {
       ['رى','رى نصف دييز','مي بيمول','مي نصف بيمول','مي','فا نصف بيمول','فا','فا نصف دييز','فا دييز','صول نصف بيمول'],
       // وتر صول (3): 0-9 أرباع
       ['صول','صول نصف دييز','لا بيمول','لا نصف بيمول','لا','لا نصف دييز','سي بيمول','سي نصف بيمول','سي','دو نصف بيمول'],
-      // وتر دو (4): 0-26 ربع (لغاية فريت 13)
+      // وتر دو (4): 0-26 ربع بوضع ٥ أوتار (بلا حدود)، 0-9 بس بوضع ٦ أوتار (فريت ٤.٥، ينتقل بعدها للشرار)
       ['دو','دو نصف دييز','رى بيمول','رى نصف بيمول','رى','رى نصف دييز','مي بيمول','مي نصف بيمول','مي','فا نصف بيمول','فا','فا نصف دييز','فا دييز','صول نصف بيمول','صول','صول نصف دييز','لا بيمول',
-       'لا نصف بيمول','لا','لا نصف دييز','سي بيمول','سي نصف بيمول','سي','دو نصف بيمول','دو','دو نصف دييز','رى بيمول']
+       'لا نصف بيمول','لا','لا نصف دييز','سي بيمول','سي نصف بيمول','سي','دو نصف بيمول','دو','دو نصف دييز','رى بيمول'],
+      // وتر الشرار / فا الجواب الجواب (5): 0-26 ربع (لغاية فريت 13)، يُستخدم بوضع ٦ أوتار بس
+      ['فا','فا نصف دييز','صول بيمول','صول نصف بيمول','صول','صول نصف دييز','لا بيمول','لا نصف بيمول','لا','لا نصف دييز','سي بيمول','سي نصف بيمول','سي','دو نصف بيمول','دو','دو نصف دييز','رى بيمول',
+       'رى نصف بيمول','رى','رى نصف دييز','مي بيمول','مي نصف بيمول','مي','فا نصف بيمول','فا','فا نصف دييز','فا دييز']
     ];
 
     // جدول الاسم الأساسي لكل حرف من الـ 25 — يحدد الحرف الموسيقي الأصلي
@@ -4075,7 +4214,18 @@ if (westernGuideBtn && westernGuideModal) {
       'miBimol':'مي','miHafBimol':'مي','mi':'مي','miHafDiaz':'مي',
       'fa':'فا','faHafDiaz':'فا','faDiaz':'فا','solHafBimol':'صول','solJawab':'صول',
       'solHalfDiazJawab':'صول','laBimolJawab':'لا','laHafBimolJawab':'لا','laJawab':'لا','laHafDiazJawab':'لا',
-      'siBimolJawab':'سي','siHafBimolJawab':'سي','siJawab':'سي','doHafBimolJawab':'دو','doJawab':'دو'
+      'siBimolJawab':'سي','siHafBimolJawab':'سي','siJawab':'سي','doHafBimolJawab':'دو','doJawab':'دو',
+      // ===== مواضع 35-47 =====
+      'doHafDiazJawab':'دو','doDiazJawab':'دو','reHafBimolJawab':'رى','reJawab':'رى','reHafDiazJawab':'رى',
+      'miBimolJawab':'مي','miHafBimolJawab':'مي','miJawab':'مي','miHafDiazJawab':'مي',
+      'faJawab':'فا','faHafDiazJawab':'فا','faDiazJawab':'فا','solHafBimolJawab':'صول',
+      // ===== مواضع 48-70 (جواب الجواب) =====
+      'solJawabJawab':'صول','solHalfDiazJawabJawab':'صول','laBimolJawabJawab':'لا','laHafBimolJawabJawab':'لا',
+      'laJawabJawab':'لا','laHafDiazJawabJawab':'لا','siBimolJawabJawab':'سي','siHafBimolJawabJawab':'سي',
+      'siJawabJawab':'سي','doHafBimolJawabJawab':'دو','doJawabJawab':'دو','doHafDiazJawabJawab':'دو',
+      'doDiazJawabJawab':'دو','reHafBimolJawabJawab':'رى','reJawabJawab':'رى','reHafDiazJawabJawab':'رى',
+      'miBimolJawabJawab':'مي','miHafBimolJawabJawab':'مي','miJawabJawab':'مي','miHafDiazJawabJawab':'مي',
+      'faJawabJawab':'فا','faHafDiazJawabJawab':'فا','faDiazJawabJawab':'فا'
     };
 
     // ===== الأسماء الأساسية السبعة وترتيبها =====
@@ -4291,7 +4441,7 @@ if (westernGuideBtn && westernGuideModal) {
         }
         const effectiveQ = (highlightIdx !== undefined && degIdx === highlightIdx && highlightQuarters !== undefined)
           ? highlightQuarters : effectiveQForDraw;
-        if (effectiveQ < 0 || effectiveQ > 60) return;
+        if (effectiveQ < 0 || effectiveQ > 70) return;
         const { s, q } = getStringFret(effectiveQ);
         const x = quarterToX(q);
         const y = arStringY(s, x);
@@ -4457,6 +4607,13 @@ if (westernGuideBtn && westernGuideModal) {
       { q: 52, file: 'sounds/oud/La0JJ.wav' }, // لا جواب الجواب
       { q: 56, file: 'sounds/oud/La4JJ.wav' }, // سي جواب الجواب
       { q: 58, file: 'sounds/oud/La6JJ.wav' }, // دو جواب الجواب
+      // ===== امتداد إضافي يغطي فريتات الوتر السادس (الشرار) =====
+      { q: 60, file: 'sounds/oud/La8JJ.wav' }, // دو دييز جواب الجواب
+      { q: 62, file: 'sounds/oud/Re0JJ.wav' }, // رى جواب الجواب
+      { q: 64, file: 'sounds/oud/Re2JJ.wav' }, // مي بيمول جواب الجواب
+      { q: 66, file: 'sounds/oud/Re4JJ.wav' }, // مي جواب الجواب
+      { q: 68, file: 'sounds/oud/Re6JJ.wav' }, // فا جواب الجواب
+      { q: 70, file: 'sounds/oud/Re8JJ.wav' }, // فا دييز جواب الجواب
     ];
 
     const oudBuffers = {};
