@@ -2298,8 +2298,8 @@ function renderChordHighlight(positions, active){
     const boxW = 64, boxH = 32;
     const rect = el('rect', {
       x: p.x-boxW/2, y: p.y-boxH/2, width:boxW, height:boxH, rx:4,
-      fill: active ? '#e8a83a' : '#2b6fc9',
-      stroke: active ? '#c9871a' : '#1a5fa8',
+      fill: active ? '#d64545' : '#2b6fc9',
+      stroke: active ? '#a82f2f' : '#1a5fa8',
       'stroke-width': active ? 4 : 2,
     });
     rect.style.cursor = 'pointer';
@@ -2324,7 +2324,7 @@ function renderChordHighlight(positions, active){
       const noteFreq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
       window.toggleSustainedNoteOnRect(freshRect, noteFreq,
         (liveRect) => {
-          liveRect.setAttribute('fill', '#e8a83a'); liveRect.setAttribute('stroke', '#c9871a'); liveRect.setAttribute('stroke-width', 4);
+          liveRect.setAttribute('fill', '#d64545'); liveRect.setAttribute('stroke', '#a82f2f'); liveRect.setAttribute('stroke-width', 4);
           if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
         },
         (liveRect) => { liveRect.setAttribute('fill', '#2b6fc9'); liveRect.setAttribute('stroke', '#1a5fa8'); liveRect.setAttribute('stroke-width', 2); },
@@ -3247,13 +3247,13 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
     const correctName = getCorrectNoteName(pc, letterIdx);
 
     const isCurrent = (currentIndex !== undefined && currentIndex === scaleIdx);
-    const fillColor = isCurrent ? '#e8a83a' : '#2b6fc9';
+    const fillColor = isCurrent ? '#d64545' : '#2b6fc9';
     const textColor = '#fff';
 
     const rectEl = el('rect', {
       x: p.x-boxW/2, y: p.y-boxH/2, width:boxW, height:boxH, rx:4,
       fill: fillColor,
-      stroke: isCurrent ? '#c9871a' : '#1a5fa8',
+      stroke: isCurrent ? '#a82f2f' : '#1a5fa8',
       'stroke-width': isCurrent ? 4 : 2,
       'data-scale-idx': scaleIdx
     });
@@ -3266,14 +3266,14 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
     // ضغط على المستطيل — صوت مستمر (يبدأ بالضغطة الأولى، يتوقف بالضغطة الثانية) + اهتزاز
     rectEl.style.cursor = 'pointer';
     const origFillForToggle = rectEl.getAttribute('fill');
-    const origStrokeForToggle = isCurrent ? '#c9871a' : '#1a5fa8';
+    const origStrokeForToggle = isCurrent ? '#a82f2f' : '#1a5fa8';
     rectEl.addEventListener('click', () => {
       const noteFreq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset); // نحسبه هنا (وقت الضغط الفعلي) عشان يعكس آخر دوزان مختار، مو الدوزان وقت رسم السلم
       window.toggleSustainedNoteOnRect(rectEl, noteFreq,
         (liveEl) => { // عند بدء الصوت (liveEl = المستطيل الحالي الفعلي، ممكن يكون تغير لو انعاد رسم السلم)
           const target = liveEl || rectEl;
-          target.setAttribute('fill', '#e8a83a');
-          target.setAttribute('stroke', '#c9871a');
+          target.setAttribute('fill', '#d64545');
+          target.setAttribute('stroke', '#a82f2f');
           if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
         },
         (liveEl) => { // عند إيقاف الصوت (liveEl = العنصر الحقيقي المضاء حالياً، ممكن يكون تغير لو انعاد رسم السلم)
@@ -3644,8 +3644,8 @@ function nextStep(){
     oudNotesLayer.querySelectorAll('rect').forEach(rect => {
       const idx = parseInt(rect.getAttribute('data-scale-idx'));
       if (idx === scaleIdx) {
-        rect.setAttribute('fill', '#e8a83a');
-        rect.setAttribute('stroke', '#c9871a');
+        rect.setAttribute('fill', '#d64545');
+        rect.setAttribute('stroke', '#a82f2f');
       } else {
         rect.setAttribute('fill', '#2b6fc9');
         rect.setAttribute('stroke', '#fff');
@@ -3656,8 +3656,8 @@ function nextStep(){
     oudNotesLayer.querySelectorAll('rect').forEach(rect => {
       const idx = parseInt(rect.getAttribute('data-scale-idx'));
       if (idx === scaleIdx) {
-        rect.setAttribute('fill', '#e8a83a');
-        rect.setAttribute('stroke', '#c9871a');
+        rect.setAttribute('fill', '#d64545');
+        rect.setAttribute('stroke', '#a82f2f');
       } else {
         rect.setAttribute('fill', '#2b6fc9');
         rect.setAttribute('stroke', '#fff');
@@ -4451,13 +4451,13 @@ if (westernGuideBtn && westernGuideModal) {
         const { text, acc } = getDegreeNameAndAcc(degIdx, startPos, effectiveQ, maqamName || '', isHighlighted ? (isDescending || false) : false);
 
         const isCurrent = (highlightIdx !== undefined && highlightIdx === degIdx);
-        const fillColor = isCurrent ? '#e8a83a' : '#2b6fc9';
+        const fillColor = isCurrent ? '#d64545' : '#2b6fc9';
 
         const rect = document.createElementNS(ns2, 'rect');
         rect.setAttribute('x', x - boxW/2); rect.setAttribute('y', y - boxH/2);
         rect.setAttribute('width', boxW); rect.setAttribute('height', boxH);
         rect.setAttribute('rx', 4); rect.setAttribute('fill', fillColor);
-        rect.setAttribute('stroke', isCurrent ? '#c9871a' : '#1a5fa8');
+        rect.setAttribute('stroke', isCurrent ? '#a82f2f' : '#1a5fa8');
         rect.setAttribute('stroke-width', isCurrent ? 3 : 2);
         rect.setAttribute('data-scale-idx', degIdx);
         rect.style.cursor = 'pointer';
@@ -4465,15 +4465,15 @@ if (westernGuideBtn && westernGuideModal) {
 
         // ضغط على المستطيل — نغمة مستمرة (تبدأ بالضغطة الأولى، تتوقف بالضغطة الثانية)
         const origFillAr = fillColor;
-        const origStrokeAr = isCurrent ? '#c9871a' : '#1a5fa8';
+        const origStrokeAr = isCurrent ? '#a82f2f' : '#1a5fa8';
         rect.addEventListener('click', () => {
           const arNoteFreq = posToFreq(effectiveQ); // نحسبه هنا (وقت الضغط الفعلي) عشان يعكس آخر دوزان مختار
           const { s: vibStrIdx } = getStringFret(effectiveQ);
           window.toggleSustainedNoteOnRect(rect, arNoteFreq,
             (liveEl) => {
               const target = liveEl || rect;
-              target.setAttribute('fill', '#e8a83a');
-              target.setAttribute('stroke', '#c9871a');
+              target.setAttribute('fill', '#d64545');
+              target.setAttribute('stroke', '#a82f2f');
               if (typeof window.vibrateString === 'function') window.vibrateString(vibStrIdx);
             },
             (liveEl) => {
