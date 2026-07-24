@@ -1500,7 +1500,7 @@ input[type="radio"] {
       <p>🔹 <strong>فتح قائمة الكوردات:</strong> اضغط زر <strong>"☰ اختر من الدائرة"</strong> فوق العود (بتبويب المقامات الغربية)، ثم اضغط تبويب <strong>"الكوردات"</strong> أعلى القائمة، بدل تبويب "دائرة الرابعات والخامسات".</p>
       <p>🔹 <strong>اختيار نوع السلم:</strong> داخل قائمة الكوردات نفسها، فيه صف أزرار (Major / Minor طبيعي / Minor توافقي / Minor ميلودي) يتيح لك التبديل بين الأنواع الأربعة مباشرة، وتتحدث الكوردات فوراً بدون ما تحتاج تغلق القائمة.</p>
       <p>🔹 <strong>اختيار كورد:</strong> تظهر الكوردات السبعة بدرجاتها (I, ii, iii, IV, V, vi, vii°...)، وباسم كل كورد الكامل (مثل "دو Major" أو "رى Minor"). اضغط على أي كورد لتختاره — تضيء نغماته الثلاث على الزند بالأزرق، وتختفي نغمات السلم العادية مؤقتاً لتوضيح الكورد لوحده.</p>
-      <p>🔹 <strong>تشغيل الكورد كاملاً:</strong> بعد اختيار الكورد، استخدم زر <strong>▶ التشغيل</strong> بالمشغل بالأسفل لسماع النغمات الثلاث تُعزف معاً بصوت مستمر — وتتحول إضاءتها للأخضر أثناء التشغيل. تعمل بقية أزرار المشغل (⏸ إيقاف مؤقت، ⏹ إيقاف) بنفس طريقتها المعتادة.</p>
+      <p>🔹 <strong>تشغيل الكورد كاملاً:</strong> بعد اختيار الكورد، استخدم زر <strong>▶ التشغيل</strong> بالمشغل بالأسفل لسماع النغمات الثلاث تُعزف معاً بصوت العود الحقيقي — بضغطة وحدة تشتغل وتنتهي طبيعياً (بدون إيقاف مؤقت)، وتضيء أثناء التشغيل.</p>
       <p>🔹 <strong>سماع كل نغمة لحالها:</strong> يمكنك أيضاً الضغط على أي نغمة من الثلاث مباشرة (بنفس تقنية النغمة المستمرة) للتأكد من صوتها فرادى، قبل أو بدل سماع الكورد كاملاً معاً.</p>
       <p>🔹 <strong>الرجوع للسلم:</strong> اضغط تبويب "دائرة الرابعات والخامسات" بأعلى القائمة، أو اختر مقاماً جديداً من الدائرة، للرجوع لعرض السلم العادي على الزند.</p>
     </div>
@@ -2352,28 +2352,22 @@ function selectChord(ch, btnEl){
 function startChordPlaying(){
   if (!window.selectedChord) return;
   if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote(); // نوقف أي نغمة مفردة شغالة لحالها قبل التشغيل الجماعي
-  chordPlayState = 'playing';
-  playBtn.textContent = '⏸';
-  playBtn.title = 'إيقاف مؤقت';
-  stopBtn.disabled = false;
-  const handles = window.selectedChord.positions.map(pos => {
+  window.selectedChord.positions.forEach(pos => {
     const freq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
     if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
-    return startSustainedNote(freq);
+    if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq); // نفس العينات الحقيقية المستخدمة بتشغيل السلم العادي، بضغطة وحدة تشتغل وتخلص طبيعياً
   });
-  currentChordSustain = { handles, positions: window.selectedChord.positions };
   renderChordHighlight(window.selectedChord.positions, true);
+  // نضيء لثانيتين تقريباً (مدة العينة الطبيعية تقريباً) ثم نرجع الإضاءة للوضع العادي، بدون حالة "إيقاف مؤقت" لأن التشغيل بضغطة وحدة بس
+  setTimeout(() => {
+    if (window.selectedChord) renderChordHighlight(window.selectedChord.positions, false);
+  }, 2000);
 }
 
 function pauseChordPlaying(){
-  chordPlayState = 'paused';
+  chordPlayState = 'stopped';
   playBtn.textContent = '▶';
-  playBtn.title = 'استئناف';
-  if (currentChordSustain){
-    currentChordSustain.handles.forEach(h => stopSustainedNote(h));
-    currentChordSustain = null;
-  }
-  if (window.selectedChord) renderChordHighlight(window.selectedChord.positions, false);
+  playBtn.title = 'تشغيل';
 }
 
 function resumeChordPlaying(){
@@ -3445,8 +3439,8 @@ let currentSustainedNote = null; // {oscillators, masterGain, rectEl}
 
 const SUSTAINED_PARTIALS = [
   { mult: 1,   gain: 1.0,  type: 'triangle' },
-  { mult: 2,   gain: 0.35, type: 'sine' },
-  { mult: 3,   gain: 0.15, type: 'sine' },
+  { mult: 2,   gain: 0.12, type: 'sine' },
+  { mult: 3,   gain: 0.04, type: 'sine' },
 ];
 
 function startSustainedNote(freq){
@@ -3725,9 +3719,7 @@ function resetPlayer(){
 playBtn.addEventListener('click', () => {
   if(window.isArabicMode) return;
   if (window.chordModeActive && window.selectedChord){
-    if (chordPlayState === 'stopped') startChordPlaying();
-    else if (chordPlayState === 'playing') pauseChordPlaying();
-    else if (chordPlayState === 'paused') resumeChordPlaying();
+    startChordPlaying();
     return;
   }
   window.stopAnySustainedNote();
