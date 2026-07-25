@@ -840,6 +840,14 @@ flex-shrink: 0;
   svg#shared-oudSvg #handBtnRight *, svg#shared-oudSvg #handBtnLeft * { pointer-events: auto !important; }
   svg#shared-oudSvg #stringCountBtn { pointer-events: auto !important; cursor: pointer; }
   svg#shared-oudSvg #stringCountBtn * { pointer-events: auto !important; }
+  svg#shared-oudSvg #langToggleBtn { pointer-events: auto !important; cursor: pointer; }
+  svg#shared-oudSvg #langToggleBtn * { pointer-events: auto !important; }
+  .lang-btn-pulse .lang-btn-rect { animation: langBtnPulse 1.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes langBtnPulse {
+    0%   { stroke: #3ab4e8; }
+    50%  { stroke: #a82f2f; filter: drop-shadow(0 0 6px rgba(168,47,47,.8)); }
+    100% { stroke: #3ab4e8; }
+  }
 
   /* ===== Modal دليل المقام ===== */
   .maqam-guide-modal{
@@ -996,6 +1004,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #svgRatingBtn rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #stringCountBtn{ pointer-events:auto !important; cursor:pointer; }
   svg#shared-oudSvg #stringCountBtn *{ pointer-events:auto !important; }
+  svg#shared-oudSvg #langToggleBtn{ pointer-events:auto !important; cursor:pointer; }
+  svg#shared-oudSvg #langToggleBtn *{ pointer-events:auto !important; }
   svg#shared-oudSvg #svgRatingBtn text{ pointer-events:none; }
   svg#shared-oudSvg #oudNotesLayer rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #chordHighlightLayer rect{ pointer-events:auto; cursor:pointer; }
@@ -2481,6 +2491,9 @@ window.oudStringMode = localStorage.getItem('oudStringCountPref')
   : 5; // مؤقتاً: نبقي ٥ (الوضع المستقر والمُتحقق منه بالكامل) كافتراضي، لين نتأكد من صحة رسم الستة أوتار بالكامل
 window.oudCurrentStringCount = window.oudStringMode; // متغيّر عالمي (window) يقدر يوصله أي <script> بالصفحة، بعكس OUD اللي محصور بنفس الـ<script> بس
 
+// نظام اللغة: نقرأ آخر لغة اختارها المستخدم (localStorage، تدوم حتى بعد إغلاق المتصفح)، والعربي افتراضي لأول زيارة
+window.oudLanguage = localStorage.getItem('oudLanguagePref') || 'ar';
+
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
   window.isLeftHanded = (sessionStorage.getItem('oudHandPref') === 'left');
@@ -2786,7 +2799,7 @@ function buildOudStatic(){
   const handScaleForHelp = 1.45, handGapForHelp = 14;
   const helpBtnW = 88 * handScaleForHelp; // نفس عرض زر "يمين" بالضبط
   const helpBtnH = 66 * handScaleForHelp; // نفس ارتفاع زر "يمين" بالضبط
-  const helpBx = oldHelpBx - (helpBtnW/2 + handGapForHelp/2); // نفس موقع زر "يمين" أفقياً (محاذاة عمودية)
+  const helpBx = oldHelpBx - (helpBtnW/2 + handGapForHelp/2) + 20; // نفس موقع زر "يمين" أفقياً (محاذاة عمودية) — +20 لمطابقة groupShift المُضاف لاحقاً لأزرار اليد
   const helpY = OUD.neckTopY(helpBx) - 103;
   const helpG = el('g', { id: 'helpBtn', style: 'cursor:pointer' });
   helpG.appendChild(el('rect', {
@@ -2899,16 +2912,16 @@ function buildOudStatic(){
       const sg = el('g', { id: 'stringCountBtn', style: 'cursor:pointer;pointer-events:all;' });
       sg.appendChild(el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: '#cbe8f7', stroke: '#1a5fa8', 'stroke-width': '3'
+        fill: '#1a5fa8', stroke: '#0d3c66', 'stroke-width': '3'
       }));
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.setAttribute('x', x); t.setAttribute('y', y + 6*handScale);
+      t.setAttribute('x', x); t.setAttribute('y', y + 8*handScale);
       t.setAttribute('text-anchor', 'middle');
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
-      t.setAttribute('font-size', String(19 * handScale));
+      t.setAttribute('font-size', String(22 * handScale));
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', '#0d3c66');
-      t.textContent = (OUD.STRING_COUNT === 6 ? '٦ أوتار' : '٥ أوتار');
+      t.setAttribute('fill', '#ffffff');
+      t.textContent = (OUD.STRING_COUNT === 6 ? '6 أوتار' : '5 أوتار');
       sg.appendChild(t);
       sg.addEventListener('click', () => {
         const newCount = (OUD.STRING_COUNT === 6) ? 5 : 6;
@@ -2924,6 +2937,42 @@ function buildOudStatic(){
       return sg;
     }
     oudControlBtnsLayer.appendChild(makeStringCountBtn(hand3X, handY));
+
+    // ===== زر تبديل اللغة (AR/EN) — يمين زر المساعدة، بنفس أبعاده بالضبط، مع وميض جذب انتباه أول ما تفتح الصفحة =====
+    function makeLanguageBtn(x, y){
+      const lg = el('g', { id: 'langToggleBtn', style: 'cursor:pointer;pointer-events:all;', class: 'lang-btn-pulse' });
+      lg.appendChild(el('rect', {
+        x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
+        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2', class: 'lang-btn-rect'
+      }));
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', x); t.setAttribute('y', y + 16);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
+      t.setAttribute('font-size', '46');
+      t.setAttribute('font-weight', '800');
+      t.setAttribute('fill', '#1a5fa8');
+      t.textContent = (window.oudLanguage === 'en') ? 'EN' : 'AR';
+      lg.appendChild(t);
+      lg.addEventListener('click', () => {
+        lg.classList.remove('lang-btn-pulse'); // نوقف الوميض عند أول تفاعل من المستخدم مع الزر نفسه
+        const newLang = (window.oudLanguage === 'en') ? 'ar' : 'en';
+        localStorage.setItem('oudLanguagePref', newLang);
+        window.oudLanguage = newLang;
+        window.location.reload();
+      });
+      return lg;
+    }
+    const naturalLangX = helpBx - helpBtnW/2 - handGap - helpBtnW/2; // نفس مسافة الفصل بين يمين ويسار بالضبط (handGap كاملة، مو نصفها)
+    const langBtnFinalX = window.isLeftHanded ? naturalLangX : mirrorXForBtns(naturalLangX);
+    const langBtn = makeLanguageBtn(langBtnFinalX, helpY);
+    oudControlBtnsLayer.appendChild(langBtn);
+    // أي ضغطة بأي مكان بالصفحة (مو بس الزر نفسه) توقف الوميض — "استخدم الموقع" = فهم وجود الزر
+    document.addEventListener('click', function stopLangPulseOnce(e){
+      if (e.target.closest && e.target.closest('#langToggleBtn')) return; // الزر نفسه له معالج منفصل فوق
+      langBtn.classList.remove('lang-btn-pulse');
+      document.removeEventListener('click', stopLangPulseOnce);
+    }, { once: true });
   }
 
   const stringNames = ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
@@ -4137,6 +4186,33 @@ if (westernGuideBtn && westernGuideModal) {
       'faHafDiazJawabJawab':'فا نصف دييز','faDiazJawabJawab':'فا دييز'
     };
 
+    // النسخة الإنجليزية من نفس الجدول (بنفس المفاتيح بالضبط) — تُستخدم بقائمة الاختيار عند تفعيل اللغة الإنجليزية
+    const HARF_DISPLAY_EN = {
+      'sol':'Sol','solHalfDiaz':'Sol Half Sharp','laBimol':'La Flat',
+      'laHafBimol':'La Half Flat','la':'La','laHafDiaz':'La Half Sharp',
+      'siBimol':'Si Flat','siHafBimol':'Si Half Flat','si':'Si',
+      'doHafBimol':'Do Half Flat','do':'Do','doHafDiaz':'Do Half Sharp',
+      'doDiaz':'Do Sharp','reHafBimol':'Re Half Flat','re':'Re',
+      'reHafDiaz':'Re Half Sharp','miBimol':'Mi Flat','miHafBimol':'Mi Half Flat',
+      'mi':'Mi','miHafDiaz':'Mi Half Sharp','fa':'Fa','faHafDiaz':'Fa Half Sharp',
+      'faDiaz':'Fa Sharp','solHafBimol':'Sol Half Flat','solJawab':'Sol Jawab',
+      'solHalfDiazJawab':'Sol Half Sharp Jawab','laBimolJawab':'La Flat Jawab','laHafBimolJawab':'La Half Flat Jawab',
+      'laJawab':'La Jawab','laHafDiazJawab':'La Half Sharp Jawab','siBimolJawab':'Si Flat Jawab',
+      'siHafBimolJawab':'Si Half Flat Jawab','siJawab':'Si Jawab','doHafBimolJawab':'Do Half Flat Jawab','doJawab':'Do Jawab',
+      'doHafDiazJawab':'Do Half Sharp Jawab','doDiazJawab':'Do Sharp Jawab','reHafBimolJawab':'Re Half Flat Jawab',
+      'reJawab':'Re Jawab','reHafDiazJawab':'Re Half Sharp Jawab','miBimolJawab':'Mi Flat Jawab',
+      'miHafBimolJawab':'Mi Half Flat Jawab','miJawab':'Mi Jawab','miHafDiazJawab':'Mi Half Sharp Jawab',
+      'faJawab':'Fa Jawab','faHafDiazJawab':'Fa Half Sharp Jawab','faDiazJawab':'Fa Sharp Jawab','solHafBimolJawab':'Sol Half Flat Jawab',
+      'solJawabJawab':'Sol Jawab Jawab','solHalfDiazJawabJawab':'Sol Half Sharp Jawab Jawab','laBimolJawabJawab':'La Flat Jawab Jawab',
+      'laHafBimolJawabJawab':'La Half Flat Jawab Jawab','laJawabJawab':'La Jawab Jawab','laHafDiazJawabJawab':'La Half Sharp Jawab Jawab',
+      'siBimolJawabJawab':'Si Flat Jawab Jawab','siHafBimolJawabJawab':'Si Half Flat Jawab Jawab','siJawabJawab':'Si Jawab Jawab',
+      'doHafBimolJawabJawab':'Do Half Flat Jawab Jawab','doJawabJawab':'Do Jawab Jawab','doHafDiazJawabJawab':'Do Half Sharp Jawab Jawab',
+      'doDiazJawabJawab':'Do Sharp Jawab Jawab','reHafBimolJawabJawab':'Re Half Flat Jawab Jawab','reJawabJawab':'Re Jawab Jawab',
+      'reHafDiazJawabJawab':'Re Half Sharp Jawab Jawab','miBimolJawabJawab':'Mi Flat Jawab Jawab','miHafBimolJawabJawab':'Mi Half Flat Jawab Jawab',
+      'miJawabJawab':'Mi Jawab Jawab','miHafDiazJawabJawab':'Mi Half Sharp Jawab Jawab','faJawabJawab':'Fa Jawab Jawab',
+      'faHafDiazJawabJawab':'Fa Half Sharp Jawab Jawab','faDiazJawabJawab':'Fa Sharp Jawab Jawab'
+    };
+
     // القاعدة: كل وتر يستوعب 9 أرباع (دستان 0 إلى 4.5) ثم ينتقل للوتر التالي
     // من صول (موضع 0) على وتر مي (q=6 من مفتوح مي):
     // مفتوح لا = 4 أرباع من صول (q=0 على لا)
@@ -4220,6 +4296,27 @@ if (westernGuideBtn && westernGuideModal) {
       'doDiazJawabJawab':'دو','reHafBimolJawabJawab':'رى','reJawabJawab':'رى','reHafDiazJawabJawab':'رى',
       'miBimolJawabJawab':'مي','miHafBimolJawabJawab':'مي','miJawabJawab':'مي','miHafDiazJawabJawab':'مي',
       'faJawabJawab':'فا','faHafDiazJawabJawab':'فا','faDiazJawabJawab':'فا'
+    };
+
+    // النسخة الإنجليزية (Title Case، تُستخدم على الزند مع الرمز المرسوم بعدها مباشرة)
+    const BASE_NAME_OF_HARF_EN = {
+      'sol':'Sol','solHalfDiaz':'Sol','laBimol':'La','laHafBimol':'La',
+      'la':'La','laHafDiaz':'La','siBimol':'Si','siHafBimol':'Si',
+      'si':'Si','doHafBimol':'Do','do':'Do','doHafDiaz':'Do',
+      'doDiaz':'Do','reHafBimol':'Re','re':'Re','reHafDiaz':'Re',
+      'miBimol':'Mi','miHafBimol':'Mi','mi':'Mi','miHafDiaz':'Mi',
+      'fa':'Fa','faHafDiaz':'Fa','faDiaz':'Fa','solHafBimol':'Sol','solJawab':'Sol',
+      'solHalfDiazJawab':'Sol','laBimolJawab':'La','laHafBimolJawab':'La','laJawab':'La','laHafDiazJawab':'La',
+      'siBimolJawab':'Si','siHafBimolJawab':'Si','siJawab':'Si','doHafBimolJawab':'Do','doJawab':'Do',
+      'doHafDiazJawab':'Do','doDiazJawab':'Do','reHafBimolJawab':'Re','reJawab':'Re','reHafDiazJawab':'Re',
+      'miBimolJawab':'Mi','miHafBimolJawab':'Mi','miJawab':'Mi','miHafDiazJawab':'Mi',
+      'faJawab':'Fa','faHafDiazJawab':'Fa','faDiazJawab':'Fa','solHafBimolJawab':'Sol',
+      'solJawabJawab':'Sol','solHalfDiazJawabJawab':'Sol','laBimolJawabJawab':'La','laHafBimolJawabJawab':'La',
+      'laJawabJawab':'La','laHafDiazJawabJawab':'La','siBimolJawabJawab':'Si','siHafBimolJawabJawab':'Si',
+      'siJawabJawab':'Si','doHafBimolJawabJawab':'Do','doJawabJawab':'Do','doHafDiazJawabJawab':'Do',
+      'doDiazJawabJawab':'Do','reHafBimolJawabJawab':'Re','reJawabJawab':'Re','reHafDiazJawabJawab':'Re',
+      'miBimolJawabJawab':'Mi','miHafBimolJawabJawab':'Mi','miJawabJawab':'Mi','miHafDiazJawabJawab':'Mi',
+      'faJawabJawab':'Fa','faHafDiazJawabJawab':'Fa','faDiazJawabJawab':'Fa'
     };
 
     // ===== الأسماء الأساسية السبعة وترتيبها =====
