@@ -838,6 +838,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #helpBtn { display: block; pointer-events: auto; cursor: pointer; }
   svg#shared-oudSvg #handBtnRight, svg#shared-oudSvg #handBtnLeft { pointer-events: auto !important; cursor: pointer; }
   svg#shared-oudSvg #handBtnRight *, svg#shared-oudSvg #handBtnLeft * { pointer-events: auto !important; }
+  svg#shared-oudSvg #handToggleBtn { pointer-events: auto !important; cursor: pointer; }
+  svg#shared-oudSvg #handToggleBtn * { pointer-events: auto !important; }
   svg#shared-oudSvg #stringCountBtn { pointer-events: auto !important; cursor: pointer; }
   svg#shared-oudSvg #stringCountBtn * { pointer-events: auto !important; }
   svg#shared-oudSvg #langToggleBtn { pointer-events: auto !important; cursor: pointer; }
@@ -2904,8 +2906,46 @@ function buildOudStatic(){
       return hg;
     }
 
-    oudControlBtnsLayer.appendChild(makeHandBtn(hand1X, handY, 'يمين', false, 'handBtnRight'));
-    oudControlBtnsLayer.appendChild(makeHandBtn(hand2X, handY, 'يسار', true, 'handBtnLeft'));
+    function makeSingleHandBtn(x, y){
+      const hg = el('g', { id: 'handToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
+      const rect = el('rect', {
+        x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
+        fill: '#1a5fa8', stroke: '#0d3c66', 'stroke-width': '3'
+      });
+      hg.appendChild(rect);
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', x); t.setAttribute('y', y + 8*handScale);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
+      t.setAttribute('font-size', String(24 * handScale));
+      t.setAttribute('font-weight', '800');
+      t.setAttribute('fill', '#ffffff');
+      t.textContent = window.isLeftHanded ? 'يسار' : 'يمين';
+      hg.appendChild(t);
+      hg.addEventListener('click', () => {
+        const newIsLeft = !window.isLeftHanded;
+        if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+        if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+        if (window.isArabicMode) {
+          if (typeof window.arGetPlayerState === 'function' && window.arGetPlayerState() !== 'stopped' && typeof window.arResetPlayer === 'function') {
+            window.arResetPlayer();
+          }
+        } else {
+          if (typeof playerState !== 'undefined' && playerState !== 'stopped' && typeof resetPlayer === 'function') {
+            resetPlayer();
+          }
+        }
+        window.isLeftHanded = newIsLeft;
+        document.body.classList.toggle('hand-left-mode', newIsLeft);
+        sessionStorage.setItem('oudHandPref', newIsLeft ? 'left' : 'right');
+        redrawOudEverything();
+        if (window.selectedChord && typeof renderChordHighlight === 'function') {
+          renderChordHighlight(window.selectedChord.positions, false);
+        }
+      });
+      return hg;
+    }
+    oudControlBtnsLayer.appendChild(makeSingleHandBtn(hand1X, handY));
 
     // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
     function makeStringCountBtn(x, y){
