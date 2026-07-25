@@ -2807,16 +2807,16 @@ function buildOudStatic(){
   helpG.appendChild(el('rect', {
     x: helpBx - helpBtnW/2, y: helpY - helpBtnH/2,
     width: helpBtnW, height: helpBtnH, rx: instBtnR,
-    fill: '#f3e2c7', stroke: '#9c5a18', 'stroke-width': '2'
+    fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
   }));
   const helpTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   helpTxt.setAttribute('x', helpBx);
-  helpTxt.setAttribute('y', helpY + 11);
+  helpTxt.setAttribute('y', helpY + 13);
   helpTxt.setAttribute('text-anchor', 'middle');
   helpTxt.setAttribute('font-family', "'Cairo', Arial, sans-serif");
-  helpTxt.setAttribute('font-size', '26');
+  helpTxt.setAttribute('font-size', '32');
   helpTxt.setAttribute('font-weight', '800');
-  helpTxt.setAttribute('fill', '#2b1608');
+  helpTxt.setAttribute('fill', '#1a5fa8');
   helpTxt.textContent = 'مساعدة';
   helpG.appendChild(helpTxt);
   helpG.addEventListener('click', () => {
@@ -4253,6 +4253,16 @@ if (westernGuideBtn && westernGuideModal) {
       'faHafDiazJawabJawab':'Fa Half Sharp Jawab Jawab','faDiazJawabJawab':'Fa Sharp Jawab Jawab'
     };
 
+    // نترجم نصوص قائمة اختيار المحطّ للإنجليزي لو كانت هي اللغة المختارة (بعد فلترة عدد الأوتار اللي صارت فوق)
+    if (window.oudLanguage === 'en') {
+      const harfSelForLang = document.getElementById('harf-select');
+      if (harfSelForLang) {
+        Array.from(harfSelForLang.options).forEach(opt => {
+          if (HARF_DISPLAY_EN[opt.value]) opt.textContent = HARF_DISPLAY_EN[opt.value];
+        });
+      }
+    }
+
     // القاعدة: كل وتر يستوعب 9 أرباع (دستان 0 إلى 4.5) ثم ينتقل للوتر التالي
     // من صول (موضع 0) على وتر مي (q=6 من مفتوح مي):
     // مفتوح لا = 4 أرباع من صول (q=0 على لا)
@@ -4377,6 +4387,12 @@ if (westernGuideBtn && westernGuideModal) {
 
     // ===== خوارزمية الإملاء الصحيح =====
     // تحدد الاسم الصحيح لكل درجة بناءً على قاعدة 7 حروف مختلفة
+    // ترجمة بسيطة وآمنة للاسم الأساسي فقط (بعد ما تحسبه الخوارزمية العربية بدقة) — ما تلمس منطق حساب الإملاء الصحيح إطلاقاً
+    const BASE_NAME_AR_TO_EN = { 'دو':'Do', 'رى':'Re', 'مي':'Mi', 'فا':'Fa', 'صول':'Sol', 'لا':'La', 'سي':'Si' };
+    function displayBaseName(arabicText){
+      return (window.oudLanguage === 'en') ? (BASE_NAME_AR_TO_EN[arabicText] || arabicText) : arabicText;
+    }
+
     function getDegreeNameAndAcc(degIdx, startPos, quartersFromSol, maqamName, isDescending) {
       // 1. اعرف الوتر والربع من getStringFret
       const { s, q } = getStringFret(quartersFromSol);
@@ -4623,7 +4639,7 @@ if (westernGuideBtn && westernGuideModal) {
           label.setAttribute('font-family', "Arial,'Segoe UI',sans-serif");
           label.setAttribute('text-anchor', 'middle');
           label.setAttribute('font-weight', '700');
-          label.textContent = text;
+          label.textContent = displayBaseName(text);
           layer.appendChild(label);
           label.setAttribute('data-scale-idx', degIdx);
           label.setAttribute('data-x', x);
@@ -4636,7 +4652,7 @@ if (westernGuideBtn && westernGuideModal) {
           label.setAttribute('font-family', "Arial,'Segoe UI',sans-serif");
           label.setAttribute('text-anchor', 'middle');
           label.setAttribute('font-weight', '700');
-          label.textContent = text;
+          label.textContent = displayBaseName(text);
           layer.appendChild(label);
         }
       });
