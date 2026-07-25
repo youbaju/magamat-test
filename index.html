@@ -2811,13 +2811,13 @@ function buildOudStatic(){
   }));
   const helpTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   helpTxt.setAttribute('x', helpBx);
-  helpTxt.setAttribute('y', helpY + 13);
+  helpTxt.setAttribute('y', helpY + 18);
   helpTxt.setAttribute('text-anchor', 'middle');
-  helpTxt.setAttribute('font-family', "'Cairo', Arial, sans-serif");
-  helpTxt.setAttribute('font-size', '32');
+  helpTxt.setAttribute('font-family', "Arial, sans-serif");
+  helpTxt.setAttribute('font-size', '68');
   helpTxt.setAttribute('font-weight', '800');
   helpTxt.setAttribute('fill', '#1a5fa8');
-  helpTxt.textContent = 'مساعدة';
+  helpTxt.textContent = '?';
   helpG.appendChild(helpTxt);
   helpG.addEventListener('click', () => {
     document.getElementById('shared-stopBtn').click();
