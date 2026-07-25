@@ -1057,13 +1057,17 @@ flex-shrink: 0;
   white-space: nowrap;
 }
 .no-result.visible { display: block; }
-#page-help {
+#page-help, #page-help-en {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: #fff;
   z-index: 500;
   overflow-y: auto;
   display: none;
+}
+#page-help-en .help-page-content {
+  direction: ltr;
+  text-align: left;
 }
 .help-page-content {
   max-width: 700px;
@@ -1540,6 +1544,110 @@ input[type="radio"] {
 
   </div>
 </div>
+
+<div id="page-help-en" style="display:none;">
+  <div class="help-page-content">
+    <button class="help-close-btn" id="helpCloseBtnEn" onclick="document.getElementById('page-help-en').style.display='none';">✕ Close</button>
+    <h2 class="help-title">Website User Guide</h2>
+
+    <div class="help-section">
+      <h3>1. Choosing the Maqam Type</h3>
+      <p>When you open the site you'll find a toggle at the top-left to switch between <strong>Arabic Maqamat</strong> and <strong>Western Scales</strong>. Start by choosing the type you want to explore. The default selection is <strong>Arabic Maqamat</strong>.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>2. Choosing an Arabic Maqam</h3>
+      <p>Press the <strong>☰ Choose Maqam</strong> button to open the menu. Pick the family, then the maqam, then the letter (root). Selecting a maqam will show its default root automatically in the letter list.</p>
+      <p>The site supports representing the oud with 5 or 6 strings, and the number of available letters for the root depends on the mode:</p>
+      <p>In 5-string mode, the site offers <strong>35 letters</strong> divided into quarter-tones — from <strong>Sol (low)</strong> to <strong>Do Jawab</strong> (the bottom-most string for a right-handed player, the top-most for a left-handed player) — to represent any Arabic maqam.</p>
+      <p>In 6-string mode, the site offers <strong>45 letters</strong> divided into quarter-tones — from <strong>Sol (low)</strong> to <strong>Fa Jawab</strong> (the "Sharrar" string, the bottom-most string for a right-handed player, the top-most for a left-handed player) — to represent any Arabic maqam.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>3. Maqam Guide and Intervals</h3>
+      <p>After choosing a maqam, two buttons appear above the fretboard:</p>
+      <p>🔹 <strong>Guide for [name]</strong> — shows an illustration of the maqam on the musical staff along with its constituent jins (tetrachords).</p>
+      <p>🔹 <strong>Intervals of [name]</strong> — shows a table of the maqam's intervals in quarter-tones between each degree and the next.</p>
+      <p style="font-size:0.85rem;color:#555;text-align:center">These display the guide and intervals of the maqam currently shown.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>4. Reading the Oud Fretboard</h3>
+      <p>The fretboard represents the oud's strings (Fa, La, Re, Sol, Do — plus a sixth string "Sharrar" if enabled) from top to bottom. The numbers above the fretboard represent the frets. Colored rectangles mark the maqam's note positions.</p>
+      <p>⚠️ <strong>The thin brown lines between the numbered frets represent quarter-tones</strong> — the essential musical distinction in Arabic maqamat.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>5. Playing the Scale</h3>
+      <p>Use the player buttons at the bottom: <strong>▶ Play</strong> to hear the scale, <strong>⏸ Pause</strong>, <strong>⏹ Stop</strong>, <strong>⏮ Restart</strong>, and the <strong>Repeat</strong> button to play the scale continuously. You can change the <strong>tuning</strong> from the dropdown, and the <strong>speed</strong> with the slider (or the <strong>−</strong> and <strong>+</strong> buttons beside it for fine adjustment) — the number shown is the speed in BPM (beats per minute), matching a real musical metronome exactly.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>6. Western Scales</h3>
+      <p>Press the <strong>☰ Choose Scale</strong> button to open the menu. Choose the key from the circle of fifths and the scale type (Major, Natural Minor, Harmonic, Melodic). The scale's notes will appear on the fretboard.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>7. Western Scale Guide</h3>
+      <p>After choosing a key and scale type from the circle of fifths, a <strong>Guide for [scale name]</strong> button appears above the fretboard (in the same spot as the Arabic maqam guide button).</p>
+      <p>🔹 Pressing it opens a popup showing <strong>the scale's notes on a traditional musical staff</strong> (ascending and descending), in the same octave matching its actual pitch on the oud.</p>
+      <p>🔹 The button's label updates automatically with each key or scale type you choose.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>8. Choosing Right or Left Hand</h3>
+      <p>To make playing easier for left-handed players, the site provides <strong>a single button</strong> below the fretboard (between frets 10 and 12) that shows your current setting — "Right" or "Left".</p>
+      <p>🔹 The default whenever you open the site is always: <strong>"Right"</strong>.</p>
+      <p>🔹 Press the button to switch immediately — if it says "Right" it becomes "Left" and vice versa, and the oud's shape and strings flip automatically to match exactly how you hold it.</p>
+      <p>🔹 This switch is <strong>purely visual</strong> — the correct note positions and sounds never change. It works the same way for both Arabic maqamat and Western scales, and your choice stays fixed when switching between the two tabs.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>9. String Count Button (5 or 6)</h3>
+      <p>Right beside the hand button, there's a button showing the current string count — "5 أوتار" or "6 أوتار".</p>
+      <p>🔹 The default is: <strong>6 strings</strong> (includes the sixth string, "Sharrar").</p>
+      <p>🔹 Pressing the button switches the count instantly, and resets the selected maqam/scale to its default (while hand direction, tuning, and speed stay as they were).</p>
+    </div>
+
+    <div class="help-section">
+      <h3>10. Help Button (?)</h3>
+      <p>The large question mark "؟" above the fretboard opens this exact guide page — anytime you need to review any detail.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>11. Playing a Single Note by Tapping</h3>
+      <p>Besides playing the whole scale or maqam with the player buttons, you can hear any single note directly from the fretboard, using <strong>real sustained sound</strong> (no looping or clicks) that starts and stops based on your taps.</p>
+      <p>🔹 <strong>Start:</strong> Tap any note rectangle (in Arabic maqamat or Western scales) to start its sound playing continuously, and its color turns green.</p>
+      <p>🔹 <strong>Stop:</strong> Tap <strong>the same rectangle again</strong> to stop the sound immediately and return its color to normal.</p>
+      <p>🔹 <strong>Switching notes:</strong> If you tap a second note rectangle while one is already sounding, the first stops automatically and the new one starts — only one note sounds at any moment.</p>
+      <p>🔹 <strong>Interaction with full scale/maqam playback:</strong> The two systems (single sustained note, and full sequential playback via the player buttons) never run at the same time:</p>
+      <p style="margin-right:18px;">- If you press <strong>▶ Play</strong> while a single sustained note is sounding, the single note stops automatically and full playback begins.</p>
+      <p style="margin-right:18px;">- Conversely: if the scale/maqam is playing sequentially and you tap any note rectangle, sequential playback stops automatically and the single sustained note starts instead.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>12. Western Scale Chords</h3>
+      <p>Besides the scales themselves, the site provides the <strong>seven chords</strong> (scale degrees) for each Western scale — the three notes making up each chord appear together on the fretboard, in the closest and easiest playing position.</p>
+      <p>🔹 <strong>Opening the chords list:</strong> Press the <strong>"☰ Choose from Circle"</strong> button above the oud (in the Western Scales tab), then press the <strong>"Chords"</strong> tab at the top of the menu, instead of the "Circle of Fourths and Fifths" tab.</p>
+      <p>🔹 <strong>Choosing the scale type:</strong> Inside the chords menu, there's a row of buttons (Major / Natural Minor / Harmonic Minor / Melodic Minor) letting you switch between the four types directly, and the chords update instantly without needing to close the menu.</p>
+      <p>🔹 <strong>Choosing a chord:</strong> The seven chords appear with their degrees (I, ii, iii, IV, V, vi, vii°...) and each chord's full name (like "Do Major" or "Re Minor"). Tap any chord to select it — its three notes light up in blue on the fretboard, and the regular scale notes temporarily disappear to highlight the chord alone.</p>
+      <p>🔹 <strong>Playing the full chord:</strong> After choosing a chord, use the <strong>▶ Play</strong> button in the player below to hear the three notes played together — a single tap plays it through and it ends naturally (no pause), lighting up while playing.</p>
+      <p>🔹 <strong>Hearing each note alone:</strong> You can also tap any of the three notes directly (using the same sustained-note technique) to check its sound individually, before or instead of hearing the whole chord together.</p>
+      <p>🔹 <strong>Returning to the scale:</strong> Press the "Circle of Fourths and Fifths" tab at the top of the menu, or choose a new key from the circle, to return to the normal scale display on the fretboard.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>13. Rating the Website</h3>
+      <p>Any visitor can rate the website from 1 to 5 stars, and see the overall average of all ratings.</p>
+      <p>🔹 <strong>Opening the rating page:</strong> Press the <strong>"⭐ Rate"</strong> button at the bottom of the page (beside the "Contact" button and the Vision 2030 logo).</p>
+      <p>🔹 <strong>Submitting your rating:</strong> Tap the number of stars that reflects your opinion (you can change your choice before confirming by tapping a different star), then press the <strong>"✓ Confirm Rating"</strong> button to actually submit it — this way a rating never gets saved by mistake if you tap the wrong star. A thank-you message appears after confirming.</p>
+      <p>🔹 <strong>One rating per visitor:</strong> After submitting your rating, you can't submit another one from the same device/browser (the stars become locked), so the overall average stays accurate and reflects each visitor's opinion just once.</p>
+      <p>🔹 <strong>Have feedback or a suggestion?</strong> There's a "Contact Us" link inside the rating page that takes you directly to the site's contact page, if you'd like to explain your opinion in more detail (especially if your rating was low and you have a specific reason).</p>
+      <p>🔹 <strong>Overall average:</strong> Shown at the bottom of the rating page for everyone — the average of all submitted ratings, and the number of people who rated.</p>
+    </div>
+  </div>
+</div>
+
 
 <div class="site-page active" id="page-circle">
 
@@ -2831,7 +2939,8 @@ function buildOudStatic(){
   helpG.appendChild(helpTxt);
   helpG.addEventListener('click', () => {
     document.getElementById('shared-stopBtn').click();
-    const helpPage = document.getElementById('page-help');
+    const helpPageId = (window.oudLanguage === 'en') ? 'page-help-en' : 'page-help';
+    const helpPage = document.getElementById(helpPageId);
     helpPage.style.display = 'block';
     helpPage.scrollTop = 0;
   });
@@ -3931,11 +4040,11 @@ if (westernGuideBtn && westernGuideModal) {
     // أسماء المقامات الفرعية — مؤكدة فقط من فهرس Maqam World الرسمي (maqamworld.com)، بدون أي تخمين
     // الأسماء غير المؤكدة (تحتاج تحقق إضافي) تُركت خارج القاموس عمداً، تظهر بالعربي مؤقتاً لو اللغة إنجليزية
     const MAQAM_NAME_EN = {
-      "الراست": "Rast", "السوزناك": "Suznak", "السوزدلار": "Suzdalara", "الماهور": "Mahur", "الدلنشين": "Dalanshin",
-      "النيرز راست": "Nairuz", "راست البشاير": "Rast Bashair",
+      "الراست": "Rast", "السوزناك": "Suznak", "السوزدلار": "Suzdalar", "الماهور": "Mahur", "الدلنشين": "Dalanshin",
+      "النيرز راست": "Nairuz", "راست البشاير": "Rast Al-Bashair",
       "البياتي": "Bayati", "الشورى": "Shuri", "الحسيني": "Husaini",
-      "الكرد": "Kurd", "اللامي": "Lami", "الحجاز كار كرد": "Hijazkar Kurd",
-      "الحجاز": "Hijaz", "الشاهناز": "Shahnaz", "الزنجران": "Zanjaran", "حجاز الأويج": "Hijaz Awj",
+      "الكرد": "Kurd", "اللامي": "Lami", "الحجاز كار كرد": "Hijaz Kar Kurd",
+      "الحجاز": "Hijaz", "الشاهناز": "Shahnaz", "الزنجران": "Zanjaran", "حجاز الأويج": "Hijaz Al-Awj",
       "العشاق المصري": "Ushaq Masri", "النهاوند المرصع": "Nahawand Murassa", "الفرح فزا": "Farahfaza",
       "السيكاه": "Sikah", "الهزام": "Huzam", "العراق": "Iraq", "البسته نكار": "Bastanikar", "السيكاه البلدي": "Sikah Baladi", "السيكاه مايا": "Sikah Maya",
       "الصبا": "Saba", "صبا الزمزمه": "Saba Al-Zamzamah", "صبا البوسليك": "Saba Buselik",
