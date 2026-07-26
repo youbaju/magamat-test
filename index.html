@@ -5621,7 +5621,7 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.035 : 0.13; // تصغير خفيف بالعمودي (مو نص)، الأفقي ثابت
+              const ratio = 0.06; // نسبة موحّدة للوضعين، محسوبة من قياس دقيق لحجم العنوان العربي الأصلي نسبة لعرض الصورة (ما يعتمد على الشاشة، يعتمد على الصورة نفسها فقط)
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
               let fontPx = Math.max(7, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
