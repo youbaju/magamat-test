@@ -2036,6 +2036,14 @@ const SCALES = {
   harmonicMinor: { name:'Minor توافقي',    intervals:[0,2,3,5,7,8,11] },
   melodicMinor:  { name:'Minor ميلودي',    intervals:[0,2,3,5,7,9,11] },
 };
+// ترجمة إنجليزية لأسماء أنواع السلالم — تُستخدم بدل القيمة العربية أينما ظهرت لو اللغة إنجليزية
+const SCALE_NAME_EN = {
+  'Major (طبيعي)': 'Major',
+  'Minor طبيعي': 'Natural Minor',
+  'Minor توافقي': 'Harmonic Minor',
+  'Minor ميلودي': 'Melodic Minor'
+};
+window.SCALE_NAME_EN = SCALE_NAME_EN;
 // السلم الميلودي النازل مختلف عن الصاعد (يطابق الطبيعي الصغير تمامًا حسب القاعدة الموسيقية)
 const MELODIC_MINOR_DESCENDING = [0,2,3,5,7,8,10];
 
@@ -2342,7 +2350,7 @@ function buildChordsForScale(root, scaleType){
     if (quality === 'Diminished') roman += '°';
     else if (quality === 'Augmented') roman += '+';
     let displayName;
-    const RLM = '\u200F'; // علامة اتجاه خفية (يمين لليسار) تلصق الرمز (# أو x أو ♭) بالحرف العربي الصحيح، قبل ما تبدأ الكلمة الإنجليزية
+    const RLM = (window.oudLanguage === 'en') ? '' : '\u200F'; // علامة اتجاه خفية (يمين لليسار) تلصق الرمز (# أو x أو ♭) بالحرف العربي الصحيح — تُعطَّل بالإنجليزي لأنها تقلب ترتيب الكلمات اللاتينية
     if (quality === 'Major') displayName = rootLetterName + RLM + ' Major';
     else if (quality === 'Minor') displayName = rootLetterName + RLM + ' Minor';
     else if (quality === 'Diminished') displayName = rootLetterName + RLM + ' Diminished';
@@ -2384,10 +2392,11 @@ function findChordPositions(pcs){
 
 function renderChordsList(){
   const titleEl = document.getElementById('cChordsTitle');
-  const scaleLabel = SCALES[state.scaleType].name;
+  const rawScaleLabel = SCALES[state.scaleType].name;
+  const scaleLabel = (window.oudLanguage === 'en' && window.SCALE_NAME_EN && window.SCALE_NAME_EN[rawScaleLabel]) ? window.SCALE_NAME_EN[rawScaleLabel] : rawScaleLabel;
   const rootLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
   const rootName = getCorrectNoteName(state.root, rootLetterIdx);
-  titleEl.textContent = `كوردات ${rootName} ${scaleLabel}`;
+  titleEl.textContent = (window.oudLanguage === 'en') ? `Chords of ${rootName} ${scaleLabel}` : `كوردات ${rootName} ${scaleLabel}`;
 
   // نزامن زر النوع النشط جوا لوحة الكوردات نفسها مع النوع الحالي فعلياً
   document.querySelectorAll('.c-chords-type-btn').forEach(b => {
@@ -2588,7 +2597,8 @@ document.querySelectorAll('.c-chords-type-btn').forEach(btn => {
 });
 
 function updateNowPlaying(){
-  const scaleName = SCALES[state.scaleType].name;
+  const rawScaleName = SCALES[state.scaleType].name;
+  const scaleName = (window.oudLanguage === 'en' && SCALE_NAME_EN[rawScaleName]) ? SCALE_NAME_EN[rawScaleName] : rawScaleName;
   const rootLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
   const correctRootName = getCorrectNoteName(state.root, rootLetterIdx);
   document.getElementById('c-nowPlaying').textContent = `${correctRootName} ${scaleName}`;
@@ -3356,6 +3366,7 @@ function buildOudStatic(){
 // خريطة: لكل نوتة طبيعية (pitch class)، رقم حرفها الموسيقي (0=دو، 1=رى، 2=مي... 6=سي)
 const NATURAL_PC_TO_LETTER = {0:0, 2:1, 4:2, 5:3, 7:4, 9:5, 11:6};
 const LETTER_NAMES_ONLY = ['دو','رى','مي','فا','صول','لا','سي'];
+const LETTER_NAMES_ONLY_EN = ['Do','Re','Mi','Fa','Sol','La','Si'];
 const NATURAL_PC_FOR_LETTER = [0,2,4,5,7,9,11]; // pitch class الطبيعي لكل حرف بترتيب 0-6
 
 // دليل المقام: عدد ونوع التحويل (دييز/بيمول) لكل مفتاح ميجور، حسب دائرة الخامسات
@@ -3382,14 +3393,15 @@ function getRootLetterIndex(rootPC, scaleType, letterOverride){
 
 // تعطي الاسم الصحيح موسيقيًا (الإملاء الإنهارموني الصحيح) لنوتة معينة حسب حرفها الصحيح بالسلم
 function getCorrectNoteName(pc, letterIdx){
+  const names = (window.oudLanguage === 'en') ? LETTER_NAMES_ONLY_EN : LETTER_NAMES_ONLY;
   const naturalPC = NATURAL_PC_FOR_LETTER[letterIdx];
   const diff = ((pc - naturalPC) + 12) % 12;
-  if(diff === 0) return LETTER_NAMES_ONLY[letterIdx];
-  if(diff === 1) return LETTER_NAMES_ONLY[letterIdx] + '#';
-  if(diff === 2) return LETTER_NAMES_ONLY[letterIdx] + 'x';
-  if(diff === 11) return LETTER_NAMES_ONLY[letterIdx] + '♭';
-  if(diff === 10) return LETTER_NAMES_ONLY[letterIdx] + '♭♭';
-  return LETTER_NAMES_ONLY[letterIdx]; // احتياطي (نادر الحدوث)
+  if(diff === 0) return names[letterIdx];
+  if(diff === 1) return names[letterIdx] + '#';
+  if(diff === 2) return names[letterIdx] + 'x';
+  if(diff === 11) return names[letterIdx] + '♭';
+  if(diff === 10) return names[letterIdx] + '♭♭';
+  return names[letterIdx]; // احتياطي (نادر الحدوث)
 }
 
 // بناء مسار وضعية يد واحدة عبر الأوتار الخمسة:
@@ -4139,9 +4151,9 @@ if (westernGuideBtn && westernGuideModal) {
       if (tuningSelEl) {
         const tuningTextMap = {
           'عالمي (440 Hz)': 'Universal (440 Hz)',
-          'ناقص نصف تون (415 Hz)': 'Half Tone Down (415 Hz)',
-          'ناقص تون كامل (392 Hz)': 'Whole Tone Down (392 Hz)',
-          'ناقص تون ونصف (370 Hz)': 'One and a Half Tones Down (370 Hz)'
+          'ناقص نصف تون (415 Hz)': '-0.5 Tone (415 Hz)',
+          'ناقص تون كامل (392 Hz)': '-1 Tone (392 Hz)',
+          'ناقص تون ونصف (370 Hz)': '-1.5 Tone (370 Hz)'
         };
         Array.from(tuningSelEl.options).forEach(opt => {
           if (tuningTextMap[opt.textContent]) opt.textContent = tuningTextMap[opt.textContent];
@@ -4152,6 +4164,28 @@ if (westernGuideBtn && westernGuideModal) {
       if (speedMinusEl) speedMinusEl.setAttribute('aria-label', 'Decrease Speed');
       const speedPlusEl = document.getElementById('shared-speedPlus');
       if (speedPlusEl) speedPlusEl.setAttribute('aria-label', 'Increase Speed');
+      // أزرار نوع السلم (دائرة وكوردات مع بعض)
+      document.querySelectorAll('.scale-btn, .c-chords-type-btn').forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (window.SCALE_NAME_EN && window.SCALE_NAME_EN[txt]) btn.textContent = window.SCALE_NAME_EN[txt];
+      });
+      // تسميات دائرة الرابعات والخامسات (النص بمنتصف الدائرة، مقسّم لسطرين)
+      document.querySelectorAll('text').forEach(t => {
+        if (t.textContent.trim() === 'دائرة الرابعات') t.textContent = 'Circle of';
+        else if (t.textContent.trim() === 'و الخامسات') t.textContent = 'Fourths & Fifths';
+      });
+      // تبويب "دائرة الرابعات والخامسات" أعلى قائمة اختيار السلم الغربي
+      document.querySelectorAll('.c-drawer-tab').forEach(tabEl => {
+        if (tabEl.textContent.trim() === 'دائرة الرابعات والخامسات') tabEl.textContent = 'Circle of Fourths & Fifths';
+        else if (tabEl.textContent.trim() === 'الكوردات') tabEl.textContent = 'Chords';
+      });
+      // باقي عناصر قائمة اختيار السلم الغربي
+      document.querySelectorAll('.c-drawer-title').forEach(el => {
+        if (el.textContent.trim() === 'اختر المفتاح') el.textContent = 'Choose the Key';
+        else if (el.textContent.trim() === 'كوردات') el.textContent = 'Chords';
+      });
+      const zoomNoteEl = document.querySelector('.circle-zoom-note');
+      if (zoomNoteEl) zoomNoteEl.textContent = '💡 Slots 5, 6, 7 have two names — zoom in the circle for precise selection';
       // نافذة التقييم
       document.querySelectorAll('h3').forEach(h => { if (h.textContent.trim() === 'قيّم الموقع') h.textContent = 'Rate the Website'; });
       document.querySelectorAll('p').forEach(p => { if (p.textContent.trim() === 'رأيك يهمنا ويساعد الآخرين') p.textContent = 'Your opinion matters and helps others'; });
@@ -4175,6 +4209,8 @@ if (westernGuideBtn && westernGuideModal) {
       // "جزيرة" LTR لصف الدوزان والسرعة بالمشغل، عشان ترتيب العناصر يتماشى مع اتجاه القراءة الإنجليزية
       const tuningRowEl = document.querySelector('.tuning-row');
       if (tuningRowEl) { tuningRowEl.setAttribute('dir', 'ltr'); tuningRowEl.style.direction = 'ltr'; tuningRowEl.style.justifyContent = 'flex-start'; }
+      const tuningSelectDirEl = document.getElementById('shared-tuningSelect');
+      if (tuningSelectDirEl) { tuningSelectDirEl.setAttribute('dir', 'ltr'); tuningSelectDirEl.style.direction = 'ltr'; }
     }
 
     const defaultHarf = {
