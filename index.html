@@ -892,14 +892,6 @@ flex-shrink: 0;
     border-bottom: 1px solid #ddd;
     padding-bottom: 6px;
   }
-  /* دليل المقام العربي عبارة عن صورة عريضة جداً نسبة لارتفاعها (زي شريط نوتة موسيقية)، فلو انضغطت
-     لعرض شاشة الجوال العمودي الضيق يصير ارتفاعها الفعلي صغير جداً وصعبة القراءة. بالعمودي نخليها
-     تاخذ ارتفاع مريح ثابت بدل ما تعتمد على عرض الحاوية، ونسمح بالتمرير الأفقي لمشاهدة باقي الصورة */
-  @media (orientation:portrait){
-    #maqamGuideModal .maqam-guide-container{ overflow-x: auto; }
-    #maqamGuideImgWrap{ display: inline-block; }
-    #maqamGuideImg{ width: auto; max-width: none; height: 34vh; }
-  }
   .maqam-intervals-btn{
     font-family: 'Cairo', sans-serif;
     font-size: .85rem;
@@ -5580,7 +5572,7 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.04 : 0.095; // نصغّر النسبة أكثر بالعمودي عشان النص ما يطلع كبير، ونكبّر الأفقي شوي يرجع لحجمه السابق
+              const ratio = isPortrait ? 0.08 : 0.13; // كبّرنا الخط بالوضعين حسب الطلب
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
               let fontPx = Math.max(8, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
