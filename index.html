@@ -5621,12 +5621,14 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.08 : 0.13; // كبّرنا الخط بالوضعين حسب الطلب
-              guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
-              let fontPx = Math.max(8, boxWidth * ratio);
+              const ratio = isPortrait ? 0.035 : 0.13; // تصغير خفيف بالعمودي (مو نص)، الأفقي ثابت
+              guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
+              let fontPx = Math.max(7, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
               let tries = 0;
-              while (guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth && tries < 20) {
+              // نتحقق من تجاوز العرض والارتفاع معاً — قبل كذا كنا نتحقق من العرض بس، فأحياناً
+              // النص يلف لسطرين ويتجاوز ارتفاع المستطيل وينقص جزء منه (overflow:hidden)
+              while ((guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth || guideTitleOverlay.scrollHeight > guideTitleOverlay.clientHeight) && tries < 25) {
                 fontPx *= 0.92;
                 guideTitleOverlay.style.fontSize = fontPx + 'px';
                 tries++;
