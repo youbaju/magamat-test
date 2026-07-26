@@ -5571,7 +5571,9 @@ if (westernGuideBtn && westernGuideModal) {
             // واضح وقابل للقراءة بالجوال حتى لو الصورة نفسها صغيرة نسبة لعرض الشاشة الكامل
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
-              let fontPx = Math.max(12, boxWidth * 0.085);
+              const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+              const ratio = isPortrait ? 0.06 : 0.085; // نصغّر النسبة بالعمودي عشان أسماء المقامات الطويلة تنعرض صح، ونخلي الأفقي زي ما هو
+              let fontPx = Math.max(10, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
               let tries = 0;
               while (guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth && tries < 20) {
