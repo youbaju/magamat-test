@@ -656,8 +656,8 @@ flex-shrink: 0;
     margin-bottom: 4px;
   }
   .c-chords-type-minor-row{
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
   }
   .c-chords-type-btn{
@@ -4167,9 +4167,9 @@ if (westernGuideBtn && westernGuideModal) {
       if (tuningSelEl) {
         const tuningTextMap = {
           'عالمي (440 Hz)': 'Universal (440 Hz)',
-          'ناقص نصف تون (415 Hz)': '-0.5 Tone (415 Hz)',
-          'ناقص تون كامل (392 Hz)': '-1 Tone (392 Hz)',
-          'ناقص تون ونصف (370 Hz)': '-1.5 Tone (370 Hz)'
+          'ناقص نصف تون (415 Hz)': '0.5 Tone Down (415 Hz)',
+          'ناقص تون كامل (392 Hz)': '1 Tone Down (392 Hz)',
+          'ناقص تون ونصف (370 Hz)': '1.5 Tone Down (370 Hz)'
         };
         Array.from(tuningSelEl.options).forEach(opt => {
           if (tuningTextMap[opt.textContent]) opt.textContent = tuningTextMap[opt.textContent];
