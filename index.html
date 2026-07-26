@@ -656,8 +656,8 @@ flex-shrink: 0;
     margin-bottom: 4px;
   }
   .c-chords-type-minor-row{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px;
   }
   .c-chords-type-btn{
@@ -749,7 +749,7 @@ flex-shrink: 0;
   .c-selection-summary > *{ pointer-events: auto; }
 
   /* ===== أزرار اختيار نوع السلم ===== */
-  .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
+  .scale-buttons{ display:grid; grid-template-columns:1fr 1fr; gap:5px; justify-content:center; }
   .scale-btn{
     background:#f5f1ea;
     color: #5a4a35;
