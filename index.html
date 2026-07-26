@@ -5567,13 +5567,16 @@ if (westernGuideBtn && westernGuideModal) {
           if (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) {
             guideTitleOverlay.textContent = 'Guide of ' + window.MAQAM_NAME_EN[maqam];
             guideTitleOverlay.style.display = 'flex';
-            // نصغّر حجم الخط تلقائياً لو النص الإنجليزي طويل عشان يضل جوا حدود المستطيل الأبيض
-            guideTitleOverlay.style.fontSize = '1.6vw';
+            // نحسب حجم الخط بالاعتماد على عرض الصورة الفعلي بالبكسل (مو vw بالنسبة للشاشة)، عشان يضل
+            // واضح وقابل للقراءة بالجوال حتى لو الصورة نفسها صغيرة نسبة لعرض الشاشة الكامل
             requestAnimationFrame(() => {
+              const boxWidth = guideTitleOverlay.clientWidth || 300;
+              let fontPx = Math.max(12, boxWidth * 0.085);
+              guideTitleOverlay.style.fontSize = fontPx + 'px';
               let tries = 0;
               while (guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth && tries < 20) {
-                const cur = parseFloat(getComputedStyle(guideTitleOverlay).fontSize);
-                guideTitleOverlay.style.fontSize = (cur * 0.92) + 'px';
+                fontPx *= 0.92;
+                guideTitleOverlay.style.fontSize = fontPx + 'px';
                 tries++;
               }
             });
