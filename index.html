@@ -5572,8 +5572,9 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.06 : 0.085; // نصغّر النسبة بالعمودي عشان أسماء المقامات الطويلة تنعرض صح، ونخلي الأفقي زي ما هو
-              let fontPx = Math.max(10, boxWidth * ratio);
+              const ratio = isPortrait ? 0.04 : 0.085; // نصغّر النسبة أكثر بالعمودي عشان النص ما يطلع كبير، ونخلي الأفقي زي ما هو
+              guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
+              let fontPx = Math.max(8, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
               let tries = 0;
               while (guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth && tries < 20) {
