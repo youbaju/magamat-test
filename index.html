@@ -250,6 +250,14 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
 
+/* أزرار نوع السلم (Major/Minor...) بوضع الجوال/التابلت العمودي فقط — نفرض صفين × زرين ثابتة
+   بغض النظر عن طول النص (عربي أو إنجليزي)، لأن flex-wrap العادي ما يضمن اللف دايماً إذا كان
+   إجمالي عرض الأزرار أقصر من عرض الشاشة (زي النص الإنجليزي القصير أحياناً). الوضع الأفقي ما يتأثر
+   إطلاقاً من هالقاعدة (محصورة بـ orientation:portrait بس)، فيضل يعرض صف واحد كما بالأصل */
+@media (max-width:1024px) and (orientation:portrait){
+  .scale-buttons{ display:grid !important; grid-template-columns:1fr 1fr !important; gap:5px !important; justify-content:center !important; }
+}
+
 @media (max-width:600px){
   .shared-oud-area .audio-player{ max-width: 95vw !important; }
   .tuning-row { flex-wrap: wrap !important; gap: 3px !important; }
@@ -5147,6 +5155,15 @@ if (westernGuideBtn && westernGuideModal) {
         check();
       });
     };
+
+    // نبدأ تحميل عينات العود بالخلفية تلقائياً بعد ما تفتح الصفحة بلحظات قصيرة (بدون ما ننتظر
+    // ضغطة تشغيل من المستخدم) — الهدف إن العينات تكون جاهزة مسبقاً قبل ما يوصل المستخدم لصفحة
+    // الكوردات ويضغط تشغيل، فيختفي تأخير أول تشغيل اللي كان يصير قبل هالتعديل
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(() => window.ensureOudSamplesLoaded(), { timeout: 3000 });
+    } else {
+      setTimeout(() => window.ensureOudSamplesLoaded(), 1500);
+    }
 
     // إيجاد أقرب sample للنغمة المطلوبة — يبحث بالمدى الكامل (كل العينات المتاحة
     // بأي أوكتاف)، مباشرة وبدون أي التفاف/تدوير وهمي. التسريع المطلوب (playbackRate)
