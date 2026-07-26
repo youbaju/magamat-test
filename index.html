@@ -4048,7 +4048,8 @@ function updateWesternGuideImage(){
   const title = document.getElementById('westernGuideTitle');
   if (title) {
     const btnName = document.getElementById('westernGuideBtnName');
-    title.textContent = 'دليل ' + (btnName ? btnName.textContent : '');
+    const guideLabel = (window.oudLanguage === 'en') ? 'Guide of ' : 'دليل ';
+    title.textContent = guideLabel + (btnName ? btnName.textContent : '');
   }
 }
 
