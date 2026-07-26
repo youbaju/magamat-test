@@ -892,6 +892,14 @@ flex-shrink: 0;
     border-bottom: 1px solid #ddd;
     padding-bottom: 6px;
   }
+  /* دليل المقام العربي عبارة عن صورة عريضة جداً نسبة لارتفاعها (زي شريط نوتة موسيقية)، فلو انضغطت
+     لعرض شاشة الجوال العمودي الضيق يصير ارتفاعها الفعلي صغير جداً وصعبة القراءة. بالعمودي نخليها
+     تاخذ ارتفاع مريح ثابت بدل ما تعتمد على عرض الحاوية، ونسمح بالتمرير الأفقي لمشاهدة باقي الصورة */
+  @media (orientation:portrait){
+    #maqamGuideModal .maqam-guide-container{ overflow-x: auto; }
+    #maqamGuideImgWrap{ display: inline-block; }
+    #maqamGuideImg{ width: auto; max-width: none; height: 34vh; }
+  }
   .maqam-intervals-btn{
     font-family: 'Cairo', sans-serif;
     font-size: .85rem;
@@ -1811,7 +1819,7 @@ input[type="radio"] {
       <div style="text-align:left;margin-bottom:4px;">
         <button class="mit-close" id="maqamGuideClose">✕</button>
       </div>
-      <div style="position:relative;">
+      <div id="maqamGuideImgWrap" style="position:relative;">
         <img id="maqamGuideImg" src="" alt="دليل المقام" style="width:100%;border-radius:8px;display:block;">
         <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:22%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:1%;box-sizing:border-box;"></div>
       </div>
@@ -5572,7 +5580,7 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.04 : 0.085; // نصغّر النسبة أكثر بالعمودي عشان النص ما يطلع كبير، ونخلي الأفقي زي ما هو
+              const ratio = isPortrait ? 0.04 : 0.095; // نصغّر النسبة أكثر بالعمودي عشان النص ما يطلع كبير، ونكبّر الأفقي شوي يرجع لحجمه السابق
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
               let fontPx = Math.max(8, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
