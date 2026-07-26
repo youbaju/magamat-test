@@ -1512,7 +1512,7 @@ input[type="radio"] {
     <div class="help-section">
       <h3>١١. سماع نغمة فردية بالضغط عليها</h3>
       <p>بالإضافة لتشغيل السلم أو المقام كاملاً بأزرار المشغل، يمكنك سماع أي نغمة منفردة مباشرة من على الزند، بتقنية <strong>صوت مستمر حقيقي</strong> (بدون أي تكرار أو تقطيع) يبدأ ويتوقف حسب ضغطاتك.</p>
-      <p>🔹 <strong>البدء:</strong> اضغط على أي مستطيل نغمة (بالمقامات العربية أو السلالم الغربية) ليبدأ صوتها بالعزف مستمراً بدون توقف، ويتحول لونها للأخضر.</p>
+      <p>🔹 <strong>البدء:</strong> اضغط على أي مستطيل نغمة (بالمقامات العربية أو السلالم الغربية) ليبدأ صوتها بالعزف مستمراً بدون توقف، ويتحول لونها للأحمر.</p>
       <p>🔹 <strong>الإيقاف:</strong> اضغط على <strong>نفس المستطيل مرة ثانية</strong> ليتوقف الصوت فوراً ويرجع لونها لطبيعتها.</p>
       <p>🔹 <strong>التبديل بين النغمات:</strong> لو ضغطت على مستطيل نغمة ثانية وفيه صوت شغال بالفعل، يتوقف الصوت الأول تلقائياً ويبدأ صوت النغمة الجديدة — نغمة واحدة بس تُسمع بأي لحظة.</p>
       <p>🔹 <strong>التداخل مع تشغيل السلم/المقام كاملاً:</strong> النظامان (النغمة المفردة، وتشغيل السلم الكامل بالأزرار) لا يعملان بنفس الوقت أبداً:</p>
@@ -1604,7 +1604,7 @@ input[type="radio"] {
 
     <div class="help-section">
       <h3>9. String Count Button (5 or 6)</h3>
-      <p>Right beside the hand button, there's a button showing the current string count — "5 أوتار" or "6 أوتار".</p>
+      <p>Right beside the hand button, there's a button showing the current string count — "5 Strings" or "6 Strings".</p>
       <p>🔹 The default is: <strong>6 strings</strong> (includes the sixth string, "Sharrar").</p>
       <p>🔹 Pressing the button switches the count instantly, and resets the selected maqam/scale to its default (while hand direction, tuning, and speed stay as they were).</p>
     </div>
@@ -1617,7 +1617,7 @@ input[type="radio"] {
     <div class="help-section">
       <h3>11. Playing a Single Note by Tapping</h3>
       <p>Besides playing the whole scale or maqam with the player buttons, you can hear any single note directly from the fretboard, using <strong>real sustained sound</strong> (no looping or clicks) that starts and stops based on your taps.</p>
-      <p>🔹 <strong>Start:</strong> Tap any note rectangle (in Arabic maqamat or Western scales) to start its sound playing continuously, and its color turns green.</p>
+      <p>🔹 <strong>Start:</strong> Tap any note rectangle (in Arabic maqamat or Western scales) to start its sound playing continuously, and its color turns red.</p>
       <p>🔹 <strong>Stop:</strong> Tap <strong>the same rectangle again</strong> to stop the sound immediately and return its color to normal.</p>
       <p>🔹 <strong>Switching notes:</strong> If you tap a second note rectangle while one is already sounding, the first stops automatically and the new one starts — only one note sounds at any moment.</p>
       <p>🔹 <strong>Interaction with full scale/maqam playback:</strong> The two systems (single sustained note, and full sequential playback via the player buttons) never run at the same time:</p>
@@ -2265,7 +2265,11 @@ const circleMenuToggleEl = document.getElementById('c-menuToggle');
 let currentDrawerMode = 'circle'; // 'circle' أو 'chords' - آخر وضع مختار (يبقى محفوظ حتى لو أغلقنا وفتحنا)
 
 function updateMenuToggleLabel(){
-  circleMenuToggleEl.textContent = (currentDrawerMode === 'chords') ? '☰ اختر الكوردات' : '☰ اختر من الدائرة';
+  if (window.oudLanguage === 'en') {
+    circleMenuToggleEl.textContent = (currentDrawerMode === 'chords') ? '☰ Choose Chords' : '☰ Choose from Circle';
+  } else {
+    circleMenuToggleEl.textContent = (currentDrawerMode === 'chords') ? '☰ اختر الكوردات' : '☰ اختر من الدائرة';
+  }
 }
 
 function openCircleDrawer(){
@@ -2497,7 +2501,7 @@ function startChordPlaying(){
 function pauseChordPlaying(){
   chordPlayState = 'stopped';
   playBtn.textContent = '▶';
-  playBtn.title = 'تشغيل';
+  playBtn.title = (window.oudLanguage === 'en') ? 'Play' : 'تشغيل';
 }
 
 function resumeChordPlaying(){
@@ -2510,7 +2514,7 @@ function resetChordPlayer(){
     currentChordSustain.handles.forEach(h => stopSustainedNote(h));
     currentChordSustain = null;
   }
-  if (playBtn){ playBtn.textContent = '▶'; playBtn.title = 'تشغيل'; }
+  if (playBtn){ playBtn.textContent = '▶'; playBtn.title = (window.oudLanguage === 'en') ? 'Play' : 'تشغيل'; }
   if (stopBtn) stopBtn.disabled = true;
   if (window.selectedChord) renderChordHighlight(window.selectedChord.positions, false);
 }
@@ -2752,6 +2756,7 @@ oudSvg.appendChild(chordHighlightLayer);
 oudSvg.appendChild(oudControlBtnsLayer);
 
 const arabicNum = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','١٠','١١','١٢','١٣'];
+const englishNum = ['0','1','2','3','4','5','6','7','8','9','10','11','12','13'];
 
 function buildOudStatic(){
   const g2 = oudStatic;
@@ -2783,7 +2788,7 @@ function buildOudStatic(){
     const yTop = OUD.neckTopY(x), yBot = OUD.neckBottomY(x);
     g2.appendChild(el('line', { x1:x,y1:yTop,x2:x,y2:yBot, stroke:'#111','stroke-width':1.6 }));
     const label = el('text', { x:x, y:yTop-16, fill:'#111', 'font-size':'34', 'font-family':"Arial, 'Segoe UI', Tahoma, sans-serif", 'font-weight':'700', 'text-anchor':'middle' });
-    label.textContent = arabicNum[n];
+    label.textContent = (window.oudLanguage === 'en') ? englishNum[n] : arabicNum[n];
     g2.appendChild(label);
   }
 
@@ -3039,7 +3044,9 @@ function buildOudStatic(){
       t.setAttribute('font-size', String(24 * handScale));
       t.setAttribute('font-weight', '800');
       t.setAttribute('fill', '#ffffff');
-      t.textContent = window.isLeftHanded ? 'يسار' : 'يمين';
+      t.textContent = (window.oudLanguage === 'en')
+        ? (window.isLeftHanded ? 'Left' : 'Right')
+        : (window.isLeftHanded ? 'يسار' : 'يمين');
       hg.appendChild(t);
       hg.addEventListener('click', () => {
         const newIsLeft = !window.isLeftHanded;
@@ -3080,7 +3087,9 @@ function buildOudStatic(){
       t.setAttribute('font-size', String(22 * handScale));
       t.setAttribute('font-weight', '800');
       t.setAttribute('fill', '#ffffff');
-      t.textContent = (OUD.STRING_COUNT === 6 ? '6 أوتار' : '5 أوتار');
+      t.textContent = (window.oudLanguage === 'en')
+        ? (OUD.STRING_COUNT === 6 ? '6 Strings' : '5 Strings')
+        : (OUD.STRING_COUNT === 6 ? '6 أوتار' : '5 أوتار');
       sg.appendChild(t);
       sg.addEventListener('click', () => {
         const newCount = (OUD.STRING_COUNT === 6) ? 5 : 6;
@@ -3134,7 +3143,7 @@ function buildOudStatic(){
     }, { once: true });
   }
 
-  const stringNames = ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
+  const stringNames = (window.oudLanguage === 'en') ? ['Fa','La','Re','Sol','Do','Fa'] : ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
   const rectSlope = (neckJointTopEndY - neckYTopAtNut) / (NECK_JOINT_END_X - OUD.VISUAL_NUT_X);
   const lineLen = 80;
 
@@ -3188,10 +3197,8 @@ function buildOudStatic(){
   // ٤ عناصر متباعدة بالتساوي (نفس قيمة gap بين كل وحدة والثانية): [نصوص الحقوق] - [تواصل] - [تقييم] - [شعار الرؤية]
   // ملاحظة: صورة شعار الرؤية فيها هامش فاضي داخلي (الشعار الفعلي أصغر من الصندوق المعلن 280×280)، فنعوّض عنه هنا عشان تكون المسافة البصرية متساوية فعلياً لا المسافة النظرية بس
   const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
-  const copyrightTextMaxW = 258; // أطول سطر بنصوص الحقوق فعلياً (نستخدمه بدل عرض الزر لضمان تباعد صحيح)
   const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
   const btnX2 = ratingBtnX2 - gap - btnW;
-  const boxX2 = btnX2 - gap - copyrightTextMaxW - gap;
   const visionImg = el('image', {
     x: visionX, y: visionY,
     width: visionSize, height: visionSize,
@@ -3232,7 +3239,7 @@ function buildOudStatic(){
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'32', 'font-weight':'800', fill:'#1b1410'
   });
-  btnText.textContent = '📱 تواصل';
+  btnText.textContent = (window.oudLanguage === 'en') ? '📱 Contact' : '📱 تواصل';
   contactG.appendChild(btnRect);
   contactG.appendChild(btnText);
   oudFooterGroup.appendChild(contactG);
@@ -3250,55 +3257,75 @@ function buildOudStatic(){
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'32', 'font-weight':'800', fill:'#1b1410'
   });
-  ratingText.textContent = '⭐ تقييم';
+  ratingText.textContent = (window.oudLanguage === 'en') ? '⭐ Rate' : '⭐ تقييم';
   ratingG.appendChild(ratingRect);
   ratingG.appendChild(ratingText);
   oudFooterGroup.appendChild(ratingG);
 
   // الكتابة تبدأ من أول موقع الحقوق الجديد (بدون إزاحات قديمة كانت محسوبة لتخطيط الثلاث عناصر السابق)
   const cpHandOffset = window.isLeftHanded ? 322 : 0; // تعويض تجريبي خاص بوضع اليسار (الانعكاس يتصرف مختلف مع هالنص تحديداً)
-  const cpRightX = boxX2 + cpHandOffset;
 
-  const copyrightG = el('g', {});
+  const copyrightG = el('g', (window.oudLanguage === 'en') ? { direction: 'ltr' } : {});
 
   const cp1 = el('text', {
-    x: cpRightX, y: cpStartY,
+    x: 0, y: cpStartY,
     'text-anchor':'start',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'24', 'font-weight':'700', fill:'#222',
   });
-  cp1.textContent = 'جميع الحقوق محفوظة';
+  cp1.textContent = (window.oudLanguage === 'en') ? 'All rights reserved' : 'جميع الحقوق محفوظة';
   copyrightG.appendChild(cp1);
 
   const cp2 = el('text', {
-    x: cpRightX, y: cpStartY + lineH,
+    x: 0, y: cpStartY + lineH,
     'text-anchor':'start',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'22', 'font-weight':'700', fill:'#222',
   });
-  cp2.textContent = 'الهيئة السعودية للملكية الفكرية';
+  cp2.textContent = (window.oudLanguage === 'en') ? 'Saudi Authority for Intellectual Property' : 'الهيئة السعودية للملكية الفكرية';
   copyrightG.appendChild(cp2);
 
   const cpName = el('text', {
-    x: cpRightX, y: cpStartY + lineH * 2,
+    x: 0, y: cpStartY + lineH * 2,
     'text-anchor':'start',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'22', 'font-weight':'700', fill:'#222',
   });
-  cpName.textContent = 'بإسم: يوسف احمد باجبير';
+  cpName.textContent = (window.oudLanguage === 'en') ? 'By: Yousef Ahmed Bajubair' : 'بإسم: يوسف احمد باجبير';
   copyrightG.appendChild(cpName);
 
   const cp3 = el('text', {
-    x: cpRightX, y: cpStartY + lineH * 3,
+    x: 0, y: cpStartY + lineH * 3,
     'text-anchor':'start',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
     'font-size':'22', 'font-weight':'700', fill:'#222',
   });
-  cp3.textContent = 'رقم التسجيل: \u200E26-12-90269610';
+  cp3.textContent = (window.oudLanguage === 'en') ? 'Registration No: \u200E26-12-90269610' : 'رقم التسجيل: \u200E26-12-90269610';
   copyrightG.appendChild(cp3);
 
   oudFooterGroup.appendChild(copyrightG);
   g2.appendChild(oudFooterGroup);
+
+  // نقيس عرض النص الفعلي من المتصفح (بعد ما صار جزء من الصفحة الحية) بدل تخمين عرض ثابت — يضمن دقة تامة لأي طول نص بأي لغة
+  let copyrightTextMaxW = 258; // احتياطي لو فشل القياس لأي سبب
+  try {
+    copyrightTextMaxW = Math.max(
+      cp1.getComputedTextLength(), cp2.getComputedTextLength(),
+      cpName.getComputedTextLength(), cp3.getComputedTextLength()
+    );
+  } catch(e) {}
+  const boxX2 = btnX2 - gap - copyrightTextMaxW;
+  const cpRightX = boxX2 + cpHandOffset;
+  [cp1, cp2, cpName, cp3].forEach(t => t.setAttribute('x', cpRightX));
+
+  // تعويض مباشر ومبسّط لوضعي اليمين واليسار بالإنجليزي (كل وضع له قيمة منفصلة، حسب الاختبار الفعلي)
+  if (window.oudLanguage === 'en') {
+    if (!window.isLeftHanded) {
+      copyrightG.setAttribute('transform', `translate(${2 * gap * 3}, 0)`);
+    } else {
+      copyrightG.setAttribute('transform', `translate(${-gap * 5.5}, 0)`);
+    }
+  }
 
   // ربط النقر بزر التقييم (يفتح مودال التقييم، ويوقف أي صوت شغال أول)
   ratingG.addEventListener('click', () => {
@@ -3886,7 +3913,7 @@ function startPlaying(){
   stepDirections = new Map();
   playerState = 'playing';
   playBtn.textContent = '⏸';
-  playBtn.title = 'إيقاف مؤقت';
+  playBtn.title = (window.oudLanguage === 'en') ? 'Pause' : 'إيقاف مؤقت';
   stopBtn.disabled = false;
   rewindBtn.disabled = false;
   updateProgressBar();
@@ -3898,13 +3925,13 @@ function pausePlaying(){
   playerState = 'paused';
   if(pendingTimeoutId) clearTimeout(pendingTimeoutId);
   playBtn.textContent = '▶';
-  playBtn.title = 'استئناف';
+  playBtn.title = (window.oudLanguage === 'en') ? 'Resume' : 'استئناف';
 }
 
 function resumePlaying(){
   playerState = 'playing';
   playBtn.textContent = '⏸';
-  playBtn.title = 'إيقاف مؤقت';
+  playBtn.title = (window.oudLanguage === 'en') ? 'Pause' : 'إيقاف مؤقت';
   scheduleNextStep(getStepDuration());
 }
 
@@ -3915,7 +3942,7 @@ function resetPlayer(){
   stepIndex = 0;
   stepDirections = new Map();
   playBtn.textContent = '▶';
-  playBtn.title = 'تشغيل';
+  playBtn.title = (window.oudLanguage === 'en') ? 'Play' : 'تشغيل';
   playBtn.disabled = false;
   stopBtn.disabled = true;
   rewindBtn.disabled = true;
@@ -4034,7 +4061,7 @@ if (westernGuideBtn && westernGuideModal) {
     const FAMILY_NAME_EN = {
       "الراست": "Rast", "البياتي": "Bayati", "الكرد": "Kurd", "الحجاز": "Hijaz",
       "النهاوند": "Nahawand", "السيكاه": "Sikah", "الصبا": "Saba",
-      "النوا أثر": "Nawa Athar", "العجم": "Ajam"
+      "النوا أثر": "Nawa Athar", "العجم": "Ajam", "أخرى": "Other"
     };
 
     // أسماء المقامات الفرعية — مؤكدة فقط من فهرس Maqam World الرسمي (maqamworld.com)، بدون أي تخمين
@@ -4054,6 +4081,7 @@ if (westernGuideBtn && westernGuideModal) {
       "الشاهناز الكردي": "Shahnaz Kurdi", "الطرز نوين": "Tarz Nawin", "النهاوند ذو الحساس": "Nahawand Dhu al-Hasas",
       "النهاوند الكردي": "Nahawand Kurdi", "الطرز الجديد": "Tarz Jadid", "الطرز الجديد شكل آخر": "Tarz Jadid 2"
     };
+    window.MAQAM_NAME_EN = MAQAM_NAME_EN;
 
     const maqamat = {
       "الراست":    ["الراست","السوزناك","السوزدلار","النيرز راست","راست البشاير","الماهور","الدلنشين"],
@@ -4073,6 +4101,80 @@ if (westernGuideBtn && westernGuideModal) {
         const lbl = document.querySelector(`label[for="${r.id}"]`);
         if (lbl && FAMILY_NAME_EN[lbl.textContent]) lbl.textContent = FAMILY_NAME_EN[lbl.textContent];
       });
+    }
+
+    // ترجمة شاملة لعناصر الواجهة الرئيسية المشتركة (أزرار التبويب، المشغل، الدوزان، السرعة، أزرار القوائم)
+    if (window.oudLanguage === 'en') {
+      // أسماء التبويبين (عربي/غربي) — نترجمها هنا فقط، وأي تحديث ديناميكي لاحق (زي currentPageLabel) يسحب منها القيمة المترجمة تلقائياً
+      document.querySelectorAll('.site-tab-btn .tab-title').forEach(el => {
+        if (el.textContent.trim() === 'المقامات الغربية') el.textContent = 'Western Scales';
+        else if (el.textContent.trim() === 'المقامات العربية') el.textContent = 'Arabic Maqamat';
+      });
+      const curPageLbl = document.getElementById('currentPageLabel');
+      if (curPageLbl) {
+        if (curPageLbl.textContent.trim() === 'المقامات الغربية') curPageLbl.textContent = 'Western Scales';
+        else if (curPageLbl.textContent.trim() === 'المقامات العربية') curPageLbl.textContent = 'Arabic Maqamat';
+      }
+      // زرا فتح القوائم (عربي وغربي)
+      const menuBtnAr = document.getElementById('menuToggle');
+      if (menuBtnAr) menuBtnAr.textContent = '☰ Choose Maqam';
+      const menuBtnWest = document.getElementById('c-menuToggle');
+      if (menuBtnWest) menuBtnWest.textContent = '☰ Choose from Circle';
+      // أزرار المشغل (Tooltips)
+      const btnTitles = {
+        'shared-playBtn': 'Play', 'shared-stopBtn': 'Stop',
+        'shared-rewindBtn': 'Restart', 'shared-repeatBtn': 'Repeat'
+      };
+      Object.keys(btnTitles).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.title = btnTitles[id];
+      });
+      // تسميتا الدوزان والسرعة
+      const tuningLbl = document.querySelector('label[for="shared-tuningSelect"]');
+      if (tuningLbl) tuningLbl.textContent = 'Tuning: ';
+      const speedLbl = document.querySelector('label[for="shared-speedRange"]');
+      if (speedLbl) speedLbl.textContent = 'Speed: ';
+      // خيارات قائمة الدوزان
+      const tuningSelEl = document.getElementById('shared-tuningSelect');
+      if (tuningSelEl) {
+        const tuningTextMap = {
+          'عالمي (440 Hz)': 'Universal (440 Hz)',
+          'ناقص نصف تون (415 Hz)': 'Half Tone Down (415 Hz)',
+          'ناقص تون كامل (392 Hz)': 'Whole Tone Down (392 Hz)',
+          'ناقص تون ونصف (370 Hz)': 'One and a Half Tones Down (370 Hz)'
+        };
+        Array.from(tuningSelEl.options).forEach(opt => {
+          if (tuningTextMap[opt.textContent]) opt.textContent = tuningTextMap[opt.textContent];
+        });
+      }
+      // أزرار +/- السرعة
+      const speedMinusEl = document.getElementById('shared-speedMinus');
+      if (speedMinusEl) speedMinusEl.setAttribute('aria-label', 'Decrease Speed');
+      const speedPlusEl = document.getElementById('shared-speedPlus');
+      if (speedPlusEl) speedPlusEl.setAttribute('aria-label', 'Increase Speed');
+      // نافذة التقييم
+      document.querySelectorAll('h3').forEach(h => { if (h.textContent.trim() === 'قيّم الموقع') h.textContent = 'Rate the Website'; });
+      document.querySelectorAll('p').forEach(p => { if (p.textContent.trim() === 'رأيك يهمنا ويساعد الآخرين') p.textContent = 'Your opinion matters and helps others'; });
+      const ratingThankYouEl = document.getElementById('ratingThankYou');
+      if (ratingThankYouEl) ratingThankYouEl.textContent = '✅ Thanks for your rating!';
+      const ratingLoadingEl = document.getElementById('ratingLoadingMsg');
+      if (ratingLoadingEl) ratingLoadingEl.textContent = 'Loading ratings...';
+      const ratingConfirmEl = document.getElementById('ratingConfirmBtn');
+      if (ratingConfirmEl) ratingConfirmEl.textContent = '✓ Confirm Rating';
+      const ratingHintEl = document.getElementById('ratingStarsHint');
+      if (ratingHintEl) ratingHintEl.textContent = 'Tap the stars to choose your rating';
+      const ratingContactEl = document.getElementById('ratingContactLink');
+      if (ratingContactEl) ratingContactEl.textContent = 'Have feedback or a suggestion? Contact us 💬';
+      // بادئات أزرار دليل/أبعاد المقام (النص الثابت قبل اسم المقام نفسه)
+      const maqamIntervalsBtnEl = document.getElementById('maqamIntervalsBtn');
+      if (maqamIntervalsBtnEl && maqamIntervalsBtnEl.firstChild) maqamIntervalsBtnEl.firstChild.textContent = 'Intervals of ';
+      const maqamGuideBtnEl = document.getElementById('maqamGuideBtn');
+      if (maqamGuideBtnEl && maqamGuideBtnEl.firstChild) maqamGuideBtnEl.firstChild.textContent = 'Guide for ';
+      const westernGuideBtnEl = document.getElementById('westernGuideBtn');
+      if (westernGuideBtnEl && westernGuideBtnEl.firstChild) westernGuideBtnEl.firstChild.textContent = 'Guide for ';
+      // "جزيرة" LTR لصف الدوزان والسرعة بالمشغل، عشان ترتيب العناصر يتماشى مع اتجاه القراءة الإنجليزية
+      const tuningRowEl = document.querySelector('.tuning-row');
+      if (tuningRowEl) { tuningRowEl.setAttribute('dir', 'ltr'); tuningRowEl.style.direction = 'ltr'; tuningRowEl.style.justifyContent = 'flex-start'; }
     }
 
     const defaultHarf = {
@@ -5268,7 +5370,7 @@ if (westernGuideBtn && westernGuideModal) {
       const btnName = document.getElementById('maqamIntervalsBtnName');
       if (!title) return;
 
-      btnName.textContent = maqamName;
+      btnName.textContent = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqamName]) ? window.MAQAM_NAME_EN[maqamName] : maqamName;
       maqamIntervalsBtn.style.display = '';
       void maqamIntervalsBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
       maqamIntervalsBtn.style.opacity = '0.999';
@@ -5276,9 +5378,17 @@ if (westernGuideBtn && westernGuideModal) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => { maqamIntervalsBtn.style.opacity = '1'; });
       });
-      title.innerHTML = `ابعاد مقام <strong>${maqamName}</strong> &nbsp;<span style="font-weight:600;color:#555">(بأرباع التون)</span>`;
+      const displayMaqamName = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqamName]) ? window.MAQAM_NAME_EN[maqamName] : maqamName;
+      const mitTable = document.getElementById('maqamIntervalsTable');
+      if (mitTable) mitTable.style.direction = (window.oudLanguage === 'en') ? 'ltr' : 'rtl';
+      title.innerHTML = (window.oudLanguage === 'en')
+        ? `Intervals of <strong>${displayMaqamName}</strong> &nbsp;<span style="font-weight:600;color:#555">(in quarter-tones)</span>`
+        : `ابعاد مقام <strong>${maqamName}</strong> &nbsp;<span style="font-weight:600;color:#555">(بأرباع التون)</span>`;
 
-      const names = ['الأول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن'];
+      const names = (window.oudLanguage === 'en')
+        ? ['First','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth']
+        : ['الأول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن'];
+      const dimensionLabel = (window.oudLanguage === 'en') ? 'Interval' : 'البعد';
       const headerRow = document.createElement('div');
       headerRow.className = 'mit-header-row';
       headerRow.style.direction = 'ltr';
@@ -5290,7 +5400,7 @@ if (westernGuideBtn && westernGuideModal) {
         const hCell = document.createElement('div');
         hCell.className = 'mit-cell header';
         hCell.style.lineHeight = '1.3';
-        hCell.innerHTML = `<span style="display:block">البعد</span><span style="display:block">${names[i] || (i+1)}</span>`;
+        hCell.innerHTML = `<span style="display:block">${dimensionLabel}</span><span style="display:block">${names[i] || (i+1)}</span>`;
         headerRow.appendChild(hCell);
         const vCell = document.createElement('div');
         vCell.className = 'mit-cell value';
@@ -5323,7 +5433,7 @@ if (westernGuideBtn && westernGuideModal) {
         drawArabicMaqam(harf, intervals);
         renderIntervalsTable(maqam, intervals);
         // زر الدليل
-        maqamGuideBtnName.textContent = maqam;
+        maqamGuideBtnName.textContent = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) ? window.MAQAM_NAME_EN[maqam] : maqam;
         if (MAQAM_GUIDE_FILES[maqam]) {
           maqamGuideImg.src = MAQAM_GUIDE_FILES[maqam];
           maqamGuideBtn.style.display = '';
@@ -5631,7 +5741,9 @@ document.getElementById('shared-playBtn').onclick = async function() {
           selectedRatingValue = parseInt(wrap.dataset.value);
           fillStarsVisual(selectedRatingValue);
           setConfirmBtnEnabled(confirmBtn, true);
-          document.getElementById('ratingStarsHint').textContent = 'اضغط "تأكيد التقييم" لإرسال تقييمك، أو اختر نجمة ثانية للتعديل';
+          document.getElementById('ratingStarsHint').textContent = (window.oudLanguage === 'en')
+            ? 'Press "Confirm Rating" to submit, or pick a different star to change it'
+            : 'اضغط "تأكيد التقييم" لإرسال تقييمك، أو اختر نجمة ثانية للتعديل';
         });
       });
       confirmBtn.addEventListener('click', () => {
