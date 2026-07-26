@@ -250,11 +250,6 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
 
-@media (max-width:767px) and (orientation:portrait){
-  /* نفرض تخطيط صفين × زرين لأزرار نوع السلم (Major/Minor...) بوضع الجوال العمودي — بغض النظر عن اللغة أو طول النص (زي "Harmonic Minor" الإنجليزي)، عشان تبقى مطابقة لما تظهر بالعربي */
-  .scale-buttons{ display:grid !important; grid-template-columns:1fr 1fr !important; gap:5px !important; justify-content:center !important; }
-}
-
 @media (max-width:600px){
   .shared-oud-area .audio-player{ max-width: 95vw !important; }
   .tuning-row { flex-wrap: wrap !important; gap: 3px !important; }
@@ -754,7 +749,7 @@ flex-shrink: 0;
   .c-selection-summary > *{ pointer-events: auto; }
 
   /* ===== أزرار اختيار نوع السلم ===== */
-  .scale-buttons{ display:grid; grid-template-columns:1fr 1fr; gap:5px; justify-content:center; }
+  .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
   .scale-btn{
     background:#f5f1ea;
     color: #5a4a35;
