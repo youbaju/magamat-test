@@ -250,6 +250,11 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
 
+@media (max-width:767px) and (orientation:portrait){
+  /* نفرض تخطيط صفين × زرين لأزرار نوع السلم (Major/Minor...) بوضع الجوال العمودي — بغض النظر عن اللغة أو طول النص (زي "Harmonic Minor" الإنجليزي)، عشان تبقى مطابقة لما تظهر بالعربي */
+  .scale-buttons{ display:grid !important; grid-template-columns:1fr 1fr !important; gap:5px !important; justify-content:center !important; }
+}
+
 @media (max-width:600px){
   .shared-oud-area .audio-player{ max-width: 95vw !important; }
   .tuning-row { flex-wrap: wrap !important; gap: 3px !important; }
@@ -1428,6 +1433,8 @@ input[type="radio"] {
     <button class="help-close-btn" id="helpCloseBtn" onclick="document.getElementById('page-help').style.display='none';">✕ إغلاق</button>
     <h2 class="help-title">دليل استخدام الموقع</h2>
 
+    <p style="text-align:center;font-size:0.9rem;color:#555;margin:-0.5rem 0 1rem">🌐 يوجد زر لتبديل لغة الموقع بين العربية والإنجليزية ضمن أزرار التحكم.</p>
+
     <div class="help-section">
       <h3>١. اختيار نوع المقامات</h3>
       <p>عند فتح الموقع ستجد تبويباً في أعلى اليسار للتبديل بين <strong>المقامات العربية</strong> و<strong>المقامات الغربية</strong>. ابدأ باختيار النوع الذي تريد استكشافه. علماً بأن الاختيار الافتراضي لهذا التبويب هو <strong>المقامات العربية</strong>.</p>
@@ -1549,6 +1556,8 @@ input[type="radio"] {
   <div class="help-page-content">
     <button class="help-close-btn" id="helpCloseBtnEn" onclick="document.getElementById('page-help-en').style.display='none';">✕ Close</button>
     <h2 class="help-title">Website User Guide</h2>
+
+    <p style="text-align:center;font-size:0.9rem;color:#555;margin:-0.5rem 0 1rem">🌐 There's a button to switch the site language between Arabic and English among the control buttons.</p>
 
     <div class="help-section">
       <h3>1. Choosing the Maqam Type</h3>
@@ -2495,16 +2504,29 @@ function selectChord(ch, btnEl){
 function startChordPlaying(){
   if (!window.selectedChord) return;
   if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote(); // نوقف أي نغمة مفردة شغالة لحالها قبل التشغيل الجماعي
-  window.selectedChord.positions.forEach(pos => {
-    const freq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
-    if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
-    if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq); // نفس العينات الحقيقية المستخدمة بتشغيل السلم العادي، بضغطة وحدة تشتغل وتخلص طبيعياً
-  });
-  renderChordHighlight(window.selectedChord.positions, true);
-  // نضيء لثانيتين تقريباً (مدة العينة الطبيعية تقريباً) ثم نرجع الإضاءة للوضع العادي، بدون حالة "إيقاف مؤقت" لأن التشغيل بضغطة وحدة بس
-  setTimeout(() => {
-    if (window.selectedChord) renderChordHighlight(window.selectedChord.positions, false);
-  }, 2000);
+
+  const playNow = () => {
+    if (!window.selectedChord) return; // تحسباً لو المستخدم غيّر الاختيار أثناء انتظار التحميل
+    window.selectedChord.positions.forEach(pos => {
+      const freq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
+      if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
+      if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq); // نفس العينات الحقيقية المستخدمة بتشغيل السلم العادي، بضغطة وحدة تشتغل وتخلص طبيعياً
+    });
+    renderChordHighlight(window.selectedChord.positions, true);
+    // نضيء لثانيتين تقريباً (مدة العينة الطبيعية تقريباً) ثم نرجع الإضاءة للوضع العادي، بدون حالة "إيقاف مؤقت" لأن التشغيل بضغطة وحدة بس
+    setTimeout(() => {
+      if (window.selectedChord) renderChordHighlight(window.selectedChord.positions, false);
+    }, 2000);
+  };
+
+  // ننتظر اكتمال تحميل عينات العود قبل ما نشغّل أي نغمة من الكورد — لو ما انتظرنا،
+  // أول ضغطة بالجلسة تشغّل نغمة أو نغمتين بالصوت الاصطناعي الاحتياطي (لأن التحميل
+  // لسا ما خلص) بينما البقية تنتظر العينة الحقيقية، فيطلع الكورد مو متجانس أول مرة
+  if (typeof window.ensureOudSamplesLoaded === 'function') {
+    window.ensureOudSamplesLoaded().then(playNow);
+  } else {
+    playNow();
+  }
 }
 
 function pauseChordPlaying(){
@@ -5119,6 +5141,18 @@ if (westernGuideBtn && westernGuideModal) {
       console.log('Oud samples loaded:', Object.keys(oudBuffers).length, '/', OUD_SAMPLES.length);
     }
 
+    // نكشفها عالمياً (window) عشان أي جزء ثاني بالكود (زي مشغّل الكوردات) يقدر ينتظر اكتمال
+    // تحميل العينات قبل ما يشغّل أي نغمة، بدل ما تشتغل نغمات متفرقة ببعض بالصوت الاصطناعي
+    // الاحتياطي لحد ما التحميل يخلص (هذا كان سبب سماع الكورد بشكل مختلف أول مرة)
+    window.ensureOudSamplesLoaded = function() {
+      if (samplesLoaded || samplesLoadGaveUp) return Promise.resolve();
+      if (!samplesLoading) return loadOudSamples();
+      return new Promise(resolve => {
+        const check = () => { (samplesLoading) ? setTimeout(check, 50) : resolve(); };
+        check();
+      });
+    };
+
     // إيجاد أقرب sample للنغمة المطلوبة — يبحث بالمدى الكامل (كل العينات المتاحة
     // بأي أوكتاف)، مباشرة وبدون أي التفاف/تدوير وهمي. التسريع المطلوب (playbackRate)
     // دايماً يساوي 2^((الموضع المطلوب - موضع العينة الحقيقي)/24)، بغض النظر عن
@@ -5467,7 +5501,9 @@ if (westernGuideBtn && westernGuideModal) {
         const hCell = document.createElement('div');
         hCell.className = 'mit-cell header';
         hCell.style.lineHeight = '1.3';
-        hCell.innerHTML = `<span style="display:block">${dimensionLabel}</span><span style="display:block">${names[i] || (i+1)}</span>`;
+        hCell.innerHTML = (window.oudLanguage === 'en')
+          ? `<span style="display:block">${names[i] || (i+1)}</span><span style="display:block">${dimensionLabel}</span>`
+          : `<span style="display:block">${dimensionLabel}</span><span style="display:block">${names[i] || (i+1)}</span>`;
         headerRow.appendChild(hCell);
         const vCell = document.createElement('div');
         vCell.className = 'mit-cell value';
