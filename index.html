@@ -1139,33 +1139,43 @@ flex-shrink: 0;
   scroll-margin-top: 10px; /* عشان العنوان ما يلزق تماماً بأعلى الحاوية بعد القفز إليه من الفهرس */
 }
 .help-toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  margin: 0 0 18px;
-  padding: 10px;
+  margin: 0 0 20px;
+  padding: 14px 18px;
   background: #faf6ee;
   border: 1px solid #e3d5b8;
   border-radius: 10px;
 }
-.help-toc-item {
+.help-toc-title {
   font-family: 'Cairo', Arial, sans-serif;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 1rem;
   color: #5c3414;
-  background: #fff;
-  border: 1px solid #cbb789;
-  border-radius: 20px;
-  padding: 4px 11px;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.help-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 20px;
+}
+.help-toc-item {
+  display: block;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.85rem;
+  color: #1a6fa8;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  padding: 4px 0;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background .15s, color .15s;
+  border: none;
+  background: none;
+  text-align: start;
+  break-inside: avoid;
 }
 .help-toc-item:hover, .help-toc-item:active {
-  background: #c9a227;
-  color: #fff;
-  border-color: #c9a227;
+  color: #c9342b;
 }
 .help-section h3 {
   color: #5c3414;
@@ -1503,21 +1513,24 @@ input[type="radio"] {
     <h2 class="help-title">دليل استخدام الموقع</h2>
 
     <div class="help-toc">
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-1')">١. اللغة</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-2')">٢. Do/C</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-3')">٣. نوع المقامات</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-4')">٤. مقام عربي</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-5')">٥. الدليل والأبعاد</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-6')">٦. قراءة الزند</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-7')">٧. تشغيل السلم</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-8')">٨. السلالم الغربية</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-9')">٩. دليل السلم</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-10')">١٠. اليد</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-11')">١١. عدد الأوتار</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-12')">١٢. المساعدة</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-13')">١٣. نغمة فردية</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-14')">١٤. الكوردات</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-15')">١٥. التقييم</span>
+      <div class="help-toc-title">فهرس</div>
+      <ol class="help-toc-list">
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-1')">١. زر تبديل اللغة (AR/EN)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-2')">٢. زر تبديل نظام تسمية النغمات (Do/C)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-3')">٣. اختيار نوع المقامات</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-4')">٤. اختيار المقامات العربية</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-5')">٥. دليل المقام وأبعاده</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-6')">٦. قراءة زند العود</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-7')">٧. تشغيل السلم</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-8')">٨. المقامات الغربية</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-9')">٩. دليل السلم الغربي</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-10')">١٠. اختيار اليد اليمنى أو اليسرى</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-11')">١١. زر عدد الأوتار (5 أو 6)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-12')">١٢. زر المساعدة (؟)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-13')">١٣. سماع نغمة فردية بالضغط عليها</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-14')">١٤. كوردات السلالم الغربية</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-15')">١٥. تقييم الموقع</li>
+      </ol>
     </div>
 
     <div class="help-section" id="help-sec-ar-1">
@@ -1658,21 +1671,24 @@ input[type="radio"] {
     <h2 class="help-title">Website User Guide</h2>
 
     <div class="help-toc">
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-1')">1. Language</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-2')">2. Do/C</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-3')">3. Maqam Type</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-4')">4. Arabic Maqam</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-5')">5. Guide &amp; Intervals</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-6')">6. Fretboard</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-7')">7. Play Scale</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-8')">8. Western Scales</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-9')">9. Scale Guide</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-10')">10. Hand</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-11')">11. String Count</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-12')">12. Help</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-13')">13. Single Note</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-14')">14. Chords</span>
-      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-15')">15. Rating</span>
+      <div class="help-toc-title">Index</div>
+      <ol class="help-toc-list">
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-1')">1. Language Toggle Button (AR/EN)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-2')">2. Note-Naming System Toggle (Do/C)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-3')">3. Choosing the Maqam Type</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-4')">4. Choosing an Arabic Maqam</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-5')">5. Maqam Guide and Intervals</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-6')">6. Reading the Oud Fretboard</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-7')">7. Playing the Scale</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-8')">8. Western Scales</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-9')">9. Western Scale Guide</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-10')">10. Choosing Right or Left Hand</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-11')">11. String Count Button (5 or 6)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-12')">12. Help Button (?)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-13')">13. Playing a Single Note by Tapping</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-14')">14. Western Scale Chords</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-15')">15. Rating the Website</li>
+      </ol>
     </div>
 
     <div class="help-section" id="help-sec-en-1">
