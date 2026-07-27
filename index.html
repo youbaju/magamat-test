@@ -2355,18 +2355,18 @@ for (let i = 0; i < 12; i++) {
     const posTop = polarToXY(CX, CY, rTop, midAngle);
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
-    const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex });
+    const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
-    const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex });
+    const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMajor = polarToXY(CX, CY, (R_OUTER+R_OUTER_IN)/2, midAngle);
-    const labelMajor = el('text', { x:labelPosMajor.x, y:labelPosMajor.y, class:'circle-label' });
+    const labelMajor = el('text', { x:labelPosMajor.x, y:labelPosMajor.y, class:'circle-label', 'data-i': i });
     labelMajor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MAJOR[i] : CIRCLE_LATIN_MAJOR[i];
     segGroup.appendChild(labelMajor);
   }
@@ -2379,22 +2379,45 @@ for (let i = 0; i < 12; i++) {
     const posTop = polarToXY(CX, CY, rTop, midAngle);
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
-    const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex });
+    const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
-    const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex });
+    const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMinor = polarToXY(CX, CY, (R_INNER+R_INNER_IN)/2, midAngle);
-    const labelMinor = el('text', { x:labelPosMinor.x, y:labelPosMinor.y, class:'circle-label minor' });
+    const labelMinor = el('text', { x:labelPosMinor.x, y:labelPosMinor.y, class:'circle-label minor', 'data-i': i });
     labelMinor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MINOR[i] : CIRCLE_LATIN_MINOR[i];
     segGroup.appendChild(labelMinor);
   }
 }
+
+// تحديث كل تسميات دائرة الأرباع/الأخماس حياً (بدون إعادة رسم الدائرة كاملة) — تُستخدم عند تبديل نظام تسمية النغمات (Do/C)
+window.refreshCircleLabels = function(){
+  document.querySelectorAll('.circle-label').forEach(elLbl => {
+    const i = parseInt(elLbl.dataset.i);
+    const isDual = elLbl.classList.contains('dual-label');
+    const isMinor = elLbl.classList.contains('minor');
+    const useSolfege = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege');
+    if (isDual) {
+      const scaleType = elLbl.dataset.scaleType;
+      const letterIdx = parseInt(elLbl.dataset.letterIdx);
+      const seg = DUAL_NAME_SEGMENTS[scaleType === 'major' ? 'major' : 'minor'][i];
+      if (!seg) return;
+      const nameObj = seg.find(n => n.letterIndex === letterIdx) || seg[0];
+      elLbl.textContent = useSolfege ? nameObj.labelSolfege : nameObj.label;
+    } else if (!isNaN(i)) {
+      const arr = isMinor
+        ? (useSolfege ? CIRCLE_SOLFEGE_MINOR : CIRCLE_LATIN_MINOR)
+        : (useSolfege ? CIRCLE_SOLFEGE_MAJOR : CIRCLE_LATIN_MAJOR);
+      elLbl.textContent = arr[i];
+    }
+  });
+};
 
 function updateCircleHighlight(){
   majorSegments.forEach(seg => {
@@ -2811,8 +2834,8 @@ window.oudCurrentStringCount = window.oudStringMode; // متغيّر عالمي 
 // نظام اللغة: نقرأ آخر لغة اختارها المستخدم (localStorage، تدوم حتى بعد إغلاق المتصفح)، والعربي افتراضي لأول زيارة
 window.oudLanguage = localStorage.getItem('oudLanguagePref') || 'ar';
 
-// نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي، أو حرفي (C D E)
-window.oudNoteSystem = localStorage.getItem('oudNoteSystemPref') || 'solfege';
+// نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي — يُحفظ بـsessionStorage عشان يفضل مع تبديلات زي عدد الأوتار، بس يُمسح صراحة عند تبديل اللغة (كود منفصل بزر اللغة)
+window.oudNoteSystem = sessionStorage.getItem('oudNoteSystemPref') || 'solfege';
 
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
@@ -3340,6 +3363,7 @@ function buildOudStatic(){
         localStorage.setItem('oudLanguagePref', newLang);
         window.oudLanguage = newLang;
         sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ عشان يرجع كل شي للافتراضي بعد تبديل اللغة
+        sessionStorage.removeItem('oudNoteSystemPref'); // نمسح نظام تسمية النغمات (Do/C) كمان عشان يرجع لصولفيج الافتراضي بعد تبديل اللغة تحديداً
         window.location.reload();
       });
       return lg;
@@ -3376,9 +3400,14 @@ function buildOudStatic(){
         ng.appendChild(t);
         ng.addEventListener('click', () => {
           const newSystem = (window.oudNoteSystem === 'letter') ? 'solfege' : 'letter';
-          localStorage.setItem('oudNoteSystemPref', newSystem);
           window.oudNoteSystem = newSystem;
-          window.location.reload();
+          sessionStorage.setItem('oudNoteSystemPref', newSystem); // يفضل مع تبديلات الجلسة (زي عدد الأوتار)، بس يُمسح صراحة عند تبديل اللغة
+          t.textContent = (newSystem === 'letter') ? 'C' : 'Do';
+          // نحدّث كل الأماكن المتأثرة حياً بدون إعادة تحميل الصفحة
+          if (typeof window.redrawOudEverything === 'function') window.redrawOudEverything();
+          if (typeof window.renderAll === 'function') window.renderAll();
+          if (typeof window.refreshCircleLabels === 'function') window.refreshCircleLabels();
+          if (typeof window.renderChordsList === 'function' && window.chordModeActive) window.renderChordsList();
         });
         return ng;
       }
@@ -4647,31 +4676,77 @@ if (westernGuideBtn && westernGuideModal) {
     window.updateMaqam = updateMaqam; // نصدّرها للنطاق العام عشان يقدر يوصلها كود بسكربت منفصل (زي زر تبديل التبويب)
 
     const HARF_DISPLAY = {
-      'sol':'صول','solHalfDiaz':'صول نصف دييز','laBimol':'لا بيمول',
-      'laHafBimol':'لا نصف بيمول','la':'لا','laHafDiaz':'لا نصف دييز',
-      'siBimol':'سي بيمول','siHafBimol':'سي نصف بيمول','si':'سي',
-      'doHafBimol':'دو نصف بيمول','do':'دو','doHafDiaz':'دو نصف دييز',
-      'doDiaz':'دو دييز','reHafBimol':'رى نصف بيمول','re':'رى',
-      'reHafDiaz':'رى نصف دييز','miBimol':'مي بيمول','miHafBimol':'مي نصف بيمول',
-      'mi':'مي','miHafDiaz':'مي نصف دييز','fa':'فا','faHafDiaz':'فا نصف دييز',
-      'faDiaz':'فا دييز','solHafBimol':'صول نصف بيمول','solJawab':'صول',
-      'solHalfDiazJawab':'صول نصف دييز','laBimolJawab':'لا بيمول','laHafBimolJawab':'لا نصف بيمول',
-      'laJawab':'لا','laHafDiazJawab':'لا نصف دييز','siBimolJawab':'سي بيمول',
-      'siHafBimolJawab':'سي نصف بيمول','siJawab':'سي','doHafBimolJawab':'دو نصف بيمول','doJawab':'دو',
-      // ===== مواضع 35-47 =====
-      'doHafDiazJawab':'دو نصف دييز','doDiazJawab':'دو دييز','reHafBimolJawab':'رى نصف بيمول',
-      'reJawab':'رى','reHafDiazJawab':'رى نصف دييز','miBimolJawab':'مي بيمول',
-      'miHafBimolJawab':'مي نصف بيمول','miJawab':'مي','miHafDiazJawab':'مي نصف دييز',
-      'faJawab':'فا','faHafDiazJawab':'فا نصف دييز','faDiazJawab':'فا دييز','solHafBimolJawab':'صول نصف بيمول',
-      // ===== مواضع 48-70 (جواب الجواب) =====
-      'solJawabJawab':'صول','solHalfDiazJawabJawab':'صول نصف دييز','laBimolJawabJawab':'لا بيمول',
-      'laHafBimolJawabJawab':'لا نصف بيمول','laJawabJawab':'لا','laHafDiazJawabJawab':'لا نصف دييز',
-      'siBimolJawabJawab':'سي بيمول','siHafBimolJawabJawab':'سي نصف بيمول','siJawabJawab':'سي',
-      'doHafBimolJawabJawab':'دو نصف بيمول','doJawabJawab':'دو','doHafDiazJawabJawab':'دو نصف دييز',
-      'doDiazJawabJawab':'دو دييز','reHafBimolJawabJawab':'رى نصف بيمول','reJawabJawab':'رى',
-      'reHafDiazJawabJawab':'رى نصف دييز','miBimolJawabJawab':'مي بيمول','miHafBimolJawabJawab':'مي نصف بيمول',
-      'miJawabJawab':'مي','miHafDiazJawabJawab':'مي نصف دييز','faJawabJawab':'فا',
-      'faHafDiazJawabJawab':'فا نصف دييز','faDiazJawabJawab':'فا دييز'
+      'sol':'صول',
+      'solHalfDiaz':'صول نصف دييز',
+      'laBimol':'لا بيمول',
+      'laHafBimol':'لا نصف بيمول',
+      'la':'لا',
+      'laHafDiaz':'لا نصف دييز',
+      'siBimol':'سي بيمول',
+      'siHafBimol':'سي نصف بيمول',
+      'si':'سي',
+      'doHafBimol':'دو نصف بيمول',
+      'do':'دو',
+      'doHafDiaz':'دو نصف دييز',
+      'doDiaz':'دو دييز',
+      'reHafBimol':'رى نصف بيمول',
+      're':'رى',
+      'reHafDiaz':'رى نصف دييز',
+      'miBimol':'مي بيمول',
+      'miHafBimol':'مي نصف بيمول',
+      'mi':'مي',
+      'miHafDiaz':'مي نصف دييز',
+      'fa':'فا',
+      'faHafDiaz':'فا نصف دييز',
+      'faDiaz':'فا دييز',
+      'solHafBimol':'صول نصف بيمول',
+      'solJawab':'صول جواب',
+      'solHalfDiazJawab':'صول نصف دييز جواب',
+      'laBimolJawab':'لا بيمول جواب',
+      'laHafBimolJawab':'لا نصف بيمول جواب',
+      'laJawab':'لا جواب',
+      'laHafDiazJawab':'لا نصف دييز جواب',
+      'siBimolJawab':'سي بيمول جواب',
+      'siHafBimolJawab':'سي نصف بيمول جواب',
+      'siJawab':'سي جواب',
+      'doHafBimolJawab':'دو نصف بيمول جواب',
+      'doJawab':'دو جواب',
+      'doHafDiazJawab':'دو نصف دييز جواب',
+      'doDiazJawab':'دو دييز جواب',
+      'reHafBimolJawab':'رى نصف بيمول جواب',
+      'reJawab':'رى جواب',
+      'reHafDiazJawab':'رى نصف دييز جواب',
+      'miBimolJawab':'مي بيمول جواب',
+      'miHafBimolJawab':'مي نصف بيمول جواب',
+      'miJawab':'مي جواب',
+      'miHafDiazJawab':'مي نصف دييز جواب',
+      'faJawab':'فا جواب',
+      'faHafDiazJawab':'فا نصف دييز جواب',
+      'faDiazJawab':'فا دييز جواب',
+      'solHafBimolJawab':'صول نصف بيمول جواب',
+      'solJawabJawab':'صول جواب الجواب',
+      'solHalfDiazJawabJawab':'صول نصف دييز جواب الجواب',
+      'laBimolJawabJawab':'لا بيمول جواب الجواب',
+      'laHafBimolJawabJawab':'لا نصف بيمول جواب الجواب',
+      'laJawabJawab':'لا جواب الجواب',
+      'laHafDiazJawabJawab':'لا نصف دييز جواب الجواب',
+      'siBimolJawabJawab':'سي بيمول جواب الجواب',
+      'siHafBimolJawabJawab':'سي نصف بيمول جواب الجواب',
+      'siJawabJawab':'سي جواب الجواب',
+      'doHafBimolJawabJawab':'دو نصف بيمول جواب الجواب',
+      'doJawabJawab':'دو جواب الجواب',
+      'doHafDiazJawabJawab':'دو نصف دييز جواب الجواب',
+      'doDiazJawabJawab':'دو دييز جواب الجواب',
+      'reHafBimolJawabJawab':'رى نصف بيمول جواب الجواب',
+      'reJawabJawab':'رى جواب الجواب',
+      'reHafDiazJawabJawab':'رى نصف دييز جواب الجواب',
+      'miBimolJawabJawab':'مي بيمول جواب الجواب',
+      'miHafBimolJawabJawab':'مي نصف بيمول جواب الجواب',
+      'miJawabJawab':'مي جواب الجواب',
+      'miHafDiazJawabJawab':'مي نصف دييز جواب الجواب',
+      'faJawabJawab':'فا جواب الجواب',
+      'faHafDiazJawabJawab':'فا نصف دييز جواب الجواب',
+      'faDiazJawabJawab':'فا دييز جواب الجواب'
     };
     window.HARF_DISPLAY = HARF_DISPLAY;
 
@@ -5258,7 +5333,14 @@ if (westernGuideBtn && westernGuideModal) {
           layer.appendChild(label);
           label.setAttribute('data-scale-idx', degIdx);
           label.setAttribute('data-x', x);
-          drawAccidental(layer, isEnglishMode ? (x + 15) : (x - 15), y, acc, degIdx, x);
+          // نحسب مكان الرمز حسب عرض الحرف الفعلي المرسوم (مو مسافة ثابتة)، عشان يبتعد المقدار
+          // الصح لكل حرف — "صول" أطول من باقي الحروف فيحتاج مسافة أكبر، والحروف القصيرة أقل
+          let accCx = isEnglishMode ? (x + 15) : (x - 15);
+          try {
+            const lbbox = label.getBBox();
+            accCx = isEnglishMode ? (lbbox.x + lbbox.width + 9) : (lbbox.x - 9);
+          } catch(e){}
+          drawAccidental(layer, accCx, y, acc, degIdx, x);
         } else {
           const label = document.createElementNS(ns2, 'text');
           label.setAttribute('x', x); label.setAttribute('y', y + 7);
