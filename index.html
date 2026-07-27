@@ -2982,7 +2982,7 @@ function buildOudStatic(){
   const helpBtnH = 66 * handScaleForHelp; // نفس ارتفاع زر "يمين" بالضبط
   const helpBx_outer = oldHelpBx - (helpBtnW/2 + handGapForHelp/2) + 20; // نفس موقع زر "يمين" أفقياً (محاذاة عمودية) — +20 لمطابقة groupShift المُضاف لاحقاً لأزرار اليد
   const helpBx = helpBx_outer - helpBtnW - handGapForHelp; // زر المساعدة انتقل للمكان الداخلي (كان مكان زر اللغة)، عشان زر اللغة يصير دايماً جنب زر Do/C الجديد
-  const helpY = OUD.neckTopY(helpBx) - 103;
+  const helpY = OUD.neckBottomY(oldHelpBx) + 60 + 25; // بدّلنا مكانه ليصير تحت الزند (كان مكان أزرار يمين/يسار وعدد الأوتار)
   const helpG = el('g', { id: 'helpBtn', style: 'cursor:pointer' });
   helpG.appendChild(el('rect', {
     x: helpBx - helpBtnW/2, y: helpY - helpBtnH/2,
@@ -3032,7 +3032,7 @@ function buildOudStatic(){
     const hand1X = window.isLeftHanded ? naturalHand1X : mirrorXForBtns(naturalHand1X);
     const hand2X = window.isLeftHanded ? naturalHand2X : mirrorXForBtns(naturalHand2X);
     const hand3X = window.isLeftHanded ? naturalHand3X : mirrorXForBtns(naturalHand3X);
-    const handY = oldHelpY + 25;
+    const handY = OUD.neckTopY(naturalHand1X) - 103; // بدّلنا مكانه ليصير فوق الزند (كان مكان زر المساعدة/اللغة سابقاً)
 
     // أيقونة اليد: إيموجي ✋ حقيقي بدل رسمة مخصصة، معكوس أفقياً لتمثيل اليد اليسرى
     function drawPalmShape(parent, cx, cy, mirrored, active){
