@@ -781,11 +781,6 @@ flex-shrink: 0;
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .c-selection-summary { bottom: 130px !important; top: auto !important; }
 }
-/* تصغير خط زري "تواصل" و"تقييم" (SVG بالتذييل) خاص بمدى شاشة الآيباد (أفقي وعمودي) — عشان ما يفيض النص عن حدود الزر */
-@media (min-width: 768px) and (max-width: 1024px) {
-  svg#shared-oudSvg .footer-btn-text { font-size: 26px !important; }
-  svg#shared-oudSvg .footer-btn-star { font-size: 22px !important; }
-}
   .c-selection-summary > *{ pointer-events: auto; }
 
   /* ===== أزرار اختيار نوع السلم ===== */
@@ -3530,24 +3525,12 @@ function buildOudStatic(){
     fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const btnText = el('text', {
-    x: btnX + btnW/2, y: btnY + btnH/2,
+    x: btnX + btnW/2, y: btnY + btnH/2 + 12,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-size':'36', 'font-weight':'800', fill:'#1b1410'
+    'font-size':'30', 'font-weight':'800', fill:'#1b1410'
   });
-  const contactLines = (window.oudLanguage === 'en') ? ['Contact', 'Us'] : ['تواصل', 'معنا'];
-  const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-  tspan1.setAttribute('class', 'footer-btn-text');
-  tspan1.setAttribute('x', btnX + btnW/2);
-  tspan1.setAttribute('dy', '-0.6em');
-  tspan1.textContent = contactLines[0];
-  const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-  tspan2.setAttribute('class', 'footer-btn-text');
-  tspan2.setAttribute('x', btnX + btnW/2);
-  tspan2.setAttribute('dy', '1.2em');
-  tspan2.textContent = contactLines[1];
-  btnText.appendChild(tspan1);
-  btnText.appendChild(tspan2);
+  btnText.textContent = (window.oudLanguage === 'en') ? 'Contact Us' : 'تواصل معنا';
   contactG.appendChild(btnRect);
   contactG.appendChild(btnText);
   oudFooterGroup.appendChild(contactG);
@@ -3560,26 +3543,13 @@ function buildOudStatic(){
     fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const ratingText = el('text', {
-    x: ratingBtnX + btnW/2, y: btnY + btnH/2,
+    x: ratingBtnX + btnW/2, y: btnY + btnH/2 + 12,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-weight':'800', fill:'#1b1410'
+    'font-size':'30', 'font-weight':'800', fill:'#1b1410'
   });
   const ratingWord = (window.oudLanguage === 'en') ? 'Rate' : 'تقييم';
-  const rtspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-  rtspan1.setAttribute('class', 'footer-btn-text');
-  rtspan1.setAttribute('x', ratingBtnX + btnW/2);
-  rtspan1.setAttribute('dy', '-0.6em');
-  rtspan1.setAttribute('font-size', '40');
-  rtspan1.textContent = ratingWord;
-  const rtspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-  rtspan2.setAttribute('class', 'footer-btn-star');
-  rtspan2.setAttribute('x', ratingBtnX + btnW/2);
-  rtspan2.setAttribute('dy', '1.5em');
-  rtspan2.setAttribute('font-size', '36');
-  rtspan2.textContent = '⭐';
-  ratingText.appendChild(rtspan1);
-  ratingText.appendChild(rtspan2);
+  ratingText.textContent = '⭐ ' + ratingWord;
   ratingG.appendChild(ratingRect);
   ratingG.appendChild(ratingText);
   oudFooterGroup.appendChild(ratingG);
