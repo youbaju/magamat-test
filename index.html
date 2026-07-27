@@ -3268,7 +3268,7 @@ function buildOudStatic(){
       const hg = el('g', { id: 'handToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
       const rect = el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: '#1a5fa8', stroke: '#0d3c66', 'stroke-width': '3'
+        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
       });
       hg.appendChild(rect);
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -3277,7 +3277,7 @@ function buildOudStatic(){
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       t.setAttribute('font-size', String(24 * handScale));
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', '#ffffff');
+      t.setAttribute('fill', '#1a5fa8');
       t.textContent = (window.oudLanguage === 'en')
         ? (window.isLeftHanded ? 'Left' : 'Right')
         : (window.isLeftHanded ? 'يسار' : 'يمين');
@@ -3312,19 +3312,29 @@ function buildOudStatic(){
       const sg = el('g', { id: 'stringCountBtn', style: 'cursor:pointer;pointer-events:all;' });
       sg.appendChild(el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: '#1a5fa8', stroke: '#0d3c66', 'stroke-width': '3'
+        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
       }));
-      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.setAttribute('x', x); t.setAttribute('y', y + 8*handScale);
-      t.setAttribute('text-anchor', 'middle');
-      t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
-      t.setAttribute('font-size', String(22 * handScale));
-      t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', '#ffffff');
-      t.textContent = (window.oudLanguage === 'en')
-        ? (OUD.STRING_COUNT === 6 ? '6 Strings' : '5 Strings')
-        : (OUD.STRING_COUNT === 6 ? '6 أوتار' : '5 أوتار');
-      sg.appendChild(t);
+      const numStr = (OUD.STRING_COUNT === 6) ? (window.oudLanguage === 'en' ? '6' : '٦') : (window.oudLanguage === 'en' ? '5' : '٥');
+      const wordStr = (window.oudLanguage === 'en') ? 'Strings' : 'أوتار';
+      // الكلمة فوق (أصغر، أزرق)، والرقم تحت (أكبر، أحمر) — يصير الرقم أبرز عنصر بالزر
+      const wordEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      wordEl.setAttribute('x', x); wordEl.setAttribute('y', y + 22*handScale);
+      wordEl.setAttribute('text-anchor', 'middle');
+      wordEl.setAttribute('font-family', "'Cairo', Arial, sans-serif");
+      wordEl.setAttribute('font-size', String(22 * handScale));
+      wordEl.setAttribute('font-weight', '800');
+      wordEl.setAttribute('fill', '#1a5fa8');
+      wordEl.textContent = wordStr;
+      sg.appendChild(wordEl);
+      const numEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      numEl.setAttribute('x', x); numEl.setAttribute('y', y - 3*handScale);
+      numEl.setAttribute('text-anchor', 'middle');
+      numEl.setAttribute('font-family', "'Cairo', Arial, sans-serif");
+      numEl.setAttribute('font-size', String(30 * handScale));
+      numEl.setAttribute('font-weight', '800');
+      numEl.setAttribute('fill', '#c0392b');
+      numEl.textContent = numStr;
+      sg.appendChild(numEl);
       sg.addEventListener('click', () => {
         const newCount = (OUD.STRING_COUNT === 6) ? 5 : 6;
         localStorage.setItem('oudStringCountPref', String(newCount));
@@ -3387,7 +3397,7 @@ function buildOudStatic(){
         const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' + (window.isArabicMode ? 'display:none;' : '') });
         ng.appendChild(el('rect', {
           x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
-          fill: '#fdf3d8', stroke: '#c9a227', 'stroke-width': '2'
+          fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
         }));
         const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         t.setAttribute('x', x); t.setAttribute('y', y + 14);
@@ -3395,7 +3405,7 @@ function buildOudStatic(){
         t.setAttribute('font-family', "Arial, sans-serif");
         t.setAttribute('font-size', '46');
         t.setAttribute('font-weight', '800');
-        t.setAttribute('fill', '#7a5c00');
+        t.setAttribute('fill', '#1a5fa8');
         t.textContent = (window.oudNoteSystem === 'letter') ? 'C' : 'Do';
         ng.appendChild(t);
         ng.addEventListener('click', () => {
@@ -3408,6 +3418,7 @@ function buildOudStatic(){
           if (typeof window.renderAll === 'function') window.renderAll();
           if (typeof window.refreshCircleLabels === 'function') window.refreshCircleLabels();
           if (typeof window.renderChordsList === 'function' && window.chordModeActive) window.renderChordsList();
+          if (window.selectedChord && typeof renderChordHighlight === 'function') renderChordHighlight(window.selectedChord.positions, false); // تسميات الكورد على الزند بطبقة منفصلة، تحتاج تحديث صريح
         });
         return ng;
       }
@@ -3510,12 +3521,22 @@ function buildOudStatic(){
     fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const btnText = el('text', {
-    x: btnX + btnW/2, y: btnY + btnH/2 + 10,
+    x: btnX + btnW/2, y: btnY + btnH/2,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-size':'32', 'font-weight':'800', fill:'#1b1410'
+    'font-size':'36', 'font-weight':'800', fill:'#1b1410'
   });
-  btnText.textContent = (window.oudLanguage === 'en') ? '📱 Contact' : '📱 تواصل';
+  const contactLines = (window.oudLanguage === 'en') ? ['Contact', 'Us'] : ['تواصل', 'معنا'];
+  const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  tspan1.setAttribute('x', btnX + btnW/2);
+  tspan1.setAttribute('dy', '-0.6em');
+  tspan1.textContent = contactLines[0];
+  const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  tspan2.setAttribute('x', btnX + btnW/2);
+  tspan2.setAttribute('dy', '1.2em');
+  tspan2.textContent = contactLines[1];
+  btnText.appendChild(tspan1);
+  btnText.appendChild(tspan2);
   contactG.appendChild(btnRect);
   contactG.appendChild(btnText);
   oudFooterGroup.appendChild(contactG);
@@ -3528,12 +3549,24 @@ function buildOudStatic(){
     fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const ratingText = el('text', {
-    x: ratingBtnX + btnW/2, y: btnY + btnH/2 + 10,
+    x: ratingBtnX + btnW/2, y: btnY + btnH/2,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-size':'32', 'font-weight':'800', fill:'#1b1410'
+    'font-weight':'800', fill:'#1b1410'
   });
-  ratingText.textContent = (window.oudLanguage === 'en') ? '⭐ Rate' : '⭐ تقييم';
+  const ratingWord = (window.oudLanguage === 'en') ? 'Rate' : 'تقييم';
+  const rtspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  rtspan1.setAttribute('x', ratingBtnX + btnW/2);
+  rtspan1.setAttribute('dy', '-0.6em');
+  rtspan1.setAttribute('font-size', '40');
+  rtspan1.textContent = ratingWord;
+  const rtspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  rtspan2.setAttribute('x', ratingBtnX + btnW/2);
+  rtspan2.setAttribute('dy', '1.5em');
+  rtspan2.setAttribute('font-size', '36');
+  rtspan2.textContent = '⭐';
+  ratingText.appendChild(rtspan1);
+  ratingText.appendChild(rtspan2);
   ratingG.appendChild(ratingRect);
   ratingG.appendChild(ratingText);
   oudFooterGroup.appendChild(ratingG);
