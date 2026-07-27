@@ -852,6 +852,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #stringCountBtn * { pointer-events: auto !important; }
   svg#shared-oudSvg #langToggleBtn { pointer-events: auto !important; cursor: pointer; }
   svg#shared-oudSvg #langToggleBtn * { pointer-events: auto !important; }
+  svg#shared-oudSvg #noteSystemToggleBtn { pointer-events: auto !important; cursor: pointer; }
+  svg#shared-oudSvg #noteSystemToggleBtn * { pointer-events: auto !important; }
   .lang-btn-pulse .lang-btn-rect { animation: langBtnPulse 1.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
   @keyframes langBtnPulse {
     0%   { stroke: #3ab4e8; }
@@ -1016,6 +1018,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #stringCountBtn *{ pointer-events:auto !important; }
   svg#shared-oudSvg #langToggleBtn{ pointer-events:auto !important; cursor:pointer; }
   svg#shared-oudSvg #langToggleBtn *{ pointer-events:auto !important; }
+  svg#shared-oudSvg #noteSystemToggleBtn{ pointer-events:auto !important; cursor:pointer; }
+  svg#shared-oudSvg #noteSystemToggleBtn *{ pointer-events:auto !important; }
   svg#shared-oudSvg #svgRatingBtn text{ pointer-events:none; }
   svg#shared-oudSvg #oudNotesLayer rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #chordHighlightLayer rect{ pointer-events:auto; cursor:pointer; }
@@ -1964,12 +1968,16 @@ window.isArabicMode = false;
       if(targetId === 'page-maqamat'){
         window.isArabicMode = true;
         if(westernBtnsRow) westernBtnsRow.style.display = 'none';
+        const noteSysBtn = document.getElementById('noteSystemToggleBtn');
+        if (noteSysBtn) noteSysBtn.style.display = 'none';
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         if(typeof setupArabicPlayerButtons === 'function') setupArabicPlayerButtons();
         setTimeout(() => { if(typeof window.showMaqam === 'function') window.showMaqam(); }, 100);
       } else if(targetId === 'page-circle'){
         window.isArabicMode = false;
         if(westernBtnsRow) westernBtnsRow.style.display = '';
+        const noteSysBtn = document.getElementById('noteSystemToggleBtn');
+        if (noteSysBtn) noteSysBtn.style.display = '';
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         setTimeout(() => { if(typeof renderAll === 'function') renderAll(); }, 50);
         setTimeout(() => { if(typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance(); }, 120);
@@ -2043,6 +2051,9 @@ const NOTE_NAMES = ['دو','دو#','رى','رى#','مي','فا','فا#','صول'
 // أسماء لاتينية مخصصة بترتيب دائرة الخامسات (Major) - تطابق أسلوب الصورة المرجعية بالضبط
 const CIRCLE_LATIN_MAJOR = ['C','G','D','A','E','B / Cb','F# / Gb','C# / Db','Ab','Eb','Bb','F'];
 const CIRCLE_LATIN_MINOR = ['A','E','B','F#','C#','G# / Ab','D# / Eb','A# / Bb','F','C','G','D'];
+// نفس الترتيب بالضبط، بنظام الصولفيج (تُستخدم لما يختار المستخدم "Do" بدل "C" بوضع الإنجليزي)
+const CIRCLE_SOLFEGE_MAJOR = ['Do','Sol','Re','La','Mi','Si / Do♭','Fa# / Sol♭','Do# / Re♭','La♭','Mi♭','Si♭','Fa'];
+const CIRCLE_SOLFEGE_MINOR = ['La','Mi','Si','Fa#','Do#','Sol# / La♭','Re# / Mi♭','La# / Si♭','Fa','Do','Sol','Re'];
 
 // السلالم الثلاثة + الطبيعي
 const SCALES = {
@@ -2099,14 +2110,14 @@ const state = { root: currentRoot, scaleType: currentScaleType, tuningOffset: 0,
 // letterIndex: 0=دو 1=رى 2=مي 3=فا 4=صول 5=لا 6=سي (يطابق LETTER_NAMES_ONLY بالأسفل)
 const DUAL_NAME_SEGMENTS = {
   major: {
-    5: [ {label:'B',  letterIndex:6}, {label:'Cb', letterIndex:0} ],
-    6: [ {label:'F#', letterIndex:3}, {label:'Gb', letterIndex:4} ],
-    7: [ {label:'C#', letterIndex:0}, {label:'Db', letterIndex:1} ],
+    5: [ {label:'B',  labelSolfege:'Si',  letterIndex:6}, {label:'Cb', labelSolfege:'Do♭', letterIndex:0} ],
+    6: [ {label:'F#', labelSolfege:'Fa#', letterIndex:3}, {label:'Gb', labelSolfege:'Sol♭', letterIndex:4} ],
+    7: [ {label:'C#', labelSolfege:'Do#', letterIndex:0}, {label:'Db', labelSolfege:'Re♭', letterIndex:1} ],
   },
   minor: {
-    5: [ {label:'G#', letterIndex:4}, {label:'Ab', letterIndex:5} ],
-    6: [ {label:'D#', letterIndex:1}, {label:'Eb', letterIndex:2} ],
-    7: [ {label:'A#', letterIndex:5}, {label:'Bb', letterIndex:6} ],
+    5: [ {label:'G#', labelSolfege:'Sol#', letterIndex:4}, {label:'Ab', labelSolfege:'La♭', letterIndex:5} ],
+    6: [ {label:'D#', labelSolfege:'Re#', letterIndex:1}, {label:'Eb', labelSolfege:'Mi♭', letterIndex:2} ],
+    7: [ {label:'A#', labelSolfege:'La#', letterIndex:5}, {label:'Bb', labelSolfege:'Si♭', letterIndex:6} ],
   }
 };
 
@@ -2204,18 +2215,18 @@ for (let i = 0; i < 12; i++) {
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex });
-    labelTop.textContent = topName.label;
+    labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex });
-    labelBottom.textContent = bottomName.label;
+    labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMajor = polarToXY(CX, CY, (R_OUTER+R_OUTER_IN)/2, midAngle);
     const labelMajor = el('text', { x:labelPosMajor.x, y:labelPosMajor.y, class:'circle-label' });
-    labelMajor.textContent = CIRCLE_LATIN_MAJOR[i];
+    labelMajor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MAJOR[i] : CIRCLE_LATIN_MAJOR[i];
     segGroup.appendChild(labelMajor);
   }
 
@@ -2228,18 +2239,18 @@ for (let i = 0; i < 12; i++) {
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex });
-    labelTop.textContent = topName.label;
+    labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex });
-    labelBottom.textContent = bottomName.label;
+    labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMinor = polarToXY(CX, CY, (R_INNER+R_INNER_IN)/2, midAngle);
     const labelMinor = el('text', { x:labelPosMinor.x, y:labelPosMinor.y, class:'circle-label minor' });
-    labelMinor.textContent = CIRCLE_LATIN_MINOR[i];
+    labelMinor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MINOR[i] : CIRCLE_LATIN_MINOR[i];
     segGroup.appendChild(labelMinor);
   }
 }
@@ -2656,6 +2667,9 @@ window.oudCurrentStringCount = window.oudStringMode; // متغيّر عالمي 
 // نظام اللغة: نقرأ آخر لغة اختارها المستخدم (localStorage، تدوم حتى بعد إغلاق المتصفح)، والعربي افتراضي لأول زيارة
 window.oudLanguage = localStorage.getItem('oudLanguagePref') || 'ar';
 
+// نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي، أو حرفي (C D E)
+window.oudNoteSystem = localStorage.getItem('oudNoteSystemPref') || 'solfege';
+
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
   window.isLeftHanded = (sessionStorage.getItem('oudHandPref') === 'left');
@@ -2966,7 +2980,8 @@ function buildOudStatic(){
   const handScaleForHelp = 1.45, handGapForHelp = 14;
   const helpBtnW = 88 * handScaleForHelp; // نفس عرض زر "يمين" بالضبط
   const helpBtnH = 66 * handScaleForHelp; // نفس ارتفاع زر "يمين" بالضبط
-  const helpBx = oldHelpBx - (helpBtnW/2 + handGapForHelp/2) + 20; // نفس موقع زر "يمين" أفقياً (محاذاة عمودية) — +20 لمطابقة groupShift المُضاف لاحقاً لأزرار اليد
+  const helpBx_outer = oldHelpBx - (helpBtnW/2 + handGapForHelp/2) + 20; // نفس موقع زر "يمين" أفقياً (محاذاة عمودية) — +20 لمطابقة groupShift المُضاف لاحقاً لأزرار اليد
+  const helpBx = helpBx_outer - helpBtnW - handGapForHelp; // زر المساعدة انتقل للمكان الداخلي (كان مكان زر اللغة)، عشان زر اللغة يصير دايماً جنب زر Do/C الجديد
   const helpY = OUD.neckTopY(helpBx) - 103;
   const helpG = el('g', { id: 'helpBtn', style: 'cursor:pointer' });
   helpG.appendChild(el('rect', {
@@ -3182,7 +3197,7 @@ function buildOudStatic(){
       });
       return lg;
     }
-    const naturalLangX = helpBx - helpBtnW/2 - handGap - helpBtnW/2; // نفس مسافة الفصل بين يمين ويسار بالضبط (handGap كاملة، مو نصفها)
+    const naturalLangX = helpBx_outer; // زر اللغة انتقل للمكان الخارجي (كان مكان زر المساعدة)، عشان يضل دايماً جنب زر Do/C المستقبلي
     const langBtnFinalX = window.isLeftHanded ? naturalLangX : mirrorXForBtns(naturalLangX);
     const langBtn = makeLanguageBtn(langBtnFinalX, helpY);
     oudControlBtnsLayer.appendChild(langBtn);
@@ -3192,9 +3207,43 @@ function buildOudStatic(){
       langBtn.classList.remove('lang-btn-pulse');
       document.removeEventListener('click', stopLangPulseOnce);
     }, { once: true });
+
+    // ===== زر تبديل نظام تسمية النغمات (Do/C) — يظهر بس بالإنجليزي + صفحة السلالم الغربية، ملاصق لزر اللغة من الخارج =====
+    // نبنيه دايماً لو اللغة إنجليزي (بغض النظر عن التبويب الحالي وقت الرسم)، ونتحكم بإظهاره/إخفاؤه لاحقاً
+    // عند تبديل التبويب من دالة showPage — لأن هالرسمة (الزند المشترك) تُرسم مرة وحدة بس أول تحميل
+    if (window.oudLanguage === 'en') {
+      function makeNoteSystemBtn(x, y){
+        const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' + (window.isArabicMode ? 'display:none;' : '') });
+        ng.appendChild(el('rect', {
+          x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
+          fill: '#fdf3d8', stroke: '#c9a227', 'stroke-width': '2'
+        }));
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', x); t.setAttribute('y', y + 14);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-family', "Arial, sans-serif");
+        t.setAttribute('font-size', '46');
+        t.setAttribute('font-weight', '800');
+        t.setAttribute('fill', '#7a5c00');
+        t.textContent = (window.oudNoteSystem === 'letter') ? 'C' : 'Do';
+        ng.appendChild(t);
+        ng.addEventListener('click', () => {
+          const newSystem = (window.oudNoteSystem === 'letter') ? 'solfege' : 'letter';
+          localStorage.setItem('oudNoteSystemPref', newSystem);
+          window.oudNoteSystem = newSystem;
+          window.location.reload();
+        });
+        return ng;
+      }
+      const naturalNoteSysX = naturalLangX + helpBtnW + handGap; // زر جديد بمكان خارجي إضافي (أبعد عن "؟")، ملاصق لزر اللغة من الخارج
+      const noteSysFinalX = window.isLeftHanded ? naturalNoteSysX : mirrorXForBtns(naturalNoteSysX);
+      oudControlBtnsLayer.appendChild(makeNoteSystemBtn(noteSysFinalX, helpY));
+    }
   }
 
-  const stringNames = (window.oudLanguage === 'en') ? ['Fa','La','Re','Sol','Do','Fa'] : ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
+  const stringNames = (window.oudLanguage === 'en')
+    ? ((window.oudNoteSystem === 'letter') ? ['F','A','D','G','C','F'] : ['Fa','La','Re','Sol','Do','Fa'])
+    : ['فا','لا','رى','صول','دو','فا']; // الوتر السادس (الشرار) نفس اسم الأول
   const rectSlope = (neckJointTopEndY - neckYTopAtNut) / (NECK_JOINT_END_X - OUD.VISUAL_NUT_X);
   const lineLen = 80;
 
@@ -3408,6 +3457,7 @@ function buildOudStatic(){
 const NATURAL_PC_TO_LETTER = {0:0, 2:1, 4:2, 5:3, 7:4, 9:5, 11:6};
 const LETTER_NAMES_ONLY = ['دو','رى','مي','فا','صول','لا','سي'];
 const LETTER_NAMES_ONLY_EN = ['Do','Re','Mi','Fa','Sol','La','Si'];
+const LETTER_NAMES_ONLY_LATIN = ['C','D','E','F','G','A','B']; // نظام الحروف اللاتيني (بديل الصولفيج بالإنجليزي)
 const NATURAL_PC_FOR_LETTER = [0,2,4,5,7,9,11]; // pitch class الطبيعي لكل حرف بترتيب 0-6
 
 // دليل المقام: عدد ونوع التحويل (دييز/بيمول) لكل مفتاح ميجور، حسب دائرة الخامسات
@@ -3434,7 +3484,9 @@ function getRootLetterIndex(rootPC, scaleType, letterOverride){
 
 // تعطي الاسم الصحيح موسيقيًا (الإملاء الإنهارموني الصحيح) لنوتة معينة حسب حرفها الصحيح بالسلم
 function getCorrectNoteName(pc, letterIdx){
-  const names = (window.oudLanguage === 'en') ? LETTER_NAMES_ONLY_EN : LETTER_NAMES_ONLY;
+  const names = (window.oudLanguage === 'en')
+    ? ((window.oudNoteSystem === 'letter') ? LETTER_NAMES_ONLY_LATIN : LETTER_NAMES_ONLY_EN)
+    : LETTER_NAMES_ONLY;
   const naturalPC = NATURAL_PC_FOR_LETTER[letterIdx];
   const diff = ((pc - naturalPC) + 12) % 12;
   if(diff === 0) return names[letterIdx];
@@ -3578,7 +3630,7 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
     // رسم الاسم والرمز كعنصرَين منفصلَين (يدعم العربي والإنجليزي + كل أنواع علامات التحويل)
     const isEnglishNote = (window.oudLanguage === 'en');
     const parts = isEnglishNote
-      ? correctName.match(/^(Do|Re|Mi|Fa|Sol|La|Si)(#|♭♭|♭|x)?$/)
+      ? correctName.match(/^(Do|Re|Mi|Fa|Sol|La|Si|C|D|E|F|G|A|B)(#|♭♭|♭|x)?$/)
       : correctName.match(/^(دو|رى|مي|فا|صول|لا|سي)(#|♭♭|♭|x)?$/);
     if (parts) {
       const letter = parts[1];
