@@ -1838,7 +1838,7 @@ input[type="radio"] {
   </div>
 
   <!-- زر المساعدة HTML -->
-  <button class="maqam-help-btn" id="maqamHelpBtn" onclick="document.getElementById('shared-stopBtn').click(); var h=document.getElementById('page-help'); h.style.display='block'; h.scrollTop=0;">مساعدة</button>
+  <button class="maqam-help-btn" id="maqamHelpBtn" onclick="if(typeof window.stopAllOudPlayback==='function')window.stopAllOudPlayback(); document.getElementById('shared-stopBtn').click(); var h=document.getElementById('page-help'); h.style.display='block'; h.scrollTop=0;">مساعدة</button>
 
   <!-- Modal الأبعاد -->
   <div class="maqam-intervals-modal" id="maqamIntervalsModal" style="display:none">
@@ -2039,7 +2039,8 @@ window.isArabicMode = false;
       const targetId = btn.dataset.target;
       sessionStorage.setItem('oudActiveTab', targetId);
       // إيقاف الأصوات قبل تغيير التبويب
-      document.getElementById('shared-stopBtn').click();
+      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+      document.getElementById('shared-stopBtn').click(); // كطبقة أمان إضافية
       if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
       if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
       window.chordModeActive = false;
@@ -2318,6 +2319,7 @@ function updateCircleHighlight(){
 function selectRootAndType(root, scaleType, letterOverride){
   if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
   if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+  if (typeof window.resetPlayer === 'function') window.resetPlayer(); // نوقف تشغيل السلم القديم لو كان شغال، عشان ما يستمر بالخلفية بعد اختيار سلم/جذر جديد
   window.chordModeActive = false;
   window.selectedChord = null;
   sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ لأن المستخدم اختار سلم/جذر جديد صراحة
@@ -2349,6 +2351,7 @@ function updateMenuToggleLabel(){
 }
 
 function openCircleDrawer(){
+  if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
   circleDrawerEl.classList.add('open');
   circleOverlayEl.classList.add('active');
   circleMenuToggleEl.style.visibility = 'hidden';
@@ -2558,6 +2561,7 @@ function selectChord(ch, btnEl){
   renderChordHighlight(positions, false);
   if (typeof resetPlayer === 'function') resetPlayer(); // نوقف أي سلم تسلسلي شغال، ونرجع الزر لحالة "▶"
   sessionStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
+  if (typeof startChordPlaying === 'function') startChordPlaying(); // نشغّل صوت الكورد فوراً بمجرد اختياره، بدون ما ننتظر ضغطة ▶ بالمشغل — تسهيلاً لسماعه بسرعة
 }
 
 function startChordPlaying(){
@@ -3051,6 +3055,7 @@ function buildOudStatic(){
   }
   helpG.appendChild(helpTxt);
   helpG.addEventListener('click', () => {
+    if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
     document.getElementById('shared-stopBtn').click();
     const helpPageId = (window.oudLanguage === 'en') ? 'page-help-en' : 'page-help';
     const helpPage = document.getElementById(helpPageId);
@@ -3476,8 +3481,8 @@ function buildOudStatic(){
 
   // ربط النقر بصفحة التواصل
   contactG.addEventListener('click', () => {
-    document.getElementById('shared-stopBtn').click();
-    if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+    if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+    document.getElementById('shared-stopBtn').click(); // نبقيها كمان لأي معالج إضافي محتمل، كطبقة أمان زيادة
     if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();    // حفظ الصفحة الحالية
     const active = document.querySelector('.site-page.active');
     window._lastPageBeforeSocial = active ? active.id : 'page-circle';
@@ -4100,6 +4105,16 @@ function resetPlayer(){
   updateProgressBar();
   drawOudScale(state.root, state.scaleType, 'asc');
 }
+window.resetPlayer = resetPlayer; // نكشفها عالمياً عشان أي كود خارجي (زي زر تواصل) يقدر يوقف التشغيل مباشرة وبثقة
+
+// دالة مركزية توقف أي صوت شغال بالموقع (بغض النظر عن الوضع الحالي عربي/غربي) — تُستخدم بدل محاكاة
+// ضغطة زر الإيقاف (اللي تعتمد على معالجات أحداث متعددة قد يفشل أحدها)، عشان نضمن التوقف الفعلي دايماً
+window.stopAllOudPlayback = function(){
+  if (typeof window.arResetPlayer === 'function') window.arResetPlayer();
+  if (typeof window.resetPlayer === 'function') window.resetPlayer();
+  if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+  if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+};
 
 playBtn.addEventListener('click', () => {
   if(window.isArabicMode) return;
@@ -4114,6 +4129,7 @@ playBtn.addEventListener('click', () => {
   else if(playerState === 'paused') resumePlaying();
 });
 stopBtn.addEventListener('click', () => {
+  if(window.isArabicMode) return;
   if (window.chordModeActive && window.selectedChord){ resetChordPlayer(); return; }
   resetPlayer();
 });
@@ -4484,6 +4500,7 @@ if (westernGuideBtn && westernGuideModal) {
       e.stopPropagation();
       const panel = document.getElementById('panel');
       const isOpening = !panel.classList.contains('open');
+      if (isOpening && typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
       panel.classList.toggle('open');
       document.getElementById('overlay').classList.toggle('active');
       const btnsToHide = ['maqamIntervalsBtn','maqamGuideBtn'];
@@ -4618,7 +4635,7 @@ if (westernGuideBtn && westernGuideModal) {
     document.getElementById('r5b').value = "العجم";
     document.getElementById('r5a').value = "أخرى";
     document.querySelectorAll('input[name="maqam"]').forEach(r => {
-      r.addEventListener('change', () => { document.getElementById('shared-stopBtn').click(); updateMaqam(r.value); showMaqam(); });
+      r.addEventListener('change', () => { if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); updateMaqam(r.value); showMaqam(); });
     });
 
     // تهيئة عند التحميل: نستعيد آخر اختيار محفوظ لهذي الجلسة، أو الافتراضي (الراست) لجلسة جديدة
@@ -5613,14 +5630,18 @@ if (westernGuideBtn && westernGuideModal) {
     const maqamGuideImg = document.getElementById('maqamGuideImg');
     const maqamGuideBtnName = document.getElementById('maqamGuideBtnName');
 
-    maqamGuideBtn.addEventListener('click', () => { maqamGuideModal.style.display = 'flex'; });
+    maqamGuideBtn.addEventListener('click', () => {
+      maqamGuideModal.style.display = 'flex';
+    });
     maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; });
     maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
     const maqamIntervalsBtn = document.getElementById('maqamIntervalsBtn');
     const maqamIntervalsModal = document.getElementById('maqamIntervalsModal');
     const mitClose = document.getElementById('mitClose');
 
-    maqamIntervalsBtn.addEventListener('click', () => { maqamIntervalsModal.style.display = 'flex'; });
+    maqamIntervalsBtn.addEventListener('click', () => {
+      maqamIntervalsModal.style.display = 'flex';
+    });
     mitClose.addEventListener('click', () => { maqamIntervalsModal.style.display = 'none'; });
     maqamIntervalsModal.addEventListener('click', (e) => { if (e.target === maqamIntervalsModal) maqamIntervalsModal.style.display = 'none'; });
 
@@ -5747,8 +5768,8 @@ if (westernGuideBtn && westernGuideModal) {
     document.getElementById('showBtn').onclick = showMaqam;
 
     // تحديث تلقائي عند تغيير المقام أو الحرف
-    maqamSelect.addEventListener('change', () => { document.getElementById('shared-stopBtn').click(); setDefaultHarf(maqamSelect.value); showMaqam(); });
-    harfSelect.addEventListener('change', () => { document.getElementById('shared-stopBtn').click(); showMaqam(); closePanel(); });
+    maqamSelect.addEventListener('change', () => { if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); setDefaultHarf(maqamSelect.value); showMaqam(); });
+    harfSelect.addEventListener('change', () => { if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); showMaqam(); closePanel(); });
 
     // عرض السلم الافتراضي عند التحميل - بس لو تبويب المقامات العربية هو الفعلي المفعّل حالياً
     // (يحمي من الكتابة فوق حالة تبويب المقامات الغربية لو هو المحفوظ/المفعّل عند التحميل)
@@ -6059,8 +6080,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
   function openRatingModal(){
     // نوقف أي صوت شغال (سلم، مقام، أو كورد) قبل ما نفتح صفحة التقييم
-    if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
-    if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+    if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
     const stopBtnEl = document.getElementById('shared-stopBtn');
     if (stopBtnEl && !stopBtnEl.disabled) stopBtnEl.click();
     document.getElementById('ratingModal').style.display = 'flex';
