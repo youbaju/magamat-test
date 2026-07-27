@@ -123,9 +123,12 @@ body{ width:100vw; overflow-x:hidden; }
   box-shadow:0 3px 10px rgba(20,20,20,.1);
 }
 /* بوضع اليد اليسرى، زند العود ينعكس فيتغطى الجزء اليمين من الشاشة بالقوائم - فنبدّل مكان الزرين عشان يبقوا دايماً بالجهة اللي ما فيها زند مهم */
-body.hand-left-mode .site-tabs-toggle{ left:auto; right:10px; }
-body.hand-left-mode .c-menu-toggle{ right:auto; left:10px; }
-body.hand-left-mode .menu-toggle{ right:auto; left:10px; }
+body.hand-left-mode .site-tabs-toggle{ left:auto !important; right:10px !important; }
+body.hand-left-mode .c-menu-toggle{ right:auto !important; left:10px !important; }
+body.hand-left-mode .menu-toggle{ right:auto !important; left:10px !important; }
+body:not(.hand-left-mode) .site-tabs-toggle{ right:auto !important; left:10px !important; }
+body:not(.hand-left-mode) .c-menu-toggle{ left:auto !important; right:10px !important; }
+body:not(.hand-left-mode) .menu-toggle{ left:auto !important; right:10px !important; }
 /* بوضع اليد اليسرى، القوائم (فصائل المقامات، دائرة الرابعات والخامسات، الكوردات) لازم تنزلق من نفس جهة الزر (اليسار)، مو دايماً من اليمين */
 body.hand-left-mode .panel{ right:auto; left:-280px; box-shadow: 4px 0 16px rgba(0,0,0,0.2); }
 body.hand-left-mode .panel.open{ left:0; }
