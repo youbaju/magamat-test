@@ -62,6 +62,13 @@
   ]
 }
 </script>
+<script>
+  // فهرس صفحة الشرح: يقفز بسلاسة للقسم المطلوب لما تضغط عليه بالفهرس
+  window.scrollToHelpSection = function(id){
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1129,6 +1136,36 @@ flex-shrink: 0;
   margin-bottom: 24px;
   border-bottom: 1px solid #eee;
   padding-bottom: 16px;
+  scroll-margin-top: 10px; /* عشان العنوان ما يلزق تماماً بأعلى الحاوية بعد القفز إليه من الفهرس */
+}
+.help-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 0 0 18px;
+  padding: 10px;
+  background: #faf6ee;
+  border: 1px solid #e3d5b8;
+  border-radius: 10px;
+}
+.help-toc-item {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5c3414;
+  background: #fff;
+  border: 1px solid #cbb789;
+  border-radius: 20px;
+  padding: 4px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.help-toc-item:hover, .help-toc-item:active {
+  background: #c9a227;
+  color: #fff;
+  border-color: #c9a227;
 }
 .help-section h3 {
   color: #5c3414;
@@ -1150,6 +1187,15 @@ flex-shrink: 0;
 }
 .help-svg { width: 100%; height: auto; display: block; }
 .help-close-btn:hover { background: #2090c0; }
+#helpCloseBtn, #helpCloseBtnEn {
+  display: block !important;
+  width: fit-content !important;
+  margin: 0 !important;
+  margin-inline-start: auto !important; /* يدفعها لزاوية الصفحة بدل توسيطها */
+  padding: 5px 13px !important;
+  font-size: 0.82rem !important;
+  border-radius: 14px !important;
+}
 #page-social.active{
   min-height:100vh;
   min-height:100svh;
@@ -1456,14 +1502,32 @@ input[type="radio"] {
     <button class="help-close-btn" id="helpCloseBtn" onclick="document.getElementById('page-help').style.display='none';">✕ إغلاق</button>
     <h2 class="help-title">دليل استخدام الموقع</h2>
 
-    <div class="help-section">
+    <div class="help-toc">
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-1')">١. اللغة</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-2')">٢. Do/C</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-3')">٣. نوع المقامات</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-4')">٤. مقام عربي</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-5')">٥. الدليل والأبعاد</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-6')">٦. قراءة الزند</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-7')">٧. تشغيل السلم</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-8')">٨. السلالم الغربية</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-9')">٩. دليل السلم</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-10')">١٠. اليد</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-11')">١١. عدد الأوتار</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-12')">١٢. المساعدة</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-13')">١٣. نغمة فردية</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-14')">١٤. الكوردات</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-15')">١٥. التقييم</span>
+    </div>
+
+    <div class="help-section" id="help-sec-ar-1">
       <h3>١. زر تبديل اللغة (AR/EN)</h3>
       <p>يوجد زر بجانب زر المساعدة تحت زند العود يبدّل لغة الموقع بالكامل بين <strong>العربية</strong> و<strong>الإنجليزية</strong> — يظهر "AR" أو "EN" حسب اللغة الحالية.</p>
       <p>🔹 اضغط الزر لتبديل اللغة فوراً (تُعاد الصفحة تلقائياً لتطبيق اللغة الجديدة على كل عناصر الموقع).</p>
       <p>🔹 اختيارك يُحفظ ويفضل حتى لو أغلقت المتصفح ورجعت للموقع لاحقاً.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-2">
       <h3>٢. زر تبديل نظام تسمية النغمات (Do/C)</h3>
       <p>بجانب زر اللغة، يظهر زر إضافي <strong>بس بوضع الإنجليزي وبصفحة السلالم الغربية</strong> يبدّل طريقة تسمية النغمات بين نظامين عالميين:</p>
       <p>🔹 <strong>صولفيج (Do, Re, Mi...)</strong> — الافتراضي، شائع بدول أوروبية ولاتينية وعربية.</p>
@@ -1471,7 +1535,7 @@ input[type="radio"] {
       <p>🔹 التبديل يطبّق فوراً على كل مكان بصفحة السلالم الغربية: أسماء النغمات على الزند، أسماء الأوتار، أسماء الكوردات، ودائرة الأرباع/الأخماس.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-3">
       <h3>٣. اختيار نوع المقامات</h3>
       <p>عند فتح الموقع ستجد تبويباً في أعلى اليسار للتبديل بين <strong>المقامات العربية</strong> و<strong>المقامات الغربية</strong>. ابدأ باختيار النوع الذي تريد استكشافه. علماً بأن الاختيار الافتراضي لهذا التبويب هو <strong>المقامات العربية</strong>.</p>
       <div class="help-svg-wrap">
@@ -1486,7 +1550,7 @@ input[type="radio"] {
       </div>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-4">
       <h3>٤. اختيار المقامات العربية</h3>
       <p>اضغط على زر <strong>☰ اختيار المقام</strong> لفتح القائمة. اختر الفصيلة ثم المقام ثم الحرف. عند اختيار المقام سيظهر محطه بشكل افتراضي في قائمة الحروف.</p>
       <p>يدعم الموقع تمثيل العود بـ5 أو 6 أوتار، ويختلف عدد الحروف المتاحة لاختيار حرف التصوير حسب الوضع المختار:</p>
@@ -1495,7 +1559,7 @@ input[type="radio"] {
       <div class="help-svg-wrap"><img src="data:image/png;base64,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" style="width:55%;border-radius:6px;display:block;margin:0 auto;" alt="قائمة المقامات"/></div>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-5">
       <h3>٥. دليل المقام وأبعاده</h3>
       <p>بعد اختيار المقام ستظهر زران فوق الزند:</p>
       <p>🔹 <strong>دليل مقام [الاسم]</strong> — يعرض صورة توضيحية للمقام على المدرج الموسيقي مع شرح أجناسه.</p>
@@ -1504,7 +1568,7 @@ input[type="radio"] {
       <p style="font-size:0.85rem;color:#555;text-align:center">يعرضان دليل وأبعاد المقام المعروض على الشاشة</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-6">
       <h3>٦. قراءة زند العود</h3>
       <p>يُمثّل الزند أوتار العود (فا، لا، رى، صول، دو — وبإضافة الوتر السادس "الشرار" لو فعّلته) من الأعلى للأسفل. الأرقام فوق الزند تُمثّل الخطوط (الدساتين). المستطيلات الملونة تُشير إلى مواضع نوتات المقام.</p>
       <p>⚠️ <strong>الخطوط البنية الرفيعة بين الخطوط المرقّمة تُمثّل أرباع التون</strong> — وهي الفارق الموسيقي الأساسي في المقامات العربية.</p>
@@ -1514,7 +1578,7 @@ input[type="radio"] {
       </div>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-7">
       <h3>٧. تشغيل السلم</h3>
       <p>استخدم أزرار المشغل في الأسفل: <strong>▶ تشغيل</strong> لسماع السلم، <strong>⏸ إيقاف مؤقت</strong>، <strong>⏹ إيقاف</strong>، <strong>⏮ إعادة</strong>، وزر <strong>التكرار</strong> (<svg viewBox="0 0 24 24" fill="none" stroke="#3ab4e8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="miter" style="width:1em;height:1em;vertical-align:-0.15em;"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>) لتشغيل السلم بشكل متواصل. يمكنك تغيير <strong>الدوزان</strong> من القائمة، و<strong>السرعة</strong> بالشريط المنزلق (أو أزرار <strong>−</strong> و<strong>+</strong> بجانبه للضبط الدقيق) — الرقم الظاهر يمثّل السرعة بوحدة BPM (نبضة بالدقيقة)، وهي مطابقة تماماً لسرعة المترونوم الموسيقي الحقيقي.</p>
       <div class="help-svg-wrap">
@@ -1522,37 +1586,37 @@ input[type="radio"] {
       </div>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-8">
       <h3>٨. المقامات الغربية</h3>
       <p>اضغط على زر <strong>☰ اختيار المقام</strong> لفتح القائمة. اختر المفتاح من دائرة الخامسات واختر نوع السلم (ماجور، مينور طبيعي، توافقي، ميلودي). ستظهر نوتات السلم على الزند.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-9">
       <h3>٩. دليل السلم الغربي</h3>
       <p>بعد اختيار مفتاح ونوع سلم من دائرة الخامسات، سيظهر زر <strong>دليل [اسم السلم]</strong> فوق زند العود (بنفس مكان زر دليل المقام العربي بالضبط).</p>
       <p>🔹 الضغط عليه يفتح نافذة منبثقة تعرض <strong>نوتة السلم المختار على المدرج الموسيقي التقليدي</strong> (صعوداً ونزولاً)، بنفس الأوكتاف المطابق لصوته الفعلي على العود.</p>
       <p>🔹 اسم الزر يتحدث تلقائياً مع كل مفتاح أو نوع سلم تختاره.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-10">
       <h3>١٠. اختيار اليد اليمنى أو اليسرى</h3>
       <p>لتسهيل العزف على العازفين الذين يستخدمون اليد اليسرى، يوفر الموقع <strong>زر واحد</strong> فوق زند العود يعرض وضعك الحالي — "يمين" أو "يسار".</p>
       <p>🔹 الوضع الافتراضي دائماً عند فتح الموقع: <strong>"يمين"</strong>.</p>
       <p>🔹 اضغط الزر لتبديل الوضع مباشرة — لو كان "يمين" يتحول لـ"يسار" والعكس، والعود بشكله وأوتاره ينقلب تلقائياً ليطابق طريقة إمساكك له بالضبط.</p>
       <p>🔹 هذا التبديل <strong>بصري بحت</strong> — مواقع النغمات وأصواتها الصحيحة لا تتغير أبداً. يعمل بنفس الطريقة على المقامات العربية والسلالم الغربية معاً، ويبقى اختيارك ثابتاً عند التنقل بين التبويبين.</p>
     </div>
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-11">
       <h3>١١. زر عدد الأوتار (5 أو 6)</h3>
       <p>بجانب زر اليد مباشرة، يوجد زر يعرض عدد الأوتار الحالي — "5 أوتار" أو "6 أوتار".</p>
       <p>🔹 الوضع الافتراضي: <strong>6 أوتار</strong> (يشمل الوتر السادس "الشرار").</p>
       <p>🔹 الضغط على الزر يبدّل العدد فوراً، ويعيد ضبط المقام/السلم المختار للوضع الافتراضي (بينما يبقى اتجاه اليد، الدوزان، والسرعة كما هي).</p>
     </div>
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-12">
       <h3>١٢. زر المساعدة (؟)</h3>
       <p>علامة الاستفهام الكبيرة "؟" تحت زند العود تفتح لك صفحة الشرح هذي بالضبط — بأي وقت تحتاج فيه مراجعة أي تفصيلة.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-13">
       <h3>١٣. سماع نغمة فردية بالضغط عليها</h3>
       <p>بالإضافة لتشغيل السلم أو المقام كاملاً بأزرار المشغل، يمكنك سماع أي نغمة منفردة مباشرة من على الزند، بتقنية <strong>صوت مستمر حقيقي</strong> (بدون أي تكرار أو تقطيع) يبدأ ويتوقف حسب ضغطاتك.</p>
       <p>🔹 <strong>البدء:</strong> اضغط على أي مستطيل نغمة (بالمقامات العربية أو السلالم الغربية) ليبدأ صوتها بالعزف مستمراً بدون توقف، ويتحول لونها للأحمر.</p>
@@ -1563,18 +1627,18 @@ input[type="radio"] {
       <p style="margin-right:18px;">- والعكس: لو كان السلم/المقام شغال تسلسلياً وضغطت على أي مستطيل نغمة، يتوقف التشغيل التسلسلي تلقائياً وتبدأ النغمة المفردة المستمرة بدلاً منه.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-14">
       <h3>١٤. كوردات السلالم الغربية</h3>
       <p>بالإضافة للسلالم نفسها، يوفر الموقع <strong>الكوردات السبعة</strong> (الدرجات الموسيقية) لكل سلم غربي — تظهر النغمات الثلاث المكوّنة لكل كورد معاً على زند العود، بأقرب وأسهل أوضاع للعزف.</p>
       <p>🔹 <strong>فتح قائمة الكوردات:</strong> اضغط زر <strong>"☰ اختر من الدائرة"</strong> فوق العود (بتبويب المقامات الغربية)، ثم اضغط تبويب <strong>"الكوردات"</strong> أعلى القائمة، بدل تبويب "دائرة الرابعات والخامسات".</p>
       <p>🔹 <strong>اختيار نوع السلم:</strong> داخل قائمة الكوردات نفسها، فيه صف أزرار (Major / Minor طبيعي / Minor توافقي / Minor ميلودي) يتيح لك التبديل بين الأنواع الأربعة مباشرة، وتتحدث الكوردات فوراً بدون ما تحتاج تغلق القائمة.</p>
-      <p>🔹 <strong>اختيار كورد:</strong> تظهر الكوردات السبعة بدرجاتها (I, ii, iii, IV, V, vi, vii°...)، وباسم كل كورد الكامل (مثل "دو Major" أو "رى Minor"). اضغط على أي كورد لتختاره — تضيء نغماته الثلاث على الزند بالأزرق، وتختفي نغمات السلم العادية مؤقتاً لتوضيح الكورد لوحده.</p>
-      <p>🔹 <strong>تشغيل الكورد كاملاً:</strong> بعد اختيار الكورد، استخدم زر <strong>▶ التشغيل</strong> بالمشغل بالأسفل لسماع النغمات الثلاث تُعزف معاً — بضغطة وحدة تشتغل وتنتهي طبيعياً (بدون إيقاف مؤقت)، وتضيء أثناء التشغيل.</p>
+      <p>🔹 <strong>اختيار كورد:</strong> تظهر الكوردات السبعة بدرجاتها (I, ii, iii, IV, V, vi, vii°...)، وباسم كل كورد الكامل (مثل "دو Major" أو "رى Minor"). اضغط على أي كورد لتختاره — يشتغل صوته <strong>فوراً</strong> وتضيء نغماته الثلاث على الزند بالأزرق.</p>
+      <p>🔹 <strong>إعادة سماع الكورد:</strong> استخدم زر <strong>▶ التشغيل</strong> بالمشغل بالأسفل لإعادة سماع نفس الكورد وقت ما تحب.</p>
       <p>🔹 <strong>سماع كل نغمة لحالها:</strong> يمكنك أيضاً الضغط على أي نغمة من الثلاث مباشرة (بنفس تقنية النغمة المستمرة) للتأكد من صوتها فرادى، قبل أو بدل سماع الكورد كاملاً معاً.</p>
       <p>🔹 <strong>الرجوع للسلم:</strong> اضغط تبويب "دائرة الرابعات والخامسات" بأعلى القائمة، أو اختر مقاماً جديداً من الدائرة، للرجوع لعرض السلم العادي على الزند.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-ar-15">
       <h3>١٥. تقييم الموقع</h3>
       <p>يقدر أي زائر يقيّم الموقع بنجوم من ١ إلى ٥، ويشوف المعدل العام لكل التقييمات.</p>
       <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (بجانب زر "تواصل" وشعار رؤية ٢٠٣٠).</p>
@@ -1593,14 +1657,32 @@ input[type="radio"] {
     <button class="help-close-btn" id="helpCloseBtnEn" onclick="document.getElementById('page-help-en').style.display='none';">✕ Close</button>
     <h2 class="help-title">Website User Guide</h2>
 
-    <div class="help-section">
+    <div class="help-toc">
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-1')">1. Language</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-2')">2. Do/C</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-3')">3. Maqam Type</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-4')">4. Arabic Maqam</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-5')">5. Guide &amp; Intervals</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-6')">6. Fretboard</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-7')">7. Play Scale</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-8')">8. Western Scales</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-9')">9. Scale Guide</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-10')">10. Hand</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-11')">11. String Count</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-12')">12. Help</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-13')">13. Single Note</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-14')">14. Chords</span>
+      <span class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-15')">15. Rating</span>
+    </div>
+
+    <div class="help-section" id="help-sec-en-1">
       <h3>1. Language Toggle Button (AR/EN)</h3>
       <p>Next to the help button below the fretboard, there's a button that switches the entire site's language between <strong>Arabic</strong> and <strong>English</strong> — it shows "AR" or "EN" depending on the current language.</p>
       <p>🔹 Press the button to switch language instantly (the page reloads automatically to apply the new language everywhere).</p>
       <p>🔹 Your choice is saved and stays even if you close the browser and come back later.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-2">
       <h3>2. Note-Naming System Toggle (Do/C)</h3>
       <p>Next to the language button, an extra button appears <strong>only in English mode and on the Western Scales tab</strong>, letting you switch between two international note-naming systems:</p>
       <p>🔹 <strong>Solfège (Do, Re, Mi...)</strong> — the default, common in European, Latin, and Arabic countries.</p>
@@ -1608,12 +1690,12 @@ input[type="radio"] {
       <p>🔹 The switch applies instantly everywhere on the Western Scales page: note names on the fretboard, string names, chord names, and the circle of fourths/fifths.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-3">
       <h3>3. Choosing the Maqam Type</h3>
       <p>When you open the site you'll find a toggle at the top-left to switch between <strong>Arabic Maqamat</strong> and <strong>Western Scales</strong>. Start by choosing the type you want to explore. The default selection is <strong>Arabic Maqamat</strong>.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-4">
       <h3>4. Choosing an Arabic Maqam</h3>
       <p>Press the <strong>☰ Choose Maqam</strong> button to open the menu. Pick the family, then the maqam, then the letter (root). Selecting a maqam will show its default root automatically in the letter list.</p>
       <p>The site supports representing the oud with 5 or 6 strings, and the number of available letters for the root depends on the mode:</p>
@@ -1621,7 +1703,7 @@ input[type="radio"] {
       <p>In 6-string mode, the site offers <strong>45 letters</strong> divided into quarter-tones — from <strong>Sol (low)</strong> to <strong>Fa Jawab</strong> (the "Sharrar" string, the bottom-most string for a right-handed player, the top-most for a left-handed player) — to represent any Arabic maqam.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-5">
       <h3>5. Maqam Guide and Intervals</h3>
       <p>After choosing a maqam, two buttons appear above the fretboard:</p>
       <p>🔹 <strong>Guide for [name]</strong> — shows an illustration of the maqam on the musical staff along with its constituent jins (tetrachords).</p>
@@ -1629,30 +1711,30 @@ input[type="radio"] {
       <p style="font-size:0.85rem;color:#555;text-align:center">These display the guide and intervals of the maqam currently shown.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-6">
       <h3>6. Reading the Oud Fretboard</h3>
       <p>The fretboard represents the oud's strings (Fa, La, Re, Sol, Do — plus a sixth string "Sharrar" if enabled) from top to bottom. The numbers above the fretboard represent the frets. Colored rectangles mark the maqam's note positions.</p>
       <p>⚠️ <strong>The thin brown lines between the numbered frets represent quarter-tones</strong> — the essential musical distinction in Arabic maqamat.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-7">
       <h3>7. Playing the Scale</h3>
       <p>Use the player buttons at the bottom: <strong>▶ Play</strong> to hear the scale, <strong>⏸ Pause</strong>, <strong>⏹ Stop</strong>, <strong>⏮ Restart</strong>, and the <strong>Repeat</strong> button to play the scale continuously. You can change the <strong>tuning</strong> from the dropdown, and the <strong>speed</strong> with the slider (or the <strong>−</strong> and <strong>+</strong> buttons beside it for fine adjustment) — the number shown is the speed in BPM (beats per minute), matching a real musical metronome exactly.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-8">
       <h3>8. Western Scales</h3>
       <p>Press the <strong>☰ Choose Scale</strong> button to open the menu. Choose the key from the circle of fifths and the scale type (Major, Natural Minor, Harmonic, Melodic). The scale's notes will appear on the fretboard.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-9">
       <h3>9. Western Scale Guide</h3>
       <p>After choosing a key and scale type from the circle of fifths, a <strong>Guide for [scale name]</strong> button appears above the fretboard (in the same spot as the Arabic maqam guide button).</p>
       <p>🔹 Pressing it opens a popup showing <strong>the scale's notes on a traditional musical staff</strong> (ascending and descending), in the same octave matching its actual pitch on the oud.</p>
       <p>🔹 The button's label updates automatically with each key or scale type you choose.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-10">
       <h3>10. Choosing Right or Left Hand</h3>
       <p>To make playing easier for left-handed players, the site provides <strong>a single button</strong> above the fretboard that shows your current setting — "Right" or "Left".</p>
       <p>🔹 The default whenever you open the site is always: <strong>"Right"</strong>.</p>
@@ -1660,19 +1742,19 @@ input[type="radio"] {
       <p>🔹 This switch is <strong>purely visual</strong> — the correct note positions and sounds never change. It works the same way for both Arabic maqamat and Western scales, and your choice stays fixed when switching between the two tabs.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-11">
       <h3>11. String Count Button (5 or 6)</h3>
       <p>Right beside the hand button, there's a button showing the current string count — "5 Strings" or "6 Strings".</p>
       <p>🔹 The default is: <strong>6 strings</strong> (includes the sixth string, "Sharrar").</p>
       <p>🔹 Pressing the button switches the count instantly, and resets the selected maqam/scale to its default (while hand direction, tuning, and speed stay as they were).</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-12">
       <h3>12. Help Button (?)</h3>
       <p>The large question mark "؟" below the fretboard opens this exact guide page — anytime you need to review any detail.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-13">
       <h3>13. Playing a Single Note by Tapping</h3>
       <p>Besides playing the whole scale or maqam with the player buttons, you can hear any single note directly from the fretboard, using <strong>real sustained sound</strong> (no looping or clicks) that starts and stops based on your taps.</p>
       <p>🔹 <strong>Start:</strong> Tap any note rectangle (in Arabic maqamat or Western scales) to start its sound playing continuously, and its color turns red.</p>
@@ -1683,18 +1765,18 @@ input[type="radio"] {
       <p style="margin-right:18px;">- Conversely: if the scale/maqam is playing sequentially and you tap any note rectangle, sequential playback stops automatically and the single sustained note starts instead.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-14">
       <h3>14. Western Scale Chords</h3>
       <p>Besides the scales themselves, the site provides the <strong>seven chords</strong> (scale degrees) for each Western scale — the three notes making up each chord appear together on the fretboard, in the closest and easiest playing position.</p>
       <p>🔹 <strong>Opening the chords list:</strong> Press the <strong>"☰ Choose from Circle"</strong> button above the oud (in the Western Scales tab), then press the <strong>"Chords"</strong> tab at the top of the menu, instead of the "Circle of Fourths and Fifths" tab.</p>
       <p>🔹 <strong>Choosing the scale type:</strong> Inside the chords menu, there's a row of buttons (Major / Natural Minor / Harmonic Minor / Melodic Minor) letting you switch between the four types directly, and the chords update instantly without needing to close the menu.</p>
-      <p>🔹 <strong>Choosing a chord:</strong> The seven chords appear with their degrees (I, ii, iii, IV, V, vi, vii°...) and each chord's full name (like "Do Major" or "Re Minor"). Tap any chord to select it — its three notes light up in blue on the fretboard, and the regular scale notes temporarily disappear to highlight the chord alone.</p>
-      <p>🔹 <strong>Playing the full chord:</strong> After choosing a chord, use the <strong>▶ Play</strong> button in the player below to hear the three notes played together — a single tap plays it through and it ends naturally (no pause), lighting up while playing.</p>
+      <p>🔹 <strong>Choosing a chord:</strong> The seven chords appear with their degrees (I, ii, iii, IV, V, vi, vii°...) and each chord's full name (like "Do Major" or "Re Minor"). Tap any chord to select it — it plays <strong>instantly</strong> and its three notes light up in blue on the fretboard.</p>
+      <p>🔹 <strong>Replaying the chord:</strong> Use the <strong>▶ Play</strong> button in the player below to hear the same chord again anytime.</p>
       <p>🔹 <strong>Hearing each note alone:</strong> You can also tap any of the three notes directly (using the same sustained-note technique) to check its sound individually, before or instead of hearing the whole chord together.</p>
       <p>🔹 <strong>Returning to the scale:</strong> Press the "Circle of Fourths and Fifths" tab at the top of the menu, or choose a new key from the circle, to return to the normal scale display on the fretboard.</p>
     </div>
 
-    <div class="help-section">
+    <div class="help-section" id="help-sec-en-15">
       <h3>15. Rating the Website</h3>
       <p>Any visitor can rate the website from 1 to 5 stars, and see the overall average of all ratings.</p>
       <p>🔹 <strong>Opening the rating page:</strong> Press the <strong>"⭐ Rate"</strong> button at the bottom of the page (beside the "Contact" button and the Vision 2030 logo).</p>
