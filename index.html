@@ -3212,6 +3212,7 @@ function buildOudStatic(){
         // يتصفّر المقام/السلم بس (يرجع لافتراضي كل تبويب) — اليد، التبويب النشط، الدوزان، والسرعة تبقى زي ما هي (خصائص شخصية ثابتة للعازف)
         sessionStorage.removeItem('oudArabicSelection');
         sessionStorage.removeItem('oudWesternSelection');
+        sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ كمان عشان يرجع للافتراضي مع المقام/السلم
         OUD.setStringCount(newCount);
         window.location.reload();
       });
@@ -3240,6 +3241,7 @@ function buildOudStatic(){
         const newLang = (window.oudLanguage === 'en') ? 'ar' : 'en';
         localStorage.setItem('oudLanguagePref', newLang);
         window.oudLanguage = newLang;
+        sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ عشان يرجع كل شي للافتراضي بعد تبديل اللغة
         window.location.reload();
       });
       return lg;
