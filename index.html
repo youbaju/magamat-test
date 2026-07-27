@@ -778,6 +778,11 @@ flex-shrink: 0;
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
   .c-selection-summary { bottom: 130px !important; top: auto !important; }
 }
+/* تصغير خط زري "تواصل" و"تقييم" (SVG بالتذييل) خاص بمدى شاشة الآيباد (أفقي وعمودي) — عشان ما يفيض النص عن حدود الزر */
+@media (min-width: 768px) and (max-width: 1024px) {
+  svg#shared-oudSvg .footer-btn-text { font-size: 26px !important; }
+  svg#shared-oudSvg .footer-btn-star { font-size: 22px !important; }
+}
   .c-selection-summary > *{ pointer-events: auto; }
 
   /* ===== أزرار اختيار نوع السلم ===== */
@@ -3529,10 +3534,12 @@ function buildOudStatic(){
   });
   const contactLines = (window.oudLanguage === 'en') ? ['Contact', 'Us'] : ['تواصل', 'معنا'];
   const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  tspan1.setAttribute('class', 'footer-btn-text');
   tspan1.setAttribute('x', btnX + btnW/2);
   tspan1.setAttribute('dy', '-0.6em');
   tspan1.textContent = contactLines[0];
   const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  tspan2.setAttribute('class', 'footer-btn-text');
   tspan2.setAttribute('x', btnX + btnW/2);
   tspan2.setAttribute('dy', '1.2em');
   tspan2.textContent = contactLines[1];
@@ -3557,11 +3564,13 @@ function buildOudStatic(){
   });
   const ratingWord = (window.oudLanguage === 'en') ? 'Rate' : 'تقييم';
   const rtspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  rtspan1.setAttribute('class', 'footer-btn-text');
   rtspan1.setAttribute('x', ratingBtnX + btnW/2);
   rtspan1.setAttribute('dy', '-0.6em');
   rtspan1.setAttribute('font-size', '40');
   rtspan1.textContent = ratingWord;
   const rtspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+  rtspan2.setAttribute('class', 'footer-btn-star');
   rtspan2.setAttribute('x', ratingBtnX + btnW/2);
   rtspan2.setAttribute('dy', '1.5em');
   rtspan2.setAttribute('font-size', '36');
