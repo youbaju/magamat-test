@@ -946,7 +946,7 @@ flex-shrink: 0;
     .maqam-guide-btn, .maqam-intervals-btn { 
       font-size: .72rem; 
       padding: 8px 16px;
-      max-width: 85vw;
+      max-width: 90vw;
       white-space: nowrap;
     }
   }
@@ -969,8 +969,7 @@ flex-shrink: 0;
   /* الجوال الأفقي: الزرين يطلعون بصف واحد جنب زر "☰" (فوق)، والمسافة بينهم كانت ضيقة جداً —
      ننزّل الصف لتحت شوي ونصغّر الخط عشان يبقى فيه مسافة واضحة عن زر القائمة */
   @media (max-height: 500px) and (orientation:landscape){
-    .maqam-btns-row{ top: 58px !important; }
-    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; }
+    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; max-width: 47vw; }
   }
 
   /* ===== Modal الأبعاد ===== */
@@ -5892,6 +5891,14 @@ if (westernGuideBtn && westernGuideModal) {
       gBtn.style.width = w + 'px';
       iBtn.style.width = w + 'px';
     };
+    // نعيد الحساب لما يدوّر الجهاز أو يتغيّر حجم الشاشة — لأن حجم الخط يختلف بين الاتجاهين
+    // (كان الحساب يشتغل بس وقت اختيار مقام، فلو دوّرت الجهاز بعدها يضل العرض القديم غير مناسب)
+    window.addEventListener('resize', () => {
+      if (typeof window.syncGuideIntervalsBtnWidth === 'function') window.syncGuideIntervalsBtnWidth();
+    });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => { if (typeof window.syncGuideIntervalsBtnWidth === 'function') window.syncGuideIntervalsBtnWidth(); }, 150);
+    });
     const maqamIntervalsModal = document.getElementById('maqamIntervalsModal');
     const mitClose = document.getElementById('mitClose');
 
