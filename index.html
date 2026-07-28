@@ -4275,7 +4275,9 @@ function resetPlayer(){
   rewindBtn.disabled = true;
   if(sequence.length === 0) buildSequenceAndPaths(); // لضمان وجود sequence لحساب النسبة بأمان
   updateProgressBar();
-  drawOudScale(state.root, state.scaleType, 'asc');
+  // نرسم سلم السلالم الغربية على الزند بس لو فعلاً بوضع السلالم الغربية — غير كذا (يعني إحنا بوضع المقامات العربية)
+  // كنا نمسح رسمة المقام العربي الحالي ونعوّضها بسلم دو ماجور الافتراضي كل مرة تُستدعى فيها stopAllOudPlayback (مثلاً عند فتح لوحة "اختيار المقام")
+  if (!window.isArabicMode) drawOudScale(state.root, state.scaleType, 'asc');
 }
 window.resetPlayer = resetPlayer; // نكشفها عالمياً عشان أي كود خارجي (زي زر تواصل) يقدر يوقف التشغيل مباشرة وبثقة
 
