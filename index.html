@@ -3430,6 +3430,7 @@ function buildOudStatic(){
           if (typeof window.redrawOudEverything === 'function') window.redrawOudEverything();
           if (typeof window.renderAll === 'function') window.renderAll();
           if (typeof window.refreshCircleLabels === 'function') window.refreshCircleLabels();
+          if (typeof window.updateNowPlaying === 'function') window.updateNowPlaying(); // يحدّث اسم السلم/الجذر بزر دليل السلم الغربي (كان يبقى بالنظام القديم لحد ما تختار سلم جديد)
           if (typeof window.renderChordsList === 'function' && window.chordModeActive) window.renderChordsList();
           if (window.selectedChord && typeof renderChordHighlight === 'function') renderChordHighlight(window.selectedChord.positions, false); // تسميات الكورد على الزند بطبقة منفصلة، تحتاج تحديث صريح
         });
@@ -5943,7 +5944,7 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = 0.06; // نسبة موحّدة للوضعين، محسوبة من قياس دقيق لحجم العنوان العربي الأصلي نسبة لعرض الصورة (ما يعتمد على الشاشة، يعتمد على الصورة نفسها فقط)
+              const ratio = isPortrait ? 0.035 : 0.06; // نصغّر النسبة بالعمودي عشان الحاوية صارت أصغر (١٥٪ بدل ٢٧٪)، والنص كان يطلع مقطوع من الأسفل
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
               let fontPx = Math.max(7, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
