@@ -1961,7 +1961,7 @@ input[type="radio"] {
       </div>
       <div id="maqamGuideImgWrap" style="position:relative;">
         <img id="maqamGuideImg" src="" alt="دليل المقام" style="width:100%;border-radius:8px;display:block;">
-        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:15%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:1%;box-sizing:border-box;white-space:nowrap;"></div>
+        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:19%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:0;box-sizing:border-box;white-space:nowrap;"></div>
       </div>
     </div>
   </div>
@@ -5989,8 +5989,12 @@ if (westernGuideBtn && westernGuideModal) {
           if (MAQAM_GUIDE_FILES[maqam]) {
             const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]);
             guideTitleOverlay.textContent = isEn ? ('Guide of ' + window.MAQAM_NAME_EN[maqam]) : ('دليل مقام ' + maqam);
-            // ملاحظة: ما نحسب الحجم هنا — النافذة قد تكون مقفولة الآن (عرضها صفر)، فالحساب يكون غلط.
-            // الحساب الفعلي ينتقل لحظة فتح النافذة (زر الدليل)، عشان يقرأ العرض الحقيقي وقت ما يبان فعلاً.
+            // لو النافذة مفتوحة أصلاً (المستخدم يتصفح مقامات متتالية بدون ما يسكّرها)، لازم نعيد الحساب
+            // فوراً للمحتوى الجديد، لأن النص تغيّر وطوله يختلف عن المقام السابق
+            const modalEl = document.getElementById('maqamGuideModal');
+            if (modalEl && modalEl.style.display === 'flex' && typeof window.resizeMaqamGuideTitle === 'function') {
+              window.resizeMaqamGuideTitle();
+            }
           } else {
             guideTitleOverlay.style.display = 'none';
           }
