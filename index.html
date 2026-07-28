@@ -1961,7 +1961,7 @@ input[type="radio"] {
       </div>
       <div id="maqamGuideImgWrap" style="position:relative;">
         <img id="maqamGuideImg" src="" alt="دليل المقام" style="width:100%;border-radius:8px;display:block;">
-        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:19%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:0;box-sizing:border-box;white-space:nowrap;"></div>
+        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;background:#fff;align-items:center;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.2;box-sizing:border-box;padding:2.2% 2%;font-size:clamp(9px, 3vw, 31px);white-space:nowrap;overflow:hidden;"></div>
       </div>
     </div>
   </div>
@@ -5857,40 +5857,8 @@ if (westernGuideBtn && westernGuideModal) {
     const maqamGuideImg = document.getElementById('maqamGuideImg');
     const maqamGuideBtnName = document.getElementById('maqamGuideBtnName');
 
-    // نحسب حجم خط عنوان الدليل هنا (وقت فتح النافذة فعلياً، مو وقت اختيار المقام) — لأن النافذة
-    // لو كانت مقفولة وقت الحساب، عرضها يطلع صفر ويصير الحساب غلط (هذا كان سبب التذبذب بالحجم)
-    window.resizeMaqamGuideTitle = function(){
-      const guideTitleOverlay = document.getElementById('maqamGuideTitleOverlay');
-      if (!guideTitleOverlay || !maqamGuideBtnName || !maqamGuideBtnName.textContent) return;
-      guideTitleOverlay.style.display = 'flex';
-      requestAnimationFrame(() => {
-        const boxWidth = guideTitleOverlay.clientWidth || 300;
-        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-        const isPhonePortrait = isPortrait && boxWidth < 500;
-        const isEn = (window.oudLanguage === 'en');
-        let ratio;
-        if (isPhonePortrait) {
-          ratio = isEn ? 0.028 : 0.017;
-        } else if (isPortrait) {
-          ratio = isEn ? 0.06 : 0.055;
-        } else {
-          ratio = 0.07;
-        }
-        guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
-        let fontPx = Math.max(7, boxWidth * ratio);
-        guideTitleOverlay.style.fontSize = fontPx + 'px';
-        let tries = 0;
-        while ((guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth || guideTitleOverlay.scrollHeight > guideTitleOverlay.clientHeight) && tries < 25) {
-          fontPx *= 0.92;
-          guideTitleOverlay.style.fontSize = fontPx + 'px';
-          tries++;
-        }
-      });
-    };
-
     maqamGuideBtn.addEventListener('click', () => {
       maqamGuideModal.style.display = 'flex';
-      if (typeof window.resizeMaqamGuideTitle === 'function') window.resizeMaqamGuideTitle();
     });
     maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; });
     maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
@@ -5983,18 +5951,14 @@ if (westernGuideBtn && westernGuideModal) {
           maqamGuideBtn.style.display = 'none';
         }
         // نضيف عنوان الدليل بالعربي أو الإنجليزي فوق الصورة (الصور الحين خالية من أي عنوان مرسوم بداخلها،
-        // بعد ما تم حذفه لتفادي تراكب عناوين قديمة كانت تظهر بصور معيّنة)
+        // بعد ما تم حذفه لتفادي تراكب عناوين قديمة كانت تظهر بصور معيّنة) — الحجم الحين بـCSS بحت (clamp)،
+        // ما يحتاج أي حساب جافاسكربت (كان مصدر مشاكل تذبذب متكررة)
         const guideTitleOverlay = document.getElementById('maqamGuideTitleOverlay');
         if (guideTitleOverlay) {
           if (MAQAM_GUIDE_FILES[maqam]) {
             const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]);
             guideTitleOverlay.textContent = isEn ? ('Guide of ' + window.MAQAM_NAME_EN[maqam]) : ('دليل مقام ' + maqam);
-            // لو النافذة مفتوحة أصلاً (المستخدم يتصفح مقامات متتالية بدون ما يسكّرها)، لازم نعيد الحساب
-            // فوراً للمحتوى الجديد، لأن النص تغيّر وطوله يختلف عن المقام السابق
-            const modalEl = document.getElementById('maqamGuideModal');
-            if (modalEl && modalEl.style.display === 'flex' && typeof window.resizeMaqamGuideTitle === 'function') {
-              window.resizeMaqamGuideTitle();
-            }
+            guideTitleOverlay.style.display = 'flex';
           } else {
             guideTitleOverlay.style.display = 'none';
           }
