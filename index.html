@@ -2855,6 +2855,10 @@ window.oudLanguage = localStorage.getItem('oudLanguagePref') || 'ar';
 
 // نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي — يُحفظ بـsessionStorage عشان يفضل مع تبديلات زي عدد الأوتار، بس يُمسح صراحة عند تبديل اللغة (كود منفصل بزر اللغة)
 window.oudNoteSystem = sessionStorage.getItem('oudNoteSystemPref') || 'solfege';
+// دائرة الرابعات/الخامسات تُبنى بكود أسبق بالسكربت (قبل ما يتحدد window.oudNoteSystem فوق)، فتسمياتها كانت
+// تُرسم أول مرة وهو لسا undefined فترجع دايماً للاتيني (C,D,E...) بغض النظر عن الإعداد الفعلي (صولفيج افتراضياً) —
+// نزامنها هنا فوراً عشان تعكس القيمة الصحيحة من أول تحميل، بدل ما تنتظر أول ضغطة على زر Do/C
+if (typeof window.refreshCircleLabels === 'function') window.refreshCircleLabels();
 
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
