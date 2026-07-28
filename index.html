@@ -951,20 +951,20 @@ flex-shrink: 0;
     }
   }
   @media (max-width: 1024px) and (orientation:portrait){
-    .maqam-intervals-btn{ position: fixed; top: 120px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
+    .maqam-intervals-btn{ position: fixed; top: 108px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
   @media (max-width: 480px) and (orientation:portrait){
     .maqam-guide-btn, .maqam-intervals-btn {
-      white-space: normal;
-      text-overflow: unset;
-      overflow: visible;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
       max-width: 72vw;
       text-align: center;
       line-height: 1.3;
       font-size: .62rem;
       font-weight: 700;
     }
-    .maqam-intervals-btn{ top: 130px; }
+    .maqam-intervals-btn{ top: 105px; }
   }
 
   /* ===== Modal الأبعاد ===== */
@@ -5871,6 +5871,18 @@ if (westernGuideBtn && westernGuideModal) {
     maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; });
     maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
     const maqamIntervalsBtn = document.getElementById('maqamIntervalsBtn');
+
+    // نوحّد عرض زر الدليل وزر الأبعاد ليصيروا بنفس العرض دايماً (نقيس أعرض واحد طبيعياً ونفرضه عالاثنين)
+    window.syncGuideIntervalsBtnWidth = function(){
+      const gBtn = document.getElementById('maqamGuideBtn');
+      const iBtn = document.getElementById('maqamIntervalsBtn');
+      if (!gBtn || !iBtn || gBtn.style.display === 'none' || iBtn.style.display === 'none') return;
+      gBtn.style.width = 'auto';
+      iBtn.style.width = 'auto';
+      const w = Math.max(gBtn.offsetWidth, iBtn.offsetWidth);
+      gBtn.style.width = w + 'px';
+      iBtn.style.width = w + 'px';
+    };
     const maqamIntervalsModal = document.getElementById('maqamIntervalsModal');
     const mitClose = document.getElementById('mitClose');
 
@@ -5977,6 +5989,11 @@ if (westernGuideBtn && westernGuideModal) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => { maqamGuideBtn.style.opacity = '1'; });
         });
+        // نوحّد عرض زر الدليل وزر الأبعاد دايماً (مو بس بحد أدنى ثابت) — لأن طول الاسمين يختلف
+        // باختلاف اللغة ("Guide of" أقصر من "Intervals of")، فنقيس أعرض واحد ونفرضه عالاثنين
+        if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
+          requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth());
+        }
       } else {
         window.isArabicMode = false;
         currentAudioPath = `sounds/${fasilaFolder[fasila]}/${maqamFolder[maqam]}/${harf}.mp3`;
