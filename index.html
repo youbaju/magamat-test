@@ -1546,10 +1546,10 @@ input[type="radio"] {
 
     <div class="help-section" id="help-sec-ar-2">
       <h3>٢. زر تبديل نظام تسمية النغمات (Do/C)</h3>
-      <p>بجانب زر اللغة، يظهر زر إضافي <strong>بس بوضع الإنجليزي وبصفحة السلالم الغربية</strong> يبدّل طريقة تسمية النغمات بين نظامين عالميين:</p>
+      <p>بجانب زر اللغة، يظهر زر إضافي <strong>بس بوضع الإنجليزي</strong> (بكلا التبويبين: المقامات العربية والسلالم الغربية) يبدّل طريقة تسمية النغمات بين نظامين عالميين:</p>
       <p>🔹 <strong>صولفيج (Do, Re, Mi...)</strong> — الافتراضي، شائع بدول أوروبية ولاتينية وعربية.</p>
       <p>🔹 <strong>حروف لاتينية (C, D, E...)</strong> — شائع بالدول الأنجلوسكسونية (أمريكا، بريطانيا).</p>
-      <p>🔹 التبديل يطبّق فوراً على كل مكان بصفحة السلالم الغربية: أسماء النغمات على الزند، أسماء الأوتار، أسماء الكوردات، ودائرة الرابعات والخامسات.</p>
+      <p>🔹 التبديل يطبّق فوراً على كل شي: أسماء النغمات على الزند (بالمقامات العربية والسلالم الغربية معاً)، قائمة اختيار المحطّ، أسماء الأوتار، أسماء الكوردات، ودائرة الرابعات والخامسات.</p>
     </div>
 
     <div class="help-section" id="help-sec-ar-3">
@@ -1704,10 +1704,10 @@ input[type="radio"] {
 
     <div class="help-section" id="help-sec-en-2">
       <h3>2. Note-Naming System Toggle (Do/C)</h3>
-      <p>Next to the language button, an extra button appears <strong>only in English mode and on the Western Scales tab</strong>, letting you switch between two international note-naming systems:</p>
+      <p>Next to the language button, an extra button appears <strong>only in English mode</strong> (on both the Arabic Maqamat and Western Scales tabs), letting you switch between two international note-naming systems:</p>
       <p>🔹 <strong>Solfège (Do, Re, Mi...)</strong> — the default, common in European, Latin, and Arabic countries.</p>
       <p>🔹 <strong>Latin letters (C, D, E...)</strong> — common in Anglo-Saxon countries (US, UK).</p>
-      <p>🔹 The switch applies instantly everywhere on the Western Scales page: note names on the fretboard, string names, chord names, and the circle of fourths/fifths.</p>
+      <p>🔹 The switch applies instantly everywhere: note names on the fretboard (both Arabic maqamat and Western scales), the root-selection list, string names, chord names, and the circle of fourths/fifths.</p>
     </div>
 
     <div class="help-section" id="help-sec-en-3">
@@ -2112,16 +2112,12 @@ window.isArabicMode = false;
       if(targetId === 'page-maqamat'){
         window.isArabicMode = true;
         if(westernBtnsRow) westernBtnsRow.style.display = 'none';
-        const noteSysBtn = document.getElementById('noteSystemToggleBtn');
-        if (noteSysBtn) noteSysBtn.style.display = 'none';
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         if(typeof setupArabicPlayerButtons === 'function') setupArabicPlayerButtons();
         setTimeout(() => { if(typeof window.showMaqam === 'function') window.showMaqam(); }, 100);
       } else if(targetId === 'page-circle'){
         window.isArabicMode = false;
         if(westernBtnsRow) westernBtnsRow.style.display = '';
-        const noteSysBtn = document.getElementById('noteSystemToggleBtn');
-        if (noteSysBtn) noteSysBtn.style.display = '';
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         setTimeout(() => { if(typeof renderAll === 'function') renderAll(); }, 50);
         setTimeout(() => { if(typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance(); }, 120);
@@ -3408,7 +3404,7 @@ function buildOudStatic(){
     // عند تبديل التبويب من دالة showPage — لأن هالرسمة (الزند المشترك) تُرسم مرة وحدة بس أول تحميل
     if (window.oudLanguage === 'en') {
       function makeNoteSystemBtn(x, y){
-        const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' + (window.isArabicMode ? 'display:none;' : '') });
+        const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
         ng.appendChild(el('rect', {
           x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
           fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
@@ -3434,6 +3430,8 @@ function buildOudStatic(){
           if (typeof window.updateNowPlaying === 'function') window.updateNowPlaying(); // يحدّث اسم السلم/الجذر بزر دليل السلم الغربي (كان يبقى بالنظام القديم لحد ما تختار سلم جديد)
           if (typeof window.renderChordsList === 'function' && window.chordModeActive) window.renderChordsList();
           if (window.selectedChord && typeof renderChordHighlight === 'function') renderChordHighlight(window.selectedChord.positions, false); // تسميات الكورد على الزند بطبقة منفصلة، تحتاج تحديث صريح
+          const maqamSelEl = document.getElementById('maqam-select');
+          if (maqamSelEl && maqamSelEl.value && typeof window.setDefaultHarf === 'function') window.setDefaultHarf(maqamSelEl.value); // نحدّث قائمة الحروف (اختيار المحطّ) عشان تعكس نظام Do/C الجديد فوراً
         });
         return ng;
       }
@@ -4810,6 +4808,14 @@ if (westernGuideBtn && westernGuideModal) {
       'faHafDiazJawabJawab':'Fa Half Sharp Jawab Jawab','faDiazJawabJawab':'Fa Sharp Jawab Jawab'
     };
     window.HARF_DISPLAY_EN = HARF_DISPLAY_EN;
+    // نشتق جدول الحروف (C,D,E...) آلياً من الجدول الإنجليزي الصحيح، باستبدال المقطع الصولفيجي بالحرف
+    // المقابل بس، مع إبقاء وصف الربع تون ("Half Flat"/"Sharp"...) زي ما هو بدون أي تغيير
+    const SOLFEGE_TO_LETTER_WORD = { 'Sol':'G', 'La':'A', 'Si':'B', 'Do':'C', 'Re':'D', 'Mi':'E', 'Fa':'F' };
+    const HARF_DISPLAY_LETTER = {};
+    for (const k in HARF_DISPLAY_EN) {
+      HARF_DISPLAY_LETTER[k] = HARF_DISPLAY_EN[k].replace(/^(Sol|La|Si|Do|Re|Mi|Fa)/, (m) => SOLFEGE_TO_LETTER_WORD[m]);
+    }
+    window.HARF_DISPLAY_LETTER = HARF_DISPLAY_LETTER;
 
     function setDefaultHarf(maqam) {
       const idx = defaultHarf[maqam];
@@ -4817,8 +4823,11 @@ if (westernGuideBtn && westernGuideModal) {
         const opt = harfSelect.options[i];
         // نشيل أي علامة قديمة ("( محط المقام )" أو "( Root )") من النص الحالي أول، عشان الحساب يبدأ دايماً من نص نظيف
         const cleanCurrentText = opt.textContent.replace(/\s*\(\s*(محط المقام|Root)\s*\)\s*$/, '');
-        // نستعيد النص الصحيح حسب اللغة الحالية (قراءة آمنة عبر window، تفادياً لمشكلة التوقيت TDZ)
-        const correctText = (window.oudLanguage === 'en' && window.HARF_DISPLAY_EN && window.HARF_DISPLAY_EN[opt.value])
+        // نستعيد النص الصحيح حسب اللغة الحالية ونظام تسمية النغمات (Do/C) — قراءة آمنة عبر window، تفادياً لمشكلة التوقيت TDZ
+        const useLetterEn = (window.oudLanguage === 'en' && window.oudNoteSystem === 'letter');
+        const correctText = (window.oudLanguage === 'en' && useLetterEn && window.HARF_DISPLAY_LETTER && window.HARF_DISPLAY_LETTER[opt.value])
+          ? window.HARF_DISPLAY_LETTER[opt.value]
+          : (window.oudLanguage === 'en' && window.HARF_DISPLAY_EN && window.HARF_DISPLAY_EN[opt.value])
           ? window.HARF_DISPLAY_EN[opt.value]
           : (window.HARF_DISPLAY && window.HARF_DISPLAY[opt.value]) || cleanCurrentText;
         opt.dataset.original = correctText;
@@ -4830,6 +4839,7 @@ if (westernGuideBtn && westernGuideModal) {
         harfSelect.options[idx].textContent = harfSelect.options[idx].dataset.original + markerText;
       }
     }
+    window.setDefaultHarf = setDefaultHarf; // نكشفها عالمياً عشان زر Do/C (بمجال مختلف) يقدر يستدعيها
     maqamSelect.addEventListener('change', () => setDefaultHarf(maqamSelect.value));
 
     document.getElementById('r1b').value = "الراست";
@@ -5111,8 +5121,10 @@ if (westernGuideBtn && westernGuideModal) {
     // تحدد الاسم الصحيح لكل درجة بناءً على قاعدة 7 حروف مختلفة
     // ترجمة بسيطة وآمنة للاسم الأساسي فقط (بعد ما تحسبه الخوارزمية العربية بدقة) — ما تلمس منطق حساب الإملاء الصحيح إطلاقاً
     const BASE_NAME_AR_TO_EN = { 'دو':'Do', 'رى':'Re', 'مي':'Mi', 'فا':'Fa', 'صول':'Sol', 'لا':'La', 'سي':'Si' };
+    const BASE_NAME_AR_TO_LETTER = { 'دو':'C', 'رى':'D', 'مي':'E', 'فا':'F', 'صول':'G', 'لا':'A', 'سي':'B' };
     function displayBaseName(arabicText){
-      return (window.oudLanguage === 'en') ? (BASE_NAME_AR_TO_EN[arabicText] || arabicText) : arabicText;
+      if (window.oudLanguage !== 'en') return arabicText;
+      return (window.oudNoteSystem === 'letter') ? (BASE_NAME_AR_TO_LETTER[arabicText] || arabicText) : (BASE_NAME_AR_TO_EN[arabicText] || arabicText);
     }
 
     function getDegreeNameAndAcc(degIdx, startPos, quartersFromSol, maqamName, isDescending) {
