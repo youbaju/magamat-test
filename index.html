@@ -5963,7 +5963,10 @@ if (westernGuideBtn && westernGuideModal) {
             requestAnimationFrame(() => {
               const boxWidth = guideTitleOverlay.clientWidth || 300;
               const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              const ratio = isPortrait ? 0.05 : 0.07; // كبّرنا النسبة شوي (كانت صغيرة على الجوال/الآيباد)
+              // نفرّق بين الجوال والآيباد بالوضع العمودي حسب عرض الصورة الفعلي (الآيباد صورته أعرض
+              // بكثير من الجوال)، عشان الآيباد يضل بحجمه المضبوط والجوال يصغر شوي عن نفس النسبة
+              const isPhonePortrait = isPortrait && boxWidth < 500;
+              const ratio = isPhonePortrait ? 0.038 : (isPortrait ? 0.042 : 0.07);
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
               let fontPx = Math.max(7, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
