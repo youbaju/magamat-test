@@ -2825,6 +2825,7 @@ function updateNowPlaying(){
     }
   }
 }
+window.updateNowPlaying = updateNowPlaying; // نكشفها عالمياً عشان زر Do/C (بمجال/scope مختلف) يقدر يستدعيها بثقة
 
 /* =====================================================================
    STAGE 2: رقبة العود + رسم السلم ديناميكيًا على التقاطعات
@@ -4528,6 +4529,12 @@ if (westernGuideBtn && westernGuideModal) {
         const txt = btn.textContent.trim();
         if (window.SCALE_NAME_EN && window.SCALE_NAME_EN[txt]) btn.textContent = window.SCALE_NAME_EN[txt];
       });
+      // نعكس اتجاه صف أزرار نوع السلم (Major/Minor...) عشان ترتيبها يحاكي اتجاه القراءة الإنجليزي
+      // (من اليسار لليمين) بدل ما يبقى بترتيب عربي ثابت (يمين لليسار) حتى بالواجهة الإنجليزية
+      const scaleBtnsRow = document.querySelector('.scale-buttons');
+      if (scaleBtnsRow) scaleBtnsRow.style.direction = 'ltr';
+      const chordsMinorRow = document.querySelector('.c-chords-type-minor-row');
+      if (chordsMinorRow) chordsMinorRow.style.direction = 'ltr';
       // تسميات دائرة الرابعات والخامسات (النص بمنتصف الدائرة، مقسّم لسطرين)
       document.querySelectorAll('text').forEach(t => {
         if (t.textContent.trim() === 'دائرة الرابعات') t.textContent = 'Circle of';
