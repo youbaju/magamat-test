@@ -5857,8 +5857,40 @@ if (westernGuideBtn && westernGuideModal) {
     const maqamGuideImg = document.getElementById('maqamGuideImg');
     const maqamGuideBtnName = document.getElementById('maqamGuideBtnName');
 
+    // نحسب حجم خط عنوان الدليل هنا (وقت فتح النافذة فعلياً، مو وقت اختيار المقام) — لأن النافذة
+    // لو كانت مقفولة وقت الحساب، عرضها يطلع صفر ويصير الحساب غلط (هذا كان سبب التذبذب بالحجم)
+    window.resizeMaqamGuideTitle = function(){
+      const guideTitleOverlay = document.getElementById('maqamGuideTitleOverlay');
+      if (!guideTitleOverlay || !maqamGuideBtnName || !maqamGuideBtnName.textContent) return;
+      guideTitleOverlay.style.display = 'flex';
+      requestAnimationFrame(() => {
+        const boxWidth = guideTitleOverlay.clientWidth || 300;
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+        const isPhonePortrait = isPortrait && boxWidth < 500;
+        const isEn = (window.oudLanguage === 'en');
+        let ratio;
+        if (isPhonePortrait) {
+          ratio = isEn ? 0.028 : 0.017;
+        } else if (isPortrait) {
+          ratio = isEn ? 0.06 : 0.055;
+        } else {
+          ratio = 0.07;
+        }
+        guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%';
+        let fontPx = Math.max(7, boxWidth * ratio);
+        guideTitleOverlay.style.fontSize = fontPx + 'px';
+        let tries = 0;
+        while ((guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth || guideTitleOverlay.scrollHeight > guideTitleOverlay.clientHeight) && tries < 25) {
+          fontPx *= 0.92;
+          guideTitleOverlay.style.fontSize = fontPx + 'px';
+          tries++;
+        }
+      });
+    };
+
     maqamGuideBtn.addEventListener('click', () => {
       maqamGuideModal.style.display = 'flex';
+      if (typeof window.resizeMaqamGuideTitle === 'function') window.resizeMaqamGuideTitle();
     });
     maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; });
     maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
@@ -5957,36 +5989,8 @@ if (westernGuideBtn && westernGuideModal) {
           if (MAQAM_GUIDE_FILES[maqam]) {
             const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]);
             guideTitleOverlay.textContent = isEn ? ('Guide of ' + window.MAQAM_NAME_EN[maqam]) : ('دليل مقام ' + maqam);
-            guideTitleOverlay.style.display = 'flex';
-            // نحسب حجم الخط بالاعتماد على عرض الصورة الفعلي بالبكسل (مو vw بالنسبة للشاشة)، عشان يضل
-            // واضح وقابل للقراءة بالجوال حتى لو الصورة نفسها صغيرة نسبة لعرض الشاشة الكامل
-            requestAnimationFrame(() => {
-              const boxWidth = guideTitleOverlay.clientWidth || 300;
-              const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-              // نفرّق بين الجوال والآيباد بالوضع العمودي حسب عرض الصورة الفعلي (الآيباد صورته أعرض
-              // بكثير من الجوال)، عشان الآيباد يضل بحجمه المضبوط والجوال يصغر شوي عن نفس النسبة
-              const isPhonePortrait = isPortrait && boxWidth < 500;
-              const isEn = (window.oudLanguage === 'en');
-              let ratio;
-              if (isPhonePortrait) {
-                ratio = isEn ? 0.038 : 0.024; // بالجوال: الإنجليزي كان مقبول، العربي كان كبير جداً بنفس الرقم
-              } else if (isPortrait) {
-                ratio = isEn ? 0.06 : 0.055; // بالآيباد: كبّرنا الاثنين (كانوا صغار)
-              } else {
-                ratio = 0.07;
-              }
-              guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
-              let fontPx = Math.max(7, boxWidth * ratio);
-              guideTitleOverlay.style.fontSize = fontPx + 'px';
-              let tries = 0;
-              // نتحقق من تجاوز العرض والارتفاع معاً — قبل كذا كنا نتحقق من العرض بس، فأحياناً
-              // النص يلف لسطرين ويتجاوز ارتفاع المستطيل وينقص جزء منه (overflow:hidden)
-              while ((guideTitleOverlay.scrollWidth > guideTitleOverlay.clientWidth || guideTitleOverlay.scrollHeight > guideTitleOverlay.clientHeight) && tries < 25) {
-                fontPx *= 0.92;
-                guideTitleOverlay.style.fontSize = fontPx + 'px';
-                tries++;
-              }
-            });
+            // ملاحظة: ما نحسب الحجم هنا — النافذة قد تكون مقفولة الآن (عرضها صفر)، فالحساب يكون غلط.
+            // الحساب الفعلي ينتقل لحظة فتح النافذة (زر الدليل)، عشان يقرأ العرض الحقيقي وقت ما يبان فعلاً.
           } else {
             guideTitleOverlay.style.display = 'none';
           }
