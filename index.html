@@ -553,7 +553,7 @@ flex-shrink: 0;
     pointer-events:none;
     font-weight:700;
     direction: ltr;
-    unicode-bidi: bidi-override;
+    unicode-bidi: plaintext;
   }
   .circle-label.minor{ font-size:16px; fill:#ffffff; font-weight:600; }
   .circle-label.dual-label{
@@ -2213,6 +2213,14 @@ const CIRCLE_LATIN_MINOR = ['A','E','B','F#','C#','G# / Ab','D# / Eb','A# / Bb',
 // نفس الترتيب بالضبط، بنظام الصولفيج (تُستخدم لما يختار المستخدم "Do" بدل "C" بوضع الإنجليزي)
 const CIRCLE_SOLFEGE_MAJOR = ['Do','Sol','Re','La','Mi','Si / Do♭','Fa# / Sol♭','Do# / Re♭','La♭','Mi♭','Si♭','Fa'];
 const CIRCLE_SOLFEGE_MINOR = ['La','Mi','Si','Fa#','Do#','Sol# / La♭','Re# / Mi♭','La# / Si♭','Fa','Do','Sol','Re'];
+// نفس الترتيب بالضبط، بأسماء الصولفيج العربية (دو رى مي...) — تُستخدم افتراضياً بوضع اللغة العربية (بدل الحروف اللاتينية)
+const CIRCLE_ARABIC_MAJOR = ['دو','صول','رى','لا','مي','سي / دو♭','فا# / صول♭','دو# / رى♭','لا♭','مي♭','سي♭','فا'];
+const CIRCLE_ARABIC_MINOR = ['لا','مي','سي','فا#','دو#','صول# / لا♭','رى# / مي♭','لا# / سي♭','فا','دو','صول','رى'];
+// تحدد أي نظام تسمية تستخدمه الدائرة حالياً: عربي (افتراضي دايماً باللغة العربية)، أو صولفيج/لاتيني (حسب زر Do/C بالإنجليزي)
+function getCircleNoteMode(){
+  if (window.oudLanguage !== 'en') return 'arabic';
+  return (window.oudNoteSystem === 'solfege') ? 'solfege' : 'latin';
+}
 
 // السلالم الثلاثة + الطبيعي
 const SCALES = {
@@ -2269,14 +2277,14 @@ const state = { root: currentRoot, scaleType: currentScaleType, tuningOffset: 0,
 // letterIndex: 0=دو 1=رى 2=مي 3=فا 4=صول 5=لا 6=سي (يطابق LETTER_NAMES_ONLY بالأسفل)
 const DUAL_NAME_SEGMENTS = {
   major: {
-    5: [ {label:'B',  labelSolfege:'Si',  letterIndex:6}, {label:'Cb', labelSolfege:'Do♭', letterIndex:0} ],
-    6: [ {label:'F#', labelSolfege:'Fa#', letterIndex:3}, {label:'Gb', labelSolfege:'Sol♭', letterIndex:4} ],
-    7: [ {label:'C#', labelSolfege:'Do#', letterIndex:0}, {label:'Db', labelSolfege:'Re♭', letterIndex:1} ],
+    5: [ {label:'B',  labelSolfege:'Si',  labelArabic:'سي',  letterIndex:6}, {label:'Cb', labelSolfege:'Do♭', labelArabic:'دو♭', letterIndex:0} ],
+    6: [ {label:'F#', labelSolfege:'Fa#', labelArabic:'فا#', letterIndex:3}, {label:'Gb', labelSolfege:'Sol♭', labelArabic:'صول♭', letterIndex:4} ],
+    7: [ {label:'C#', labelSolfege:'Do#', labelArabic:'دو#', letterIndex:0}, {label:'Db', labelSolfege:'Re♭', labelArabic:'رى♭', letterIndex:1} ],
   },
   minor: {
-    5: [ {label:'G#', labelSolfege:'Sol#', letterIndex:4}, {label:'Ab', labelSolfege:'La♭', letterIndex:5} ],
-    6: [ {label:'D#', labelSolfege:'Re#', letterIndex:1}, {label:'Eb', labelSolfege:'Mi♭', letterIndex:2} ],
-    7: [ {label:'A#', labelSolfege:'La#', letterIndex:5}, {label:'Bb', labelSolfege:'Si♭', letterIndex:6} ],
+    5: [ {label:'G#', labelSolfege:'Sol#', labelArabic:'صول#', letterIndex:4}, {label:'Ab', labelSolfege:'La♭', labelArabic:'لا♭', letterIndex:5} ],
+    6: [ {label:'D#', labelSolfege:'Re#', labelArabic:'رى#', letterIndex:1}, {label:'Eb', labelSolfege:'Mi♭', labelArabic:'مي♭', letterIndex:2} ],
+    7: [ {label:'A#', labelSolfege:'La#', labelArabic:'لا#', letterIndex:5}, {label:'Bb', labelSolfege:'Si♭', labelArabic:'سي♭', letterIndex:6} ],
   }
 };
 
@@ -2374,18 +2382,18 @@ for (let i = 0; i < 12; i++) {
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex, 'data-i': i });
-    labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
+    labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
-    labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
+    labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMajor = polarToXY(CX, CY, (R_OUTER+R_OUTER_IN)/2, midAngle);
     const labelMajor = el('text', { x:labelPosMajor.x, y:labelPosMajor.y, class:'circle-label', 'data-i': i });
-    labelMajor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MAJOR[i] : CIRCLE_LATIN_MAJOR[i];
+    labelMajor.textContent = { arabic: CIRCLE_ARABIC_MAJOR[i], solfege: CIRCLE_SOLFEGE_MAJOR[i], latin: CIRCLE_LATIN_MAJOR[i] }[getCircleNoteMode()];
     segGroup.appendChild(labelMajor);
   }
 
@@ -2398,18 +2406,18 @@ for (let i = 0; i < 12; i++) {
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex, 'data-i': i });
-    labelTop.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? topName.labelSolfege : topName.label;
+    labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
-    labelBottom.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? bottomName.labelSolfege : bottomName.label;
+    labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
     const labelPosMinor = polarToXY(CX, CY, (R_INNER+R_INNER_IN)/2, midAngle);
     const labelMinor = el('text', { x:labelPosMinor.x, y:labelPosMinor.y, class:'circle-label minor', 'data-i': i });
-    labelMinor.textContent = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege') ? CIRCLE_SOLFEGE_MINOR[i] : CIRCLE_LATIN_MINOR[i];
+    labelMinor.textContent = { arabic: CIRCLE_ARABIC_MINOR[i], solfege: CIRCLE_SOLFEGE_MINOR[i], latin: CIRCLE_LATIN_MINOR[i] }[getCircleNoteMode()];
     segGroup.appendChild(labelMinor);
   }
 }
@@ -2420,18 +2428,18 @@ window.refreshCircleLabels = function(){
     const i = parseInt(elLbl.dataset.i);
     const isDual = elLbl.classList.contains('dual-label');
     const isMinor = elLbl.classList.contains('minor');
-    const useSolfege = (window.oudLanguage === 'en' && window.oudNoteSystem === 'solfege');
+    const mode = getCircleNoteMode();
     if (isDual) {
       const scaleType = elLbl.dataset.scaleType;
       const letterIdx = parseInt(elLbl.dataset.letterIdx);
       const seg = DUAL_NAME_SEGMENTS[scaleType === 'major' ? 'major' : 'minor'][i];
       if (!seg) return;
       const nameObj = seg.find(n => n.letterIndex === letterIdx) || seg[0];
-      elLbl.textContent = useSolfege ? nameObj.labelSolfege : nameObj.label;
+      elLbl.textContent = { arabic: nameObj.labelArabic, solfege: nameObj.labelSolfege, latin: nameObj.label }[mode];
     } else if (!isNaN(i)) {
       const arr = isMinor
-        ? (useSolfege ? CIRCLE_SOLFEGE_MINOR : CIRCLE_LATIN_MINOR)
-        : (useSolfege ? CIRCLE_SOLFEGE_MAJOR : CIRCLE_LATIN_MAJOR);
+        ? { arabic: CIRCLE_ARABIC_MINOR, solfege: CIRCLE_SOLFEGE_MINOR, latin: CIRCLE_LATIN_MINOR }[mode]
+        : { arabic: CIRCLE_ARABIC_MAJOR, solfege: CIRCLE_SOLFEGE_MAJOR, latin: CIRCLE_LATIN_MAJOR }[mode];
       elLbl.textContent = arr[i];
     }
   });
