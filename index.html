@@ -5966,7 +5966,15 @@ if (westernGuideBtn && westernGuideModal) {
               // نفرّق بين الجوال والآيباد بالوضع العمودي حسب عرض الصورة الفعلي (الآيباد صورته أعرض
               // بكثير من الجوال)، عشان الآيباد يضل بحجمه المضبوط والجوال يصغر شوي عن نفس النسبة
               const isPhonePortrait = isPortrait && boxWidth < 500;
-              const ratio = isPhonePortrait ? 0.026 : (isPortrait ? 0.042 : 0.07);
+              const isEn = (window.oudLanguage === 'en');
+              let ratio;
+              if (isPhonePortrait) {
+                ratio = isEn ? 0.038 : 0.024; // بالجوال: الإنجليزي كان مقبول، العربي كان كبير جداً بنفس الرقم
+              } else if (isPortrait) {
+                ratio = isEn ? 0.06 : 0.055; // بالآيباد: كبّرنا الاثنين (كانوا صغار)
+              } else {
+                ratio = 0.07;
+              }
               guideTitleOverlay.style.paddingTop = isPortrait ? '0' : '1%'; // العمودي: النص ملاصق لأعلى المستطيل تماماً (أقصى ارتفاع)
               let fontPx = Math.max(7, boxWidth * ratio);
               guideTitleOverlay.style.fontSize = fontPx + 'px';
