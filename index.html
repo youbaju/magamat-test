@@ -1961,7 +1961,7 @@ input[type="radio"] {
       </div>
       <div id="maqamGuideImgWrap" style="position:relative;">
         <img id="maqamGuideImg" src="" alt="دليل المقام" style="width:100%;border-radius:8px;display:block;">
-        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:27%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:1%;box-sizing:border-box;white-space:nowrap;"></div>
+        <div id="maqamGuideTitleOverlay" style="display:none;position:absolute;left:8%;right:8%;top:0;height:15%;background:#fff;align-items:flex-start;justify-content:center;text-align:center;font-family:'Cairo',Arial,sans-serif;font-weight:800;color:#000;line-height:1.1;overflow:hidden;padding-top:1%;box-sizing:border-box;white-space:nowrap;"></div>
       </div>
     </div>
   </div>
@@ -5930,13 +5930,13 @@ if (westernGuideBtn && westernGuideModal) {
         } else {
           maqamGuideBtn.style.display = 'none';
         }
-        // نغطي عنوان الصورة العربي بترجمة إنجليزية لو اللغة إنجليزية (باقي تسميات الأجناس ودرجات السلم
-        // بالصورة نفسها تبقى عربي عمداً — مصطلحات مقامية معروفة عالمياً وما تحتاج ترجمة، وموقعها
-        // يختلف من صورة لصورة فما نقدر نغطيها بدقة زي العنوان الثابت المكان)
+        // نضيف عنوان الدليل بالعربي أو الإنجليزي فوق الصورة (الصور الحين خالية من أي عنوان مرسوم بداخلها،
+        // بعد ما تم حذفه لتفادي تراكب عناوين قديمة كانت تظهر بصور معيّنة)
         const guideTitleOverlay = document.getElementById('maqamGuideTitleOverlay');
         if (guideTitleOverlay) {
-          if (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) {
-            guideTitleOverlay.textContent = 'Guide of ' + window.MAQAM_NAME_EN[maqam];
+          if (MAQAM_GUIDE_FILES[maqam]) {
+            const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]);
+            guideTitleOverlay.textContent = isEn ? ('Guide of ' + window.MAQAM_NAME_EN[maqam]) : ('دليل مقام ' + maqam);
             guideTitleOverlay.style.display = 'flex';
             // نحسب حجم الخط بالاعتماد على عرض الصورة الفعلي بالبكسل (مو vw بالنسبة للشاشة)، عشان يضل
             // واضح وقابل للقراءة بالجوال حتى لو الصورة نفسها صغيرة نسبة لعرض الشاشة الكامل
