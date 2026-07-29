@@ -3391,15 +3391,51 @@ function buildOudStatic(){
         fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2', class: 'lang-btn-rect'
       }));
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.setAttribute('x', x); t.setAttribute('y', y + 16);
+      t.setAttribute('x', x);
       t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('dominant-baseline', 'middle');
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
-      t.setAttribute('font-size', '46');
       t.setAttribute('font-weight', '800');
       t.setAttribute('fill', '#1a5fa8');
-      t.textContent = (window.oudLanguage === 'en') ? 'EN' : 'AR';
+      t.setAttribute('y', y + 2);
       lg.appendChild(t);
+
+      // بدل ما نكتفي باختصار "AR"/"EN" (اللي ما يوضح لمن ما يقرأ إنجليزي إنه زر لغة)، نبادل الكلمة الكاملة
+      // بين اللاتيني والعربي لنفس اللغة الحالية — عشان أي زائر، بغض النظر عن أي حرف يقرأ، يشوف كلمة مفهومة له خلال دورة الوميض
+      const wordsAr = ['Arabic', 'عربي'];
+      const wordsEn = ['English', 'إنجليزي'];
+      const maxBtnTextWidth = helpBtnW - 14; // هامش داخلي بسيط عشان الكلمة ما تلمس حواف الزر
+
+      function fitTextToButton(word){
+        t.textContent = word;
+        let fontSize = 40;
+        t.setAttribute('font-size', fontSize);
+        // نقيس العرض الفعلي المرسوم فعلياً بالخط الحقيقي بالمتصفح، ونصغّر الخط تدريجياً لين الكلمة كلها تصير داخل حدود الزر —
+        // هذا أدق بكثير من افتراض حجم خط ثابت، لأن طول "English"/"إنجليزي" يختلف كثير عن اختصار حرفين زي القديم
+        let bbox = t.getBBox();
+        let guard = 0;
+        while (bbox.width > maxBtnTextWidth && fontSize > 14 && guard < 40) {
+          fontSize -= 2;
+          t.setAttribute('font-size', fontSize);
+          bbox = t.getBBox();
+          guard++;
+        }
+      }
+
+      let wordIndex = 0;
+      function cycleWord(){
+        const words = (window.oudLanguage === 'en') ? wordsEn : wordsAr;
+        fitTextToButton(words[wordIndex % words.length]);
+        wordIndex++;
+      }
+      cycleWord();
+      // الزر ينبنى من جديد كل مرة يُعاد رسم العود (تبديل يد، عدد أوتار، إلخ)، فلازم نوقف أي مؤقّت وميض قديم قبل ما نبدأ وحد جديد
+      // عشان ما تتراكم مؤقتات كثيرة تشتغل بالخلفية على عناصر DOM قديمة ومحذوفة (تسريب ذاكرة صامت)
+      if (window._langCycleIntervalId) clearInterval(window._langCycleIntervalId);
+      window._langCycleIntervalId = setInterval(cycleWord, 1800);
+
       lg.addEventListener('click', () => {
+        clearInterval(window._langCycleIntervalId);
         window._langPulseDismissed = true; // يمنع الوميض يرجع يظهر بأي إعادة رسم لاحقة
         lg.classList.remove('lang-btn-pulse'); // نوقف الوميض عند أول تفاعل من المستخدم مع الزر نفسه
         const newLang = (window.oudLanguage === 'en') ? 'ar' : 'en';
