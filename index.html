@@ -946,8 +946,8 @@ flex-shrink: 0;
     .maqam-guide-btn, .maqam-intervals-btn { 
       font-size: .72rem; 
       padding: 4px 8px;
-      max-width: 230px;
-      min-width: 230px;
+      max-width: 230px; /* سقف احتياطي بس — العرض الفعلي يُضبط بدقة عبر JS (syncGuideIntervalsBtnWidth) حسب أطول اسم مقام حقيقي */
+      min-width: 0; /* نلغي قفل min-width:256px الموروث من القاعدة الأساسية، عشان JS يقدر يضبط العرض الحقيقي بحرية */
       white-space: nowrap;
     }
   }
@@ -959,8 +959,8 @@ flex-shrink: 0;
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
-      max-width: 230px;
-      min-width: 230px;
+      max-width: 230px; /* سقف احتياطي بس — العرض الفعلي يُضبط بدقة عبر JS حسب أطول اسم مقام حقيقي */
+      min-width: 0; /* نلغي قفل min-width:256px الموروث من القاعدة الأساسية */
       text-align: center;
       line-height: 1.3;
       font-size: .72rem;
@@ -971,7 +971,7 @@ flex-shrink: 0;
   /* الجوال الأفقي: الزرين يطلعون بصف واحد جنب زر "☰" (فوق)، والمسافة بينهم كانت ضيقة جداً —
      ننزّل الصف لتحت شوي ونصغّر الخط عشان يبقى فيه مسافة واضحة عن زر القائمة */
   @media (max-height: 500px) and (orientation:landscape){
-    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; max-width: 230px; min-width: 230px; }
+    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; max-width: 230px; min-width: 0; } /* سقف احتياطي — العرض الفعلي عبر JS، min-width:0 يلغي القفل الموروث */
   }
 
   /* ===== Modal الأبعاد ===== */
@@ -1300,6 +1300,12 @@ flex-shrink: 0;
   justify-content: center;
   gap: 6px;
   white-space: nowrap;
+}
+/* نطابق زر "اختيار المقام" بنفس نقطة التحوّل ونفس القيم المستخدمة فعلياً بزر التبويب (site-tabs-toggle) —
+   عرض الشاشة أقل من 1024px (بدون شرط اتجاه، يعني عمودي وأفقي مع بعض، تماماً زي زر التبويب) —
+   عشان يصيرو متطابقين بالمقاسات بكل الأوضاع، مو بس بالأفقي */
+@media (max-width: 1024px){
+  .menu-toggle{ height: auto; font-size: .78rem; padding: 7px 12px; border-radius: 12px; gap: 4px; }
 }
 .panel {
   position: fixed;
@@ -4532,6 +4538,7 @@ if (westernGuideBtn && westernGuideModal) {
       "النوا أثر": ["النوا أثر","النكريز","البسنديده"],
       "العجم":     ["العجم عشيران","الشوق أفزا","الجهاركاه","العجم المرصع"]
     };
+    window.maqamat = maqamat; // نعرّضه عالمياً عشان نقدر نستخدمه لاحقاً بحساب أطول اسم مقام لضبط عرض أزرار الدليل/الأبعاد بدقة
 
     // نترجم تسميات أزرار اختيار الفصيلة بالواجهة (٩ فصائل) لو اللغة الإنجليزية مفعّلة
     if (window.oudLanguage === 'en') {
@@ -5932,16 +5939,61 @@ if (westernGuideBtn && westernGuideModal) {
     maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
     const maqamIntervalsBtn = document.getElementById('maqamIntervalsBtn');
 
-    // نوحّد عرض زر الدليل وزر الأبعاد ليصيروا بنفس العرض دايماً (نقيس أعرض واحد طبيعياً ونفرضه عالاثنين)
+    // نوحّد عرض زر الدليل وزر الأبعاد ليصيروا بعرض ثابت دايماً — بس بدل رقم تخميني ثابت، نحسبه فعلياً
+    // من أطول اسم مقام موجود بكل الفصائل (مقاس بالخط الحقيقي المحمّل بالمتصفح وقت التنفيذ)، عشان:
+    // (1) ولا اسم ينقطع أبداً حتى لو كان أطول اسم بالموقع، و(2) ما يكون فيه فراغ زايد وقت الأسماء القصيرة
+    // أكثر من اللازم لأن الرقم مو تخميني، هو أعرض حالة حقيقية بالضبط
     window.syncGuideIntervalsBtnWidth = function(){
       const gBtn = document.getElementById('maqamGuideBtn');
       const iBtn = document.getElementById('maqamIntervalsBtn');
       if (!gBtn || !iBtn || gBtn.style.display === 'none' || iBtn.style.display === 'none') return;
-      gBtn.style.width = 'auto';
-      iBtn.style.width = 'auto';
-      const w = Math.max(gBtn.offsetWidth, iBtn.offsetWidth);
-      gBtn.style.width = w + 'px';
-      iBtn.style.width = w + 'px';
+
+      if (!window.maqamat) {
+        // احتياط لو لأي سبب قاموس المقامات ما توفر — نرجع لأسلوب القياس القديم (أعرض زر بين الاثنين حالياً)
+        gBtn.style.width = 'auto'; iBtn.style.width = 'auto';
+        const w = Math.max(gBtn.offsetWidth, iBtn.offsetWidth);
+        gBtn.style.width = w + 'px'; iBtn.style.width = w + 'px';
+        return;
+      }
+
+      let allNames = [];
+      Object.values(window.maqamat).forEach(list => { allNames = allNames.concat(list); });
+
+      // اللغة تأثر على الحساب من ناحيتين: (1) البادئة نفسها ("دليل مقام "/"أبعاد مقام " بالعربي، أو "Guide of "/"Intervals of " بالإنجليزي)،
+      // و(2) اسم المقام نفسه قد يكون أطول بلغة عن الثانية (مثلاً "نهاوند ذو الحساس" أقصر من ترجمته الإنجليزية Nahawand Dhu al-Hasas)
+      const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN);
+      const guidePrefix = isEn ? 'Guide of ' : 'دليل مقام ';
+      const intervalsPrefix = isEn ? 'Intervals of ' : 'أبعاد مقام ';
+      function displayName(name){
+        return (isEn && window.MAQAM_NAME_EN[name]) ? window.MAQAM_NAME_EN[name] : name;
+      }
+
+      function measureMax(realBtn, prefix){
+        const clone = realBtn.cloneNode(true);
+        clone.style.position = 'fixed';
+        clone.style.visibility = 'hidden';
+        clone.style.left = '-9999px';
+        clone.style.width = 'auto';
+        clone.style.maxWidth = 'none';
+        clone.style.minWidth = '0';
+        clone.style.whiteSpace = 'nowrap';
+        document.body.appendChild(clone);
+        let max = 0;
+        allNames.forEach(name => {
+          clone.textContent = prefix + displayName(name);
+          const w = clone.getBoundingClientRect().width;
+          if (w > max) max = w;
+        });
+        document.body.removeChild(clone);
+        return max;
+      }
+
+      const guideMax = measureMax(gBtn, guidePrefix);
+      const intervalsMax = measureMax(iBtn, intervalsPrefix);
+      // هامش أمان بسيط ٣px بس لفروق التقريب العشري بين المتصفحات، مو تخمين إضافي زي قبل
+      const finalWidth = Math.ceil(Math.max(guideMax, intervalsMax)) + 3;
+      gBtn.style.width = finalWidth + 'px';
+      iBtn.style.width = finalWidth + 'px';
     };
     // نعيد الحساب لما يدوّر الجهاز أو يتغيّر حجم الشاشة — لأن حجم الخط يختلف بين الاتجاهين
     // (كان الحساب يشتغل بس وقت اختيار مقام، فلو دوّرت الجهاز بعدها يضل العرض القديم غير مناسب)
