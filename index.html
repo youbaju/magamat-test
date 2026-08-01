@@ -982,18 +982,21 @@ flex-shrink: 0;
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,.45);
-    z-index: 200;
+    z-index: 300; /* كانت 200 وتخليها تظهر تحت زر التبويب (z-index:210) — رفعتها لتطابق نافذة دليل المقام تماماً */
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 52px;
+    padding-top: 4px; /* كانت 52px، وهذا بالضبط سبب الفجوة اللي تسيب الزرين بادين فوقها — طابقتها بنافذة الدليل تماماً */
   }
   .maqam-intervals-table{
     background: #fff;
     border-radius: 12px;
-    padding: 12px;
-    width: 92vw;
-    max-width: 480px;
+    padding: 8px; /* كانت 12px، طابقتها بنافذة الدليل */
+    width: 94vw; /* كانت 92vw، طابقتها بنافذة الدليل */
+    max-width: 700px; /* كانت 480px، وسّعتها لتطابق عرض نافذة دليل المقام (700px) */
+    max-height: 96vh; /* إضافة جديدة تطابق نافذة الدليل — تمنع الجدول يطلع أطول من الشاشة بأي جهاز */
+    max-height: 96dvh;
+    overflow-y: auto;
     font-family: 'Cairo', sans-serif;
     direction: rtl;
     box-shadow: 0 4px 24px rgba(0,0,0,.2);
@@ -2114,11 +2117,23 @@ window.isArabicMode = false;
     tabsMenu.classList.add('open');
     tabsOverlay.classList.add('active');
     tabsToggle.style.visibility = 'hidden';
+    if (typeof window.hideTopNavButtons === 'function') window.hideTopNavButtons();
+    // لو قائمة الدائرة/الكوردات (فيها أزرار نوع السلم Major/Minor...) مفتوحة، نسكّرها كمان
+    if (typeof window.closeCircleDrawer === 'function') window.closeCircleDrawer();
+    // صف أزرار نوع السلم الغربي الظاهر دايماً فوق الزند (Major/Minor...) بتبويب السلالم الغربية — نخفيه مؤقتاً
+    if (selectionSummary) selectionSummary.style.display = 'none';
   }
   function closeTabsMenu(){
     tabsMenu.classList.remove('open');
     tabsOverlay.classList.remove('active');
     tabsToggle.style.visibility = 'visible';
+    if (typeof window.showTopNavButtons === 'function') window.showTopNavButtons();
+    // نعيد حساب ظهور صف أزرار نوع السلم حسب التبويب النشط فعلياً الآن (مو نرجعه للحالة القديمة دايماً)،
+    // عشان يتطابق مع نفس الشرط اللي تستخدمه showPage بالضبط، ويشتغل صح بمسارين: اختيار تبويب فعلي، أو الإلغاء بالضغط برّا
+    if (selectionSummary) {
+      const circlePage = document.getElementById('page-circle');
+      selectionSummary.style.display = (circlePage && circlePage.classList.contains('active')) ? 'flex' : 'none';
+    }
   }
   tabsToggle.addEventListener('click', openTabsMenu);
   tabsOverlay.addEventListener('click', closeTabsMenu);
@@ -2488,6 +2503,9 @@ function selectRootAndType(root, scaleType, letterOverride){
   state.root = root;
   state.scaleType = scaleType;
   state.letterOverride = (letterOverride === undefined) ? null : letterOverride;
+  // نزامن تظليل أزرار نوع السلم (Major/Minor...) هنا، داخل الدالة نفسها، عشان أي مكان يستدعيها
+  // (بما فيها إعادة الضبط الافتراضي عند اختيار التبويب) يضمن التزامن تلقائياً بدون ما يحتاج يكرر هالسطر بنفسه
+  document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === scaleType));
   sessionStorage.setItem('oudWesternSelection', JSON.stringify({root, scaleType, letterOverride: state.letterOverride}));
   updateCircleHighlight();
   updateNowPlaying();
@@ -2538,6 +2556,7 @@ function closeCircleDrawer(){
 }
 circleMenuToggleEl.addEventListener('click', openCircleDrawer);
 circleOverlayEl.addEventListener('click', closeCircleDrawer);
+window.closeCircleDrawer = closeCircleDrawer; // نعرّضها عالمياً عشان نقدر نسكّر قائمة الدائرة/الكوردات (لو كانت مفتوحة) لما تُفتح قائمة التبويبات
 
 function showDrawerMode(mode){
   currentDrawerMode = mode;
@@ -4485,6 +4504,30 @@ window.adjustWesternButtonsClearance = function(){
 window.addEventListener('resize', () => { setTimeout(window.adjustWesternButtonsClearance, 100); });
 window.addEventListener('orientationchange', () => { setTimeout(window.adjustWesternButtonsClearance, 200); });
 
+// نخفي أزرار التنقل العلوية (التبويب، اختيار المقام العربي، اختيار من الدائرة الغربية) كل ما فُتحت أي نافذة دليل/أبعاد —
+// حل أبسط وأضمن من محاولة توسيع النافذة لتغطي حواف الأزرار على كل حجم شاشة (جوال أفقي، آيباد، ديسكتوب)
+// نعلّم كل زر أخفيناه فعلاً بخاصية data عشان نرجعه بس هو (مو نظهر زر كان مخفي أصلاً لسبب ثاني، زي زر التبويب الغربي وانت بتبويب عربي)
+function hideTopNavButtons(){
+  ['siteTabsToggle','menuToggle','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && getComputedStyle(el).display !== 'none') {
+      el.dataset.hiddenByModal = '1';
+      el.style.display = 'none';
+    }
+  });
+}
+function showTopNavButtons(){
+  ['siteTabsToggle','menuToggle','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.dataset.hiddenByModal === '1') {
+      el.style.display = '';
+      delete el.dataset.hiddenByModal;
+    }
+  });
+}
+window.hideTopNavButtons = hideTopNavButtons;
+window.showTopNavButtons = showTopNavButtons;
+
 const westernGuideBtn = document.getElementById('westernGuideBtn');
 const westernGuideModal = document.getElementById('westernGuideModal');
 const westernGuideClose = document.getElementById('westernGuideClose');
@@ -4492,9 +4535,10 @@ if (westernGuideBtn && westernGuideModal) {
   westernGuideBtn.addEventListener('click', () => {
     updateWesternGuideImage();
     westernGuideModal.style.display = 'flex';
+    hideTopNavButtons();
   });
-  westernGuideClose.addEventListener('click', () => { westernGuideModal.style.display = 'none'; });
-  westernGuideModal.addEventListener('click', e => { if (e.target === westernGuideModal) westernGuideModal.style.display = 'none'; });
+  westernGuideClose.addEventListener('click', () => { westernGuideModal.style.display = 'none'; showTopNavButtons(); });
+  westernGuideModal.addEventListener('click', e => { if (e.target === westernGuideModal) { westernGuideModal.style.display = 'none'; showTopNavButtons(); } });
 }
 
 
@@ -5951,9 +5995,10 @@ if (westernGuideBtn && westernGuideModal) {
 
     maqamGuideBtn.addEventListener('click', () => {
       maqamGuideModal.style.display = 'flex';
+      hideTopNavButtons();
     });
-    maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; });
-    maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) maqamGuideModal.style.display = 'none'; });
+    maqamGuideClose.addEventListener('click', () => { maqamGuideModal.style.display = 'none'; showTopNavButtons(); });
+    maqamGuideModal.addEventListener('click', e => { if(e.target === maqamGuideModal) { maqamGuideModal.style.display = 'none'; showTopNavButtons(); } });
     const maqamIntervalsBtn = document.getElementById('maqamIntervalsBtn');
 
     // نوحّد عرض زر الدليل وزر الأبعاد ليصيروا بعرض ثابت دايماً — بس بدل رقم تخميني ثابت، نحسبه فعلياً
@@ -6025,9 +6070,10 @@ if (westernGuideBtn && westernGuideModal) {
 
     maqamIntervalsBtn.addEventListener('click', () => {
       maqamIntervalsModal.style.display = 'flex';
+      hideTopNavButtons();
     });
-    mitClose.addEventListener('click', () => { maqamIntervalsModal.style.display = 'none'; });
-    maqamIntervalsModal.addEventListener('click', (e) => { if (e.target === maqamIntervalsModal) maqamIntervalsModal.style.display = 'none'; });
+    mitClose.addEventListener('click', () => { maqamIntervalsModal.style.display = 'none'; showTopNavButtons(); });
+    maqamIntervalsModal.addEventListener('click', (e) => { if (e.target === maqamIntervalsModal) { maqamIntervalsModal.style.display = 'none'; showTopNavButtons(); } });
 
     function renderIntervalsTable(maqamName, intervals) {
       const title = document.getElementById('mitTitle');
