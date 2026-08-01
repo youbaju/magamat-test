@@ -315,6 +315,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .audio-controls{ gap: 5px !important; }
   .ctrl-btn{ width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: .7rem !important; }
   .repeat-btn{ width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: .8rem !important; }
+  .exercise-new-btn{ height: 24px !important; font-size: .58rem !important; padding: 0 6px !important; }
   .audio-time{ font-size: .58rem !important; min-width: 56px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .6rem !important; }
   .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
@@ -385,6 +386,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   pointer-events: none;
 }
 .audio-time {
+  display: none; /* مخفي عشان نوفر مساحة لزر تمرين جديد — المدة موجودة أصلاً بشريط التقدم نفسه */
   font-size: 0.7rem;
   color: #555;
   flex-shrink: 0;
@@ -407,6 +409,26 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
 }
 .repeat-btn:hover { background: #1a8abf; }
 .repeat-btn.active { background: #e8a83a; }
+.exercise-new-btn{
+  background: #1a5fa8;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 0 10px;
+  height: 30px;
+  font-family: 'Cairo', sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background .2s;
+}
+.exercise-new-btn:hover{ background: #123f70; }
+@media (max-width: 480px){
+  .audio-controls{ flex-wrap: wrap; row-gap: 4px; } /* لو ضاق العرض، الزر ينزل صف تاني بدل ما يكسر التخطيط */
+  .exercise-new-btn{ font-size: .62rem; padding: 0 7px; height: 26px; }
+}
 .tuning-row {
   display: flex;
   align-items: center;
@@ -1519,6 +1541,7 @@ input[type="radio"] {
           <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
         </svg>
       </button>
+      <button class="exercise-new-btn" id="exerciseNewBtn" title="تمرين جديد" style="display:none">تمرين جديد</button>
     </div>
     <div class="tuning-row">
       <label for="shared-tuningSelect">الدوزان : </label>
@@ -1974,6 +1997,9 @@ input[type="radio"] {
     <button class="maqam-guide-btn" id="maqamGuideBtn" style="display:none">دليل مقام <span id="maqamGuideBtnName"></span></button>
   </div>
 
+  <!-- صندوق عرض نوتة التمرين المولّد -->
+  <div id="exerciseNotationBox" style="display:none; direction:rtl; text-align:center; font-size:.85rem; margin:8px auto 0; max-width:92%; line-height:1.7; color:#333;"></div>
+
   <!-- زر المساعدة HTML -->
   <button class="maqam-help-btn" id="maqamHelpBtn" onclick="if(typeof window.stopAllOudPlayback==='function')window.stopAllOudPlayback(); document.getElementById('shared-stopBtn').click(); var h=document.getElementById('page-help'); h.style.display='block'; h.scrollTop=0;">مساعدة</button>
 
@@ -2185,6 +2211,8 @@ window.isArabicMode = false;
       sessionStorage.setItem('oudActiveTab', targetId);
       // إيقاف الأصوات قبل تغيير التبويب
       if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+      if (typeof window.exStopPlayback === 'function') window.exStopPlayback(); // طبقة أمان إضافية خاصة بتمرين المقام
+      window.exerciseActive = false; // نرجّع التحكم للسلّم العادي بعد تغيير التبويب
       document.getElementById('shared-stopBtn').click(); // كطبقة أمان إضافية
       if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
       if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
@@ -4151,7 +4179,10 @@ window.toggleSustainedNoteOnRect = function(rectEl, freq, onStart, onStop, recom
   let liveRectEl = rectEl;
   let sequenceWasPlaying = false;
   if (window.isArabicMode) {
-    if (typeof window.arGetPlayerState === 'function' && window.arGetPlayerState() !== 'stopped' && typeof window.arResetPlayer === 'function') {
+    if (window.exerciseActive && typeof window.exStopPlayback === 'function') {
+      window.exStopPlayback();
+      sequenceWasPlaying = true;
+    } else if (typeof window.arGetPlayerState === 'function' && window.arGetPlayerState() !== 'stopped' && typeof window.arResetPlayer === 'function') {
       window.arResetPlayer();
       sequenceWasPlaying = true;
     }
@@ -4369,6 +4400,7 @@ window.stopAllOudPlayback = function(){
   if (typeof window.resetPlayer === 'function') window.resetPlayer();
   if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
   if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+  if (typeof window.exStopPlayback === 'function') window.exStopPlayback(); // إيقاف تمرين المقام لو كان شغال
 };
 
 playBtn.addEventListener('click', () => {
@@ -5432,7 +5464,10 @@ if (westernGuideBtn && westernGuideModal) {
     }
 
     // ===== الرسم الرئيسي للمقام العربي على العود =====
-    function drawArabicMaqam(startHarf, intervals, highlightIdx, maqamName, isDescending, highlightQuarters) {
+    // ملاحظة: visibleDegIdxSet باراميتر اختياري (Set لأرقام degIdx) — لو تم تمريره، تُرسم بس
+    // الدرجات الموجودة فيه (يخدم وضع تمرين المقام عشان ما يرسم كل الـ١٤ درجة الممتدة كل خطوة،
+    // بس اللي فعلياً مستخدمة بالتمرين الحالي). المشغل العادي ما يمرره فترسم كل الدرجات زي ما كانت.
+    function drawArabicMaqam(startHarf, intervals, highlightIdx, maqamName, isDescending, highlightQuarters, visibleDegIdxSet) {
       const layer = document.getElementById('oudNotesLayer');
       while (layer.firstChild) layer.removeChild(layer.firstChild);
 
@@ -5459,6 +5494,7 @@ if (westernGuideBtn && westernGuideModal) {
         const effectiveQ = (highlightIdx !== undefined && degIdx === highlightIdx && highlightQuarters !== undefined)
           ? highlightQuarters : effectiveQForDraw;
         if (effectiveQ < 0 || effectiveQ > 70) return;
+        if (visibleDegIdxSet && !visibleDegIdxSet.has(degIdx)) return;
         const { s, q } = getStringFret(effectiveQ);
         const x = quarterToX(q);
         const y = arStringY(s, x);
@@ -5916,9 +5952,445 @@ if (westernGuideBtn && westernGuideModal) {
     // أزرار المشغل للمقامات العربية
     window.setupArabicPlayerButtons = function() {};
 
+    // ============================================================
+    // ===== [تمرين المقام - نموذج أولي: نمط الثلاثيات فقط] =====
+    // ============================================================
+    // فكرة عامة: التمرين يُبنى بالكامل بالدرجات (١-١٤ = القرار + الجواب)،
+    // ويترجم لموقعه الفعلي (وتر/فريت/صوت) حسب المقام والحرف المختارين حالياً
+    // بنفس آلية HARF_LIST/getDegreePosition الموجودة، فيشتغل تلقائياً على
+    // أي من الـ٤٦ مقام وأي حرف يختاره الزائر — بدون أي كود خاص لكل مقام.
+    //
+    // ملاحظات/افتراضات لسا تحتاج تأكيدك يا يوسف قبل التوسّع لباقي الأنماط:
+    // ١) افتراض إن أبعاد الأوكتاف الثاني (درجات ٩-١٤) تكرار مطابق لأبعاد
+    //    الأوكتاف الأول (٧ أبعاد). صحيح لكل المقامات اللي شفتها بالكود، بس
+    //    حابب تأكيدك.
+    // ٢) استثناء الراست (نزول الدرجة السابعة ربع) مطبّق بس بالأوكتاف الأول
+    //    بالمشغل العادي — هالنموذج الأولي ما يطبّقه بعد على درجة ١٤ (نفس
+    //    الاستثناء بالأوكتاف الثاني). نأجله لحد ما نتأكد من التصميم العام.
+    // ٣) ما فيه سكتات بهالنمط تحديداً (الثلاثيات) بهالتجربة الأولى، عشان
+    //    نختبر المحرك الأساسي (الدرجات + الأزمنة + العرض) لحاله أول شي.
+    //    محرك التشغيل نفسه جاهز يدعم سكتة (رمز "س") لأي نمط لاحق.
+
+    const EX_REST = 'س'; // رمز السكتة المتفق عليه (لأي نمط لاحق يستخدمها)
+    const EX_AR_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    function exToArabicDigits(n) { return String(n).split('').map(c => EX_AR_DIGITS[c] !== undefined ? EX_AR_DIGITS[c] : c).join(''); }
+
+    // تحويل قيمة المدة الرقمية لاسمها الموسيقي المعتاد (نفس الجدول المتفق عليه)
+    function exDurName(dur) {
+      if (dur === 4)    return 'مدورة';
+      if (dur === 2)    return 'بيضاء';
+      if (dur === 1.5)  return 'نوار منقوط';
+      if (dur === 1)    return 'نوار';
+      if (dur === 0.75) return 'كروش منقوط';
+      if (dur === 0.5)  return 'كروش';
+      if (dur === 0.25) return 'كروش مزدوجة';
+      return dur + ' × نوار';
+    }
+
+    // يبني نص التمرين بالصيغة المتفقة: "الدرجة (المدة) - الدرجة (المدة) - ..."
+    function exFormatNotation(seq) {
+      return seq.map(n => {
+        const degText = (n.deg === null) ? EX_REST : exToArabicDigits(n.deg);
+        return degText + ' (' + exDurName(n.dur) + ')';
+      }).join(' - ');
+    }
+
+    // يبني مصفوفة أبعاد ممتدة (١٣ بعد = ١٤ درجة) بتكرار أبعاد المقام لأوكتاف ثاني
+    // (انظر الملاحظة رقم ١ فوق بخصوص هالافتراض)
+    function exGetExtendedIntervals(intervals) {
+      return intervals.concat(intervals.slice(0, 6));
+    }
+
+    // ===== نمط الثلاثيات =====
+    // يتحرك بمجموعات (درجة، درجة+٢) صعوداً من نقطة بداية عشوائية، ثم يرجع
+    // بنفس المسار نزولاً، وينتهي إجبارياً على الدرجة ١ (الجذر) دايماً
+    function exGenerateThirdsPattern(maxDegree) {
+      // حماية لحالة نادرة: مدى ضيق جداً (حرف قريب من نهاية الزند) ما يكفي لنمط ثلاثيات حقيقي
+      if (maxDegree < 3) return [{ deg: 1, dur: 2, effQ: exPositions[0] }];
+
+      // نقطة البداية: دايماً الجذر (الدرجة ١) — التمرين لازم يبدأ من دو (المحط)
+      const start = 1;
+      // مدى الصعود عشوائي كل مرة (بين الدرجة ٤ والدرجة ٨) — عشان كل ضغطة
+      // تطلع تمرين مختلف طولاً وارتفاعاً، بدل ما يوصل لنفس القمة (٨) دايماً.
+      // يضل ما يتعدى ٨ (نهاية الأوكتاف) ويحترم usableMaxDegree الفعلي.
+      const OCTAVE_TOP = 8;
+      const minTop = Math.min(4, maxDegree);
+      const maxTop = Math.min(OCTAVE_TOP, maxDegree);
+      const randomTop = minTop + Math.floor(Math.random() * (maxTop - minTop + 1));
+      const steps = randomTop - start - 1;
+
+      const DUR_END  = 2;    // بيضاء للختام على الجذر
+      const REST_SHORT = 0.25; // سكتة قصيرة طبيعية (نفس تنفّس العازف)
+
+      // يضيف نغمة للتسلسل، ويطبّق استثناء الراست (الدرجة السابعة بأي أوكتاف
+      // تنزل ربع تون عند النزول) — نفس قاعدة المشغل العادي، بس مطبّقة هنا
+      // على كل درجة سابعة بالمدى الممتد (٧ أو ١٤)، مو بس بالأوكتاف الأول
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+      function pushRest(seq, dur) { seq.push({ deg: null, dur }); }
+
+      const seq = [];
+      // صعوداً: (start,start+2) - (start+1,start+3) - ... بمدد متنوعة
+      // (طويل-قصير بالتبادل) بدل كروش ثابت، يعطي إحساس جملة موسيقية
+      for (let i = 0; i < steps; i++) {
+        const swing = (i % 2 === 0);
+        pushNote(seq, start + i,     swing ? 0.75 : 0.5, false);
+        pushNote(seq, start + i + 2, swing ? 0.25 : 0.5, false);
+      }
+      // سكتة طبيعية قصيرة بالقمة قبل النزول
+      pushRest(seq, REST_SHORT);
+      // نزولاً: نفس المسار بالعكس، بنفس التنويع الإيقاعي
+      for (let i = steps - 1; i >= 0; i--) {
+        const swing = (i % 2 === 0);
+        pushNote(seq, start + i + 2, swing ? 0.75 : 0.5, true);
+        pushNote(seq, start + i,     swing ? 0.25 : 0.5, true);
+      }
+
+      // ختام إجباري على الجذر — لو المسار أصلاً وصل للجذر بآخر نغمة (لما
+      // البداية = ١)، نمدد مدة نفس النغمة بدل ما نضيف جذر ثاني فوقها ويسمع مرتين
+      if (seq.length && seq[seq.length - 1].deg === 1) {
+        seq[seq.length - 1].dur = DUR_END;
+      } else {
+        pushNote(seq, 1, DUR_END, true);
+      }
+
+      return seq;
+    }
+
+    // ===== نمط الأربيجات (قفزات واسعة حقيقية) =====
+    // خط أربيجيو واحد نظيف: الجذر - الثالثة - الخامسة - (الجواب أحياناً)، ثم
+    // نفس المسار نزولاً — قفزات كبيرة صريحة (بدل "المشي" المتداخل بين
+    // الدرجات زي الثلاثيات)، عشان يحس المستخدم بفرق واضح بين النمطين
+    function exGenerateArpeggioPattern(maxDegree) {
+      if (maxDegree < 5) return [{ deg: 1, dur: 2, effQ: exPositions[0] }];
+
+      // القمة عشوائية: أحياناً يوصل للخامسة بس (أربيجيو قصير)، أحياناً
+      // للجواب كامل (أربيجيو موسّع) — لتنويع طول التمرين كل ضغطة
+      const possibleTops = [5, 8].filter(t => t <= maxDegree);
+      const top = possibleTops[Math.floor(Math.random() * possibleTops.length)];
+      const chordTones = (top === 8) ? [1, 3, 5, 8] : [1, 3, 5];
+
+      const DUR_END  = 2;      // بيضاء للختام على الجذر
+      const REST_SHORT = 0.25; // سكتة قصيرة طبيعية بالقمة
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+      function pushRest(seq, dur) { seq.push({ deg: null, dur }); }
+
+      // مدد متنوعة (بدل مدة ثابتة لكل نغمة) تعطي إحساس جملة موسيقية
+      const upDurs   = (top === 8) ? [0.5, 0.75, 0.5, 1.25] : [0.5, 0.75, 1.25];
+      const downDurs = (top === 8) ? [0.75, 0.5, 0.75]      : [0.75, 0.5];
+
+      const seq = [];
+      // صعوداً: قفزة مباشرة بين درجات الجذر/الثالثة/الخامسة/(الجواب)
+      chordTones.forEach((deg, i) => pushNote(seq, deg, upDurs[i], false));
+      // سكتة طبيعية قصيرة بالقمة قبل النزول
+      pushRest(seq, REST_SHORT);
+      // نزولاً: نفس المسار بالعكس
+      for (let i = chordTones.length - 2; i >= 0; i--) {
+        const dIdx = chordTones.length - 2 - i;
+        pushNote(seq, chordTones[i], (i === 0) ? DUR_END : downDurs[dIdx], true);
+      }
+
+      return seq;
+    }
+
+    // ===== نمط اللحن المتسلسل (Melodic Walk) =====
+    // بدل القفزات الثابتة، يمشي على درجات المقام بتسلسل منطقي: غالباً خطوة
+    // وحدة، أحياناً قفزة صغيرة، مع اتجاه عام يتغيّر بطبيعية (يعطي طابع صعود-
+    // هبوط زي الجملة الموسيقية الحقيقية)، بدل نمط جامد متكرر
+    function exGenerateMelodicWalkPattern(maxDegree) {
+      if (maxDegree < 3) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const OCTAVE_TOP = Math.min(8, maxDegree);
+
+      const degrees = [1]; // يبدأ من الجذر دايماً
+      let current = 1;
+      let direction = 1; // اتجاه السير العام، يتغيّر بطبيعية بالأثناء
+      const visited = new Set([1]);
+      const MAX_STEPS = 60; // سقف أمان يمنع أي حلقة تطول أكثر من اللازم
+
+      function walkStep() {
+        if (Math.random() < 0.12) direction *= -1; // تغيّر بالاتجاه أقل تكراراً (حركة أهدأ، أقواس أوضح)
+        const r = Math.random();
+        // الأغلبية الساحقة خطوة وحدة (حركة متدرجة هادئة)، قفزة صغيرة نادرة جداً
+        const step = (r < 0.85) ? 1 : (r < 0.97) ? 2 : 0;
+        let next = current + step * direction;
+        if (next > OCTAVE_TOP) { next = OCTAVE_TOP; direction = -1; }
+        if (next < 1) { next = 1; direction = 1; }
+        current = next;
+        degrees.push(current);
+      }
+
+      // نمشي بنفس الطريقة العشوائية لحد ما نزور كل درجات السلم (١ لغاية القمة) مرة عالأقل
+      let steps = 0;
+      while (visited.size < OCTAVE_TOP && steps < MAX_STEPS) {
+        walkStep();
+        visited.add(current);
+        steps++;
+      }
+      // نكمل بضع خطوات إضافية بنفس الطريقة (طول طبيعي للجملة) بعد ما تغطّت كل الدرجات
+      const extraSteps = 3 + Math.floor(Math.random() * 4);
+      for (let n = 0; n < extraSteps; n++) walkStep();
+
+      // رجوع تدريجي للجذر خطوة خطوة (بنفس أسلوب الحركة)، مو قفزة نهائية كبيرة
+      while (current > 1) {
+        current -= 1;
+        degrees.push(current);
+      }
+
+      // مقاسم إيقاعية (كل وحدة = نوار/ضربة)، كل مقسم مجموعه بالضبط ضربتين — عشان
+      // التمرين يلتزم بميزان ٢/٤ حقيقي بدون أي بيضاء. كل المقاسم بعدد نغمات
+      // زوجي (٢ أو ٤) عشان مجموع النغمات لو كان زوجي يضل التوزيع مضبوط للنهاية
+      // بدون ما يعلق بمقسم ناقص (نغمة وحدة بس متبقية بلا مقسم يناسبها)
+      const RHYTHM_CELLS_2_4 = [
+        [1, 1],               // نوار - نوار
+        [0.5, 0.5, 0.5, 0.5], // أربع كروشات
+      ];
+
+      // نضمن عدد النغمات زوجي (لو فردي نضيف نغمة جذر إضافية بالختام) عشان
+      // توزيع المقاسم (كلها بعدد زوجي من النغمات) يغطي كل نغمة بدون ما يتبقى
+      // نغمة يتيمة بلا مقسم يناسبها
+      if (degrees.length % 2 !== 0) degrees.push(1);
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      const seq = [];
+      let idx = 0;
+      // كل التمرين (من أول نغمة للختام) يوزّع على مقاسم ٢/٤ متتالية بدون استثناء
+      while (idx < degrees.length) {
+        const remaining = degrees.length - idx;
+        const candidates = RHYTHM_CELLS_2_4.filter(c => c.length <= remaining);
+        const cell = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : [1, 1];
+        for (let k = 0; k < cell.length; k++) {
+          const deg = degrees[idx];
+          const prev = idx > 0 ? degrees[idx - 1] : deg;
+          pushNote(seq, deg, cell[k], deg < prev);
+          idx++;
+        }
+      }
+
+      return seq;
+    }
+    let exSequence = [];
+    let exStepIdx = 0;
+    let exTimeoutId = null;
+    let exPlaySessionId = 0;
+    let exPositions = [];       // مواقع الأرباع (من صول) لكل درجة ١-١٤ بالمقام/الحرف الحاليين
+    let exIntervalsExt = [];
+    let exMaqamName = '';
+    let exHarf = '';
+    let exVisibleDegIdxSet = null; // مجموعة الدرجات (degIdx) المستخدمة فعلياً بالتمرين الحالي
+    let exPlayerState = 'stopped'; // 'stopped' | 'playing' | 'paused' — نفس منطق المشغل العادي
+    window.exerciseActive = false; // فيه تمرين محمّل حالياً تتحكم فيه أزرار المشغل المشتركة (بدل السلم العادي)
+    let exCumBeats = [];  // مجموع تراكمي للأزمنة (بوحدة الضربة) لكل خطوة — لشريط التقدم والوقت
+    let exTotalBeats = 0; // إجمالي عدد الضربات بالتمرين كامل
+    let exRectMap = {};            // degIdx -> عنصر SVG rect (نبنيها مرة وحدة، نستخدمها للتظليل بس)
+    let exCurrentHighlightIdx = null;
+    let exSpecialCaseActive = false; // صار عندنا رسم خاص لحالة استثنائية (سي بيمول بدل سي نصف بيمول)؟
+
+    // يعيد بناء خريطة degIdx->rect من الزند الحالي بدون إعادة رسم (تُستخدم بعد
+    // أي استدعاء لـdrawArabicMaqam عشان نحدّث المراجع للعناصر الجديدة بالـDOM)
+    function exRefreshRectMap() {
+      exRectMap = {};
+      const layer = document.getElementById('oudNotesLayer');
+      layer.querySelectorAll('rect[data-scale-idx]').forEach(rect => {
+        exRectMap[rect.getAttribute('data-scale-idx')] = rect;
+      });
+    }
+
+    // يرسم كل مربعات التمرين مرة وحدة (بدون تظليل)، ويبني خريطة degIdx->rect
+    // عشان بعدين نبدّل بس اللون بكل خطوة، مو نعيد الرسم كامل (كان هذا سبب
+    // التأخير/التقطيع بالتوقيت لما صار عدد المربعات أكبر)
+    function exDrawFullBoard() {
+      drawArabicMaqam(exHarf, exIntervalsExt, undefined, exMaqamName, false, undefined, exVisibleDegIdxSet);
+      exRefreshRectMap();
+      exCurrentHighlightIdx = null;
+      exSpecialCaseActive = false;
+    }
+
+    // يبدّل لون المربع الحالي (أحمر) ويرجّع السابق للون الافتراضي (أزرق) — بدون أي إعادة رسم
+    function exHighlightDegree(degIdx) {
+      if (exCurrentHighlightIdx !== null && exRectMap[exCurrentHighlightIdx]) {
+        const prev = exRectMap[exCurrentHighlightIdx];
+        prev.setAttribute('fill', '#2b6fc9');
+        prev.setAttribute('stroke', '#1a5fa8');
+        prev.setAttribute('stroke-width', 2);
+      }
+      if (degIdx !== null && exRectMap[degIdx]) {
+        const cur = exRectMap[degIdx];
+        cur.setAttribute('fill', '#d64545');
+        cur.setAttribute('stroke', '#a82f2f');
+        cur.setAttribute('stroke-width', 3);
+      }
+      exCurrentHighlightIdx = degIdx;
+    }
+
+    function exStopPlayback() {
+      exPlaySessionId++;
+      if (exTimeoutId) clearTimeout(exTimeoutId);
+      exStepIdx = 0;
+      exPlayerState = 'stopped';
+      if (exCurrentHighlightIdx !== null) exHighlightDegree(null); // نطفي أي تظليل أحمر متبقي
+      // نصفّر واجهة المشغل المشترك (بس لو التمرين فعلاً هو المتحكم حالياً)
+      if (window.exerciseActive) {
+        if (playBtn) { playBtn.textContent = '▶'; playBtn.disabled = false; }
+        if (stopBtn) stopBtn.disabled = true;
+        if (rewindBtn) rewindBtn.disabled = true;
+        if (progressFill) progressFill.style.width = '0%';
+        if (audioTime) audioTime.textContent = '0:00 / 0:00';
+      }
+    }
+    window.exStopPlayback = exStopPlayback; // نصدّرها عشان stopAllOudPlayback المركزية تقدر توقف تمرين المقام
+
+    // يبدأ تشغيل التمرين الحالي من أوله (يستخدم بعد التوليد، وبزر الإعادة)
+    function exStartPlay() {
+      exPlaySessionId++;
+      exStepIdx = 0;
+      exPlayerState = 'playing';
+      playBtn.textContent = '⏸'; playBtn.disabled = false;
+      stopBtn.disabled = false; rewindBtn.disabled = false;
+      exNextStep();
+    }
+    function exPause() {
+      exPlayerState = 'paused';
+      if (exTimeoutId) clearTimeout(exTimeoutId);
+      playBtn.textContent = '▶';
+    }
+    function exResume() {
+      exPlayerState = 'playing';
+      playBtn.textContent = '⏸';
+      exNextStep(); // نكمل من نفس الخطوة الحالية بدون تأخير إضافي
+    }
+
+    function exNextStep() {
+      if (exStepIdx >= exSequence.length) { exStopPlayback(); return; }
+      const step = exSequence[exStepIdx];
+      const EX_DURATION_SCALE = 0.7; // تقصير عام لكل الأزمنة (نوار كان يحس طويل)
+      // نقرأ سرعة المشغل الحالية (window.AR_STEP_MS) بكل خطوة، عشان لو المستخدم
+      // غيّر السرعة أثناء التشغيل، التمرين يعكسها فوراً بنفس لحظة تغييرها
+      const durMs = step.dur * window.AR_STEP_MS * EX_DURATION_SCALE;
+
+      if (step.deg !== null) {
+        const degIdx = step.deg - 1;
+        const defaultQ = exPositions[degIdx];
+        const q = step.effQ !== undefined ? step.effQ : defaultQ;
+
+        if (q !== defaultQ) {
+          // حالة استثنائية (الدرجة السابعة بالراست عند النزول: سي نصف بيمول
+          // تصير سي بيمول) — نرسمها بموقعها الصحيح عبر drawArabicMaqam
+          // مباشرة (نادرة، مرة أو مرتين بكل تمرين)، وما تأثر على أداء باقي
+          // النغمات لأنها مو بكل خطوة
+          drawArabicMaqam(exHarf, exIntervalsExt, degIdx, exMaqamName, true, q, exVisibleDegIdxSet);
+          exRefreshRectMap();
+          exCurrentHighlightIdx = degIdx;
+          exSpecialCaseActive = true;
+        } else {
+          if (exSpecialCaseActive) { exDrawFullBoard(); } // نرجع للرسم الطبيعي بعد ما خلصت الحالة الاستثنائية
+          exHighlightDegree(degIdx);
+        }
+
+        playArNote(q, durMs / 1000);
+        const { s: strIdx } = getStringFret(q);
+        if (typeof window.vibrateString === 'function') window.vibrateString(strIdx);
+      }
+      // ملاحظة: السكتة (step.deg === null) بس تمشي بالوقت بدون تشغيل صوت أو تظليل
+
+      // تحديث شريط التقدم والوقت (بنفس أسلوب المشغل العادي)، بس لو التمرين هو المتحكم حالياً
+      if (window.exerciseActive && exTotalBeats > 0) {
+        const elapsedBeats = exCumBeats[exStepIdx];
+        progressFill.style.width = Math.min(100, (elapsedBeats / exTotalBeats) * 100) + '%';
+        const unitMs = window.AR_STEP_MS * EX_DURATION_SCALE;
+        audioTime.textContent = formatTime(elapsedBeats * unitMs / 1000) + ' / ' + formatTime(exTotalBeats * unitMs / 1000);
+      }
+
+      exStepIdx++;
+      const mySession = exPlaySessionId;
+      exTimeoutId = setTimeout(() => { if (mySession === exPlaySessionId) exNextStep(); }, durMs);
+    }
+
+    // زر "تمرين جديد": يولّد تمريناً عشوائياً جديداً على المقام/الحرف الحاليين ويشغّله فوراً
+    document.getElementById('exerciseNewBtn').addEventListener('click', () => {
+      if (!window.isArabicMode) return;
+      const maqam = maqamSelect.value;
+      const harf = harfSelect.value;
+      const intervals = MAQAM_INTERVALS[maqam];
+      if (!intervals || !harf) return;
+
+      if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+      arResetPlayer();   // نوقف مشغل السلم العادي لو كان شغال
+      exStopPlayback();  // نوقف أي تمرين شغال حالياً
+
+      exIntervalsExt = exGetExtendedIntervals(intervals);
+      exPositions = getDegreePosition(HARF_LIST.indexOf(harf), exIntervalsExt);
+      exMaqamName = maqam;
+      exHarf = harf;
+
+      // المدى الفعلي المتاح على الزند يختلف حسب عدد الأوتار: ٦ أوتار فيها وتر
+      // إضافي (الشرار) يمدد المدى لغاية ٧٠ ربع، بينما ٥ أوتار محدودة بـ٦٠ ربع
+      // (آخر ربع موجود بجدول أسماء وتر الدو). نولّد التمرين بس ضمن الدرجات
+      // اللي فعلياً موجودة ولها اسم حرف على الوضع الحالي، عشان ما نطلع درجات فاضية.
+      const effectiveMaxQ = (window.oudCurrentStringCount === 6) ? 70 : 60;
+      let usableMaxDegree = 14;
+      for (let i = 13; i >= 0; i--) {
+        if (exPositions[i] !== undefined && exPositions[i] >= 0 && exPositions[i] <= effectiveMaxQ) {
+          usableMaxDegree = i + 1;
+          break;
+        }
+      }
+
+      // سجل الأنماط المتوفرة حالياً — نمط اللحن المتسلسل بس حالياً (استبدلنا فيه
+      // الثلاثيات/الأربيجات القافزة بناءً على طلبك)؛ الثلاثيات/الأربيجات لسا
+      // موجودة بالكود لو احتجناها لاحقاً، بس مو مفعّلة بالتدوير الحين
+      const EX_PATTERN_GENERATORS = [exGenerateMelodicWalkPattern];
+      const exPatternFn = EX_PATTERN_GENERATORS[Math.floor(Math.random() * EX_PATTERN_GENERATORS.length)];
+      exSequence = exPatternFn(usableMaxDegree);
+      // مجموعة الدرجات المستخدمة فعلياً بهالتمرين (بدون السكتات) — تُرسم هي بس على الزند
+      exVisibleDegIdxSet = new Set(exSequence.filter(n => n.deg !== null).map(n => n.deg - 1));
+
+      // مصفوفة التقدم التراكمي (بوحدة الضربة) — تُستخدم لشريط التقدم/الوقت بالمشغل
+      exCumBeats = [0];
+      exTotalBeats = 0;
+      exSequence.forEach(n => { exTotalBeats += n.dur; exCumBeats.push(exTotalBeats); });
+
+      // صندوق نص النوتة (الدرجات وسيرها) ملغى مؤقتاً من العرض بناءً على الطلب —
+      // الكود يضل يبني النص لو احتجناه مستقبلاً، بس ما نعرضه حالياً
+      // const box = document.getElementById('exerciseNotationBox');
+      // box.textContent = exFormatNotation(exSequence);
+      // box.style.display = 'block';
+
+      exDrawFullBoard(); // نرسم كل المربعات مرة وحدة، وبعدين بس نبدّل التظليل بكل نغمة
+
+      window.exerciseActive = true; // من الحين أزرار المشغل المشترك تتحكم بالتمرين، مو السلّم العادي
+      exStartPlay();
+    });
+
     document.getElementById('shared-playBtn').addEventListener('click', () => {
       if(!window.isArabicMode) return;
       if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+      if (window.exerciseActive) {
+        // التمرين هو المتحكم حالياً بأزرار المشغل، مو السلّم العادي
+        if (exPlayerState === 'stopped') exStartPlay();
+        else if (exPlayerState === 'playing') exPause();
+        else if (exPlayerState === 'paused') exResume();
+        return;
+      }
       if (arPlayerState === 'stopped' && typeof window.resetChordPlayer === 'function') window.resetChordPlayer(); // ننضّف أي كورد شغال بالخلفية بس وقت بدء تشغيل جديد، مو بكل ضغطة
       if(arPlayerState==='stopped') arStartPlay();
       else if(arPlayerState==='playing') arPause();
@@ -5926,10 +6398,13 @@ if (westernGuideBtn && westernGuideModal) {
     });
     document.getElementById('shared-stopBtn').addEventListener('click', () => {
       if(!window.isArabicMode) return;
+      if (window.exerciseActive) { exStopPlayback(); return; }
       arResetPlayer();
     });
     document.getElementById('shared-rewindBtn').addEventListener('click', () => {
-      if(window.isArabicMode){ arResetPlayer(); arStartPlay(); }
+      if(!window.isArabicMode) return;
+      if (window.exerciseActive) { exStartPlay(); return; } // إعادة نفس التمرين من أوله (مو توليد جديد)
+      arResetPlayer(); arStartPlay();
     });
     document.getElementById('shared-repeatBtn').addEventListener('click', () => {
       if(!window.isArabicMode) return;
@@ -5994,6 +6469,7 @@ if (westernGuideBtn && westernGuideModal) {
     const maqamGuideBtnName = document.getElementById('maqamGuideBtnName');
 
     maqamGuideBtn.addEventListener('click', () => {
+      if (window.exerciseActive && typeof window.exStopPlayback === 'function') window.exStopPlayback(); // التمرين يوقف، بعكس السلّم العادي (يقصد)
       maqamGuideModal.style.display = 'flex';
       hideTopNavButtons();
     });
@@ -6069,6 +6545,7 @@ if (westernGuideBtn && westernGuideModal) {
     const mitClose = document.getElementById('mitClose');
 
     maqamIntervalsBtn.addEventListener('click', () => {
+      if (window.exerciseActive && typeof window.exStopPlayback === 'function') window.exStopPlayback(); // التمرين يوقف، بعكس السلّم العادي (يقصد)
       maqamIntervalsModal.style.display = 'flex';
       hideTopNavButtons();
     });
@@ -6145,6 +6622,9 @@ if (westernGuideBtn && westernGuideModal) {
         intervals.forEach(iv => { cumQ += iv; currentDegrees.push(cumQ); });
         drawArabicMaqam(harf, intervals);
         renderIntervalsTable(maqam, intervals);
+        // زر تمرين جديد — يشتغل على أي مقام، فيظهر دايماً بمجرد اختيار مقام وحرف صالحين
+        const exBtn = document.getElementById('exerciseNewBtn');
+        if (exBtn) exBtn.style.display = '';
         // زر الدليل
         maqamGuideBtnName.textContent = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) ? window.MAQAM_NAME_EN[maqam] : maqam;
         if (MAQAM_GUIDE_FILES[maqam]) {
@@ -6186,8 +6666,8 @@ if (westernGuideBtn && westernGuideModal) {
     document.getElementById('showBtn').onclick = showMaqam;
 
     // تحديث تلقائي عند تغيير المقام أو الحرف
-    maqamSelect.addEventListener('change', () => { if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); setDefaultHarf(maqamSelect.value); showMaqam(); });
-    harfSelect.addEventListener('change', () => { if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); showMaqam(); closePanel(); });
+    maqamSelect.addEventListener('change', () => { window.exerciseActive = false; if (typeof window.exStopPlayback === 'function') window.exStopPlayback(); if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); setDefaultHarf(maqamSelect.value); showMaqam(); });
+    harfSelect.addEventListener('change', () => { window.exerciseActive = false; if (typeof window.exStopPlayback === 'function') window.exStopPlayback(); if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); showMaqam(); closePanel(); });
 
     // عرض السلم الافتراضي عند التحميل - بس لو تبويب المقامات العربية هو الفعلي المفعّل حالياً
     // (يحمي من الكتابة فوق حالة تبويب المقامات الغربية لو هو المحفوظ/المفعّل عند التحميل)
