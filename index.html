@@ -2182,6 +2182,7 @@ window.isArabicMode = false;
       }
       const notesLayer = document.getElementById('oudNotesLayer');
       const westernBtnsRow = document.getElementById('westernBtnsRow');
+      const exerciseBtnEl = document.getElementById('exerciseNewBtn');
       if(targetId === 'page-maqamat'){
         window.isArabicMode = true;
         if(westernBtnsRow) westernBtnsRow.style.display = 'none';
@@ -2191,6 +2192,7 @@ window.isArabicMode = false;
       } else if(targetId === 'page-circle'){
         window.isArabicMode = false;
         if(westernBtnsRow) westernBtnsRow.style.display = '';
+        if(exerciseBtnEl) exerciseBtnEl.style.display = 'none'; // زر تمرين المقام خاص بالعربي بس
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         setTimeout(() => { if(typeof renderAll === 'function') renderAll(); }, 50);
         setTimeout(() => { if(typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance(); }, 120);
@@ -4667,6 +4669,9 @@ if (westernGuideBtn && westernGuideModal) {
         const el = document.getElementById(id);
         if (el) el.title = btnTitles[id];
       });
+      // زر تمرين جديد
+      const exNewBtnEl = document.getElementById('exerciseNewBtn');
+      if (exNewBtnEl) { exNewBtnEl.textContent = 'New Exercise'; exNewBtnEl.title = 'New Exercise'; }
       // تسميتا الدوزان والسرعة
       const tuningLbl = document.querySelector('label[for="shared-tuningSelect"]');
       if (tuningLbl) tuningLbl.textContent = 'Tuning: ';
