@@ -6045,27 +6045,15 @@ if (westernGuideBtn && westernGuideModal) {
     // ===== نمط الثلاثيات =====
     // يتحرك بمجموعات (درجة، درجة+٢) صعوداً من نقطة بداية عشوائية، ثم يرجع
     // بنفس المسار نزولاً، وينتهي إجبارياً على الدرجة ١ (الجذر) دايماً
+    // ===== نمط الثلاثيات المكسورة (Broken Thirds) — النمط الكلاسيكي الثابت =====
+    // مسار محدد بالضبط (زي كتب تمارين الفيولين/التشيلو العالمية): ١-٣-٢-٤-٣-٥-
+    // ٤-٦-٥-٧-٦-٨ صعوداً، ثم نفس المسار بالعكس نزولاً — يغطي الأوكتاف كامل
+    // بمسار ثابت يتكرر بنفس الشكل بالضبط كل مرة (مو عشوائي)
     function exGenerateThirdsPattern(maxDegree) {
-      // حماية لحالة نادرة: مدى ضيق جداً (حرف قريب من نهاية الزند) ما يكفي لنمط ثلاثيات حقيقي
-      if (maxDegree < 3) return [{ deg: 1, dur: 2, effQ: exPositions[0] }];
+      if (maxDegree < 3) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
 
-      // نقطة البداية: دايماً الجذر (الدرجة ١) — التمرين لازم يبدأ من دو (المحط)
-      const start = 1;
-      // مدى الصعود عشوائي كل مرة (بين الدرجة ٤ والدرجة ٨) — عشان كل ضغطة
-      // تطلع تمرين مختلف طولاً وارتفاعاً، بدل ما يوصل لنفس القمة (٨) دايماً.
-      // يضل ما يتعدى ٨ (نهاية الأوكتاف) ويحترم usableMaxDegree الفعلي.
-      const OCTAVE_TOP = 8;
-      const minTop = Math.min(4, maxDegree);
-      const maxTop = Math.min(OCTAVE_TOP, maxDegree);
-      const randomTop = minTop + Math.floor(Math.random() * (maxTop - minTop + 1));
-      const steps = randomTop - start - 1;
+      const TOP = Math.min(8, maxDegree);
 
-      const DUR_END  = 2;    // بيضاء للختام على الجذر
-      const REST_SHORT = 0.25; // سكتة قصيرة طبيعية (نفس تنفّس العازف)
-
-      // يضيف نغمة للتسلسل، ويطبّق استثناء الراست (الدرجة السابعة بأي أوكتاف
-      // تنزل ربع تون عند النزول) — نفس قاعدة المشغل العادي، بس مطبّقة هنا
-      // على كل درجة سابعة بالمدى الممتد (٧ أو ١٤)، مو بس بالأوكتاف الأول
       function pushNote(seq, deg, dur, isDesc) {
         let q = exPositions[deg - 1];
         if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
@@ -6073,51 +6061,27 @@ if (westernGuideBtn && westernGuideModal) {
         }
         seq.push({ deg, dur, effQ: q });
       }
-      function pushRest(seq, dur) { seq.push({ deg: null, dur }); }
+
+      // صعوداً: (١,٣) - (٢,٤) - (٣,٥) - ... لغاية ما نوصل القمة
+      const upDegrees = [];
+      for (let d = 1; d + 2 <= TOP; d++) { upDegrees.push(d); upDegrees.push(d + 2); }
+      // لو القمة ما انضمّت طبيعياً (مثلاً TOP فردي بالنسبة لطول المسار)، نضيفها
+      if (upDegrees[upDegrees.length - 1] !== TOP) upDegrees.push(TOP);
 
       const seq = [];
-      // صعوداً: (start,start+2) - (start+1,start+3) - ... بمدد متنوعة
-      // (طويل-قصير بالتبادل) بدل كروش ثابت، يعطي إحساس جملة موسيقية
-      for (let i = 0; i < steps; i++) {
-        const swing = (i % 2 === 0);
-        pushNote(seq, start + i,     swing ? 0.75 : 0.5, false);
-        pushNote(seq, start + i + 2, swing ? 0.25 : 0.5, false);
-      }
-      // سكتة طبيعية قصيرة بالقمة قبل النزول
-      pushRest(seq, REST_SHORT);
-      // نزولاً: نفس المسار بالعكس، بنفس التنويع الإيقاعي
-      for (let i = steps - 1; i >= 0; i--) {
-        const swing = (i % 2 === 0);
-        pushNote(seq, start + i + 2, swing ? 0.75 : 0.5, true);
-        pushNote(seq, start + i,     swing ? 0.25 : 0.5, true);
-      }
-
-      // ختام إجباري على الجذر — لو المسار أصلاً وصل للجذر بآخر نغمة (لما
-      // البداية = ١)، نمدد مدة نفس النغمة بدل ما نضيف جذر ثاني فوقها ويسمع مرتين
-      if (seq.length && seq[seq.length - 1].deg === 1) {
-        seq[seq.length - 1].dur = DUR_END;
-      } else {
-        pushNote(seq, 1, DUR_END, true);
-      }
+      upDegrees.forEach(deg => pushNote(seq, deg, 1, false));
+      // نزولاً: نفس المسار بالعكس (بدون تكرار نغمة القمة مرتين متتاليتين)
+      for (let i = upDegrees.length - 2; i >= 0; i--) pushNote(seq, upDegrees[i], 1, true);
 
       return seq;
     }
 
-    // ===== نمط الأربيجات (قفزات واسعة حقيقية) =====
-    // خط أربيجيو واحد نظيف: الجذر - الثالثة - الخامسة - (الجواب أحياناً)، ثم
-    // نفس المسار نزولاً — قفزات كبيرة صريحة (بدل "المشي" المتداخل بين
-    // الدرجات زي الثلاثيات)، عشان يحس المستخدم بفرق واضح بين النمطين
+    // ===== نمط الأربيجيو — المسار الكلاسيكي الثابت (١-٣-٥-٨-٥-٣-١) =====
     function exGenerateArpeggioPattern(maxDegree) {
-      if (maxDegree < 5) return [{ deg: 1, dur: 2, effQ: exPositions[0] }];
+      if (maxDegree < 5) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
 
-      // القمة عشوائية: أحياناً يوصل للخامسة بس (أربيجيو قصير)، أحياناً
-      // للجواب كامل (أربيجيو موسّع) — لتنويع طول التمرين كل ضغطة
-      const possibleTops = [5, 8].filter(t => t <= maxDegree);
-      const top = possibleTops[Math.floor(Math.random() * possibleTops.length)];
-      const chordTones = (top === 8) ? [1, 3, 5, 8] : [1, 3, 5];
-
-      const DUR_END  = 2;      // بيضاء للختام على الجذر
-      const REST_SHORT = 0.25; // سكتة قصيرة طبيعية بالقمة
+      const TOP = Math.min(8, maxDegree);
+      const chordTones = (TOP >= 8) ? [1, 3, 5, 8] : [1, 3, 5];
 
       function pushNote(seq, deg, dur, isDesc) {
         let q = exPositions[deg - 1];
@@ -6126,63 +6090,214 @@ if (westernGuideBtn && westernGuideModal) {
         }
         seq.push({ deg, dur, effQ: q });
       }
-      function pushRest(seq, dur) { seq.push({ deg: null, dur }); }
-
-      // مدد متنوعة (بدل مدة ثابتة لكل نغمة) تعطي إحساس جملة موسيقية
-      const upDurs   = (top === 8) ? [0.5, 0.75, 0.5, 1.25] : [0.5, 0.75, 1.25];
-      const downDurs = (top === 8) ? [0.75, 0.5, 0.75]      : [0.75, 0.5];
 
       const seq = [];
-      // صعوداً: قفزة مباشرة بين درجات الجذر/الثالثة/الخامسة/(الجواب)
-      chordTones.forEach((deg, i) => pushNote(seq, deg, upDurs[i], false));
-      // سكتة طبيعية قصيرة بالقمة قبل النزول
-      pushRest(seq, REST_SHORT);
-      // نزولاً: نفس المسار بالعكس
-      for (let i = chordTones.length - 2; i >= 0; i--) {
-        const dIdx = chordTones.length - 2 - i;
-        pushNote(seq, chordTones[i], (i === 0) ? DUR_END : downDurs[dIdx], true);
-      }
+      chordTones.forEach(deg => pushNote(seq, deg, 1, false));
+      for (let i = chordTones.length - 2; i >= 0; i--) pushNote(seq, chordTones[i], 1, true);
 
       return seq;
     }
 
-    // ===== نمط اللحن المتسلسل (Melodic Walk) =====
-    // بدل القفزات الثابتة، يمشي على درجات المقام بتسلسل منطقي: غالباً خطوة
+    // ===== نمط التسلسلات (Sequences) — موتيف قصير يتكرر بإزاحة درجة =====
+    // موتيف ثابت من ٣ درجات (١-٢-٣) يتكرر صعوداً بإزاحة درجة كل مرة (٢-٣-٤،
+    // ٣-٤-٥...) لغاية القمة، ثم نفس المسار بالعكس نزولاً — مسار ثابت يتكرر
+    // بنفس الشكل بالضبط كل مرة (مو عشوائي)
+    function exGenerateSequencePattern(maxDegree) {
+      if (maxDegree < 3) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const TOP = Math.min(8, maxDegree);
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      // صعوداً: (١,٢,٣) - (٢,٣,٤) - (٣,٤,٥) - ... لغاية ما الموتيف يوصل القمة
+      const upDegrees = [];
+      for (let d = 1; d + 2 <= TOP; d++) { upDegrees.push(d); upDegrees.push(d + 1); upDegrees.push(d + 2); }
+      if (upDegrees[upDegrees.length - 1] !== TOP) { upDegrees.push(TOP - 1); upDegrees.push(TOP); }
+
+      const seq = [];
+      upDegrees.forEach(deg => pushNote(seq, deg, 1, false));
+      // نزولاً: نفس المسار بالعكس (بدون تكرار نغمة القمة مرتين متتاليتين)
+      for (let i = upDegrees.length - 2; i >= 0; i--) pushNote(seq, upDegrees[i], 1, true);
+
+      return seq;
+    }
+
+    // ===== نمط الرباعيات المكسورة (Broken Fourths) =====
+    // نفس فكرة الثلاثيات المكسورة، بس قفزة رابعة بدل ثالثة: (١,٤)-(٢,٥)-(٣,٦)...
+    function exGenerateFourthsPattern(maxDegree) {
+      if (maxDegree < 4) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const TOP = Math.min(8, maxDegree);
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      const upDegrees = [];
+      for (let d = 1; d + 3 <= TOP; d++) { upDegrees.push(d); upDegrees.push(d + 3); }
+      if (upDegrees.length === 0 || upDegrees[upDegrees.length - 1] !== TOP) upDegrees.push(TOP);
+
+      const seq = [];
+      upDegrees.forEach(deg => pushNote(seq, deg, 1, false));
+      for (let i = upDegrees.length - 2; i >= 0; i--) pushNote(seq, upDegrees[i], 1, true);
+
+      return seq;
+    }
+
+    // ===== نمط الدوران (Turn Pattern) =====
+    // كل درجة يتحول عليها بالشكل (د، د+١، د) قبل ما يكمل للدرجة اللي بعدها —
+    // تمرين تقني كلاسيكي للتحكم بالأصابع/الريشة
+    function exGenerateTurnPattern(maxDegree) {
+      if (maxDegree < 2) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const TOP = Math.min(8, maxDegree);
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      const upDegrees = [];
+      for (let d = 1; d < TOP; d++) { upDegrees.push(d); upDegrees.push(d + 1); upDegrees.push(d); }
+      upDegrees.push(TOP); // نلمس القمة بوضوح مرة وحدة قبل النزول
+
+      const seq = [];
+      upDegrees.forEach(deg => pushNote(seq, deg, 1, false));
+      // نزولاً: درجة درجة نظيفة من القمة للجذر (بدون تكرار شكل الدوران بالعكس)
+      for (let d = TOP - 1; d >= 1; d--) pushNote(seq, d, 1, true);
+
+      return seq;
+    }
+
+    // ===== نمط السداسيات المكسورة (Broken Sixths) =====
+    // قفزة سادسة (أوسع من الرابعة والثالثة): (١,٦)-(٢,٧)-(٣,٨)
+    function exGenerateSixthsPattern(maxDegree) {
+      if (maxDegree < 6) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const TOP = Math.min(8, maxDegree);
+
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      const upDegrees = [];
+      for (let d = 1; d + 5 <= TOP; d++) { upDegrees.push(d); upDegrees.push(d + 5); }
+      if (upDegrees.length === 0 || upDegrees[upDegrees.length - 1] !== TOP) upDegrees.push(TOP);
+
+      const seq = [];
+      upDegrees.forEach(deg => pushNote(seq, deg, 1, false));
+      for (let i = upDegrees.length - 2; i >= 0; i--) pushNote(seq, upDegrees[i], 1, true);
+
+      return seq;
+    }
     // وحدة، أحياناً قفزة صغيرة، مع اتجاه عام يتغيّر بطبيعية (يعطي طابع صعود-
     // هبوط زي الجملة الموسيقية الحقيقية)، بدل نمط جامد متكرر
     function exGenerateMelodicWalkPattern(maxDegree) {
       if (maxDegree < 3) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
 
-      const OCTAVE_TOP = Math.min(8, maxDegree);
+      const fullTop = Math.min(8, maxDegree);
 
-      const degrees = [1]; // يبدأ من الجذر دايماً
-      let current = 1;
-      let direction = 1; // اتجاه السير العام، يتغيّر بطبيعية بالأثناء
-      const visited = new Set([1]);
+      // طبائع مختلفة للمشي اللحني — كل ضغطة "تمرين جديد" تختار وحدة عشوائياً.
+      // runMin/runMax: أقصى عدد خطوات متتالية بنفس الاتجاه قبل ما يفرض تغيير
+      // الاتجاه (يضمن تعرّج حقيقي، مو مشي مستقيم طويل يحس كسلّم)
+      const PROFILES = [
+        { name: 'هادئ',     top: fullTop,                                            runMin: 3, runMax: 6, extraMin: 2, extraMax: 4 },
+        { name: 'حيوي',     top: fullTop,                                            runMin: 3, runMax: 4, extraMin: 5, extraMax: 8 },
+        { name: 'مدى ضيق',  top: fullTop,                                            runMin: 3, runMax: 5, extraMin: 3, extraMax: 6 },
+        { name: 'مدى واسع', top: fullTop,                                            runMin: 3, runMax: 6, extraMin: 4, extraMax: 7 },
+      ];
+      const profile = PROFILES[Math.floor(Math.random() * PROFILES.length)];
+      const OCTAVE_TOP = profile.top;
+
+      // الجذر (الدرجة ١) محجوز بس للبداية والنهاية — الاستكشاف بالمنتصف يمشي
+      // من الدرجة ٢ فما فوق، عشان ما يرجع يلمس الجذر كثير بمنتصف التمرين
+      // (كان يحس مكرر وممل، ورجّع نفسه دايماً)
+      const FLOOR = 2;
+      const degrees = [1]; // نغمة البداية (الجذر)
+      let current = FLOOR;
+      degrees.push(current);
+      let direction = 1; // اتجاه السير الحالي
+      let sameDirRun = 0; // كم خطوة متتالية مشيناها بنفس الاتجاه
+      let reverseAt = profile.runMin + Math.floor(Math.random() * (profile.runMax - profile.runMin + 1));
+      const visited = new Set([current]);
+      const neededCount = OCTAVE_TOP - FLOOR + 1; // عدد الدرجات المطلوب تغطيتها (٢ لغاية القمة)
       const MAX_STEPS = 60; // سقف أمان يمنع أي حلقة تطول أكثر من اللازم
 
-      function walkStep() {
-        if (Math.random() < 0.12) direction *= -1; // تغيّر بالاتجاه أقل تكراراً (حركة أهدأ، أقواس أوضح)
-        const r = Math.random();
-        // الأغلبية الساحقة خطوة وحدة (حركة متدرجة هادئة)، قفزة صغيرة نادرة جداً
-        const step = (r < 0.85) ? 1 : (r < 0.97) ? 2 : 0;
-        let next = current + step * direction;
-        if (next > OCTAVE_TOP) { next = OCTAVE_TOP; direction = -1; }
-        if (next < 1) { next = 1; direction = 1; }
-        current = next;
-        degrees.push(current);
+      function forceReverse() {
+        direction *= -1;
+        sameDirRun = 0;
+        reverseAt = profile.runMin + Math.floor(Math.random() * (profile.runMax - profile.runMin + 1));
       }
 
-      // نمشي بنفس الطريقة العشوائية لحد ما نزور كل درجات السلم (١ لغاية القمة) مرة عالأقل
+      function walkStep() {
+        if (sameDirRun >= reverseAt) forceReverse(); // وصلنا أقصى مسافة بنفس الاتجاه — نرجع
+        // نتأكد قبل الخطوة نفسها (مو بعدها) إننا مو رايحين نتعدى الطرف — عشان
+        // ما تتكرر نفس الدرجة مرتين متتاليتين لما نوصل الحد الأدنى أو القمة
+        if (current === OCTAVE_TOP && direction === 1) forceReverse();
+        if (current === FLOOR && direction === -1) forceReverse();
+        current = current + direction; // خطوة وحدة بس، بدون أي قفزة
+        degrees.push(current);
+        sameDirRun++;
+      }
+
+      // نمشي بنفس الطريقة العشوائية لحد ما نزور كل الدرجات (٢ لغاية القمة) مرة عالأقل
       let steps = 0;
-      while (visited.size < OCTAVE_TOP && steps < MAX_STEPS) {
+      while (visited.size < neededCount && steps < MAX_STEPS) {
         walkStep();
         visited.add(current);
         steps++;
       }
+      // ضمان إجباري: لو التعرّج العشوائي (خصوصاً بالطبائع اللي ارتدادها سريع)
+      // ما وصّل لكل الدرجات ضمن سقف الأمان، نكمل نتحرك مباشرة (خطوة خطوة، بنفس
+      // المنطق، بدون قفز) للدرجة الأقرب غير المزارة لحد ما تكتمل التغطية فعلياً
+      while (visited.size < neededCount) {
+        let target = null, bestDist = Infinity;
+        for (let d = FLOOR; d <= OCTAVE_TOP; d++) {
+          if (!visited.has(d)) {
+            const dist = Math.abs(d - current);
+            if (dist < bestDist) { bestDist = dist; target = d; }
+          }
+        }
+        if (target === null) break;
+        direction = target > current ? 1 : -1;
+        current += direction;
+        degrees.push(current);
+        visited.add(current);
+        sameDirRun = 1;
+        reverseAt = profile.runMin + Math.floor(Math.random() * (profile.runMax - profile.runMin + 1));
+      }
       // نكمل بضع خطوات إضافية بنفس الطريقة (طول طبيعي للجملة) بعد ما تغطّت كل الدرجات
-      const extraSteps = 3 + Math.floor(Math.random() * 4);
+      const extraSteps = profile.extraMin + Math.floor(Math.random() * (profile.extraMax - profile.extraMin + 1));
       for (let n = 0; n < extraSteps; n++) walkStep();
+
+      // ارتكاز على "الغماز" الافتراضي (الدرجة ٥ — نقطة الارتكاز التقليدية بين
+      // الجنس السفلي والعلوي بمعظم المقامات) قبل النزول النهائي، مو بس محطة
+      // عابرة أثناء المشي — يعطي إحساس أقرب للمسار اللحني التقليدي
+      const GHAMMAZ = Math.min(5, OCTAVE_TOP);
+      if (GHAMMAZ >= FLOOR && GHAMMAZ < OCTAVE_TOP) {
+        direction = GHAMMAZ > current ? 1 : -1;
+        while (current !== GHAMMAZ) {
+          current += direction;
+          degrees.push(current);
+        }
+      }
 
       // رجوع تدريجي للجذر خطوة خطوة (بنفس أسلوب الحركة)، مو قفزة نهائية كبيرة
       while (current > 1) {
@@ -6192,6 +6307,38 @@ if (westernGuideBtn && westernGuideModal) {
 
       // كل نغمة = نوار ثابت (بدل مقاسم متنوعة) — أسهل للفهم، التركيز يصير على
       // الدرجة والموضع بالزند بدل تتبع الإيقاع
+      function pushNote(seq, deg, dur, isDesc) {
+        let q = exPositions[deg - 1];
+        if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
+          q -= 1;
+        }
+        seq.push({ deg, dur, effQ: q });
+      }
+
+      const seq = [];
+      for (let idx = 0; idx < degrees.length; idx++) {
+        const deg = degrees[idx];
+        const prev = idx > 0 ? degrees[idx - 1] : deg;
+        pushNote(seq, deg, 1, deg < prev);
+      }
+
+      return seq;
+    }
+
+    // ===== نمط الصعود المباشر (سلس، بدون تردد) =====
+    // يمشي درجة درجة صعوداً مباشرة (بدون أي تعرّج أو تردد) لغاية الجواب، يلمسها
+    // مرتين، وبعدين يرجع نازل درجة درجة مباشرة للجذر — أسرع وصولاً للجواب من
+    // نمط المشي اللحني (اللي يتعرّج كثير قبل ما يوصل)
+    function exGenerateDirectAscentPattern(maxDegree) {
+      if (maxDegree < 3) return [{ deg: 1, dur: 1, effQ: exPositions[0] }, { deg: 1, dur: 1, effQ: exPositions[0] }];
+
+      const OCTAVE_TOP = Math.min(8, maxDegree);
+      const degrees = [1];
+      for (let d = 2; d <= OCTAVE_TOP; d++) degrees.push(d); // صعوداً مباشرة بدون تردد
+      degrees.push(OCTAVE_TOP - 1); // لمسة بسيطة عند القمة (نلمسها مرتين)
+      degrees.push(OCTAVE_TOP);
+      for (let d = OCTAVE_TOP - 1; d >= 1; d--) degrees.push(d); // نزولاً مباشرة للجذر
+
       function pushNote(seq, deg, dur, isDesc) {
         let q = exPositions[deg - 1];
         if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
@@ -6415,11 +6562,25 @@ if (westernGuideBtn && westernGuideModal) {
       // سجل الأنماط المتوفرة حالياً — نمط اللحن المتسلسل بس حالياً (استبدلنا فيه
       // الثلاثيات/الأربيجات القافزة بناءً على طلبك)؛ الثلاثيات/الأربيجات لسا
       // موجودة بالكود لو احتجناها لاحقاً، بس مو مفعّلة بالتدوير الحين
-      const EX_PATTERN_GENERATORS = [exGenerateMelodicWalkPattern];
-      const exPatternFn = EX_PATTERN_GENERATORS[Math.floor(Math.random() * EX_PATTERN_GENERATORS.length)];
+      const EX_PATTERN_GENERATORS = [exGenerateThirdsPattern, exGenerateArpeggioPattern, exGenerateSequencePattern, exGenerateFourthsPattern, exGenerateTurnPattern, exGenerateSixthsPattern];
+      // نختار نمط عشوائي، بس نضمن إنه مختلف عن آخر نمط استخدمناه (ما يتكرر بضغطتين متتاليتين)
+      let exPatternFn;
+      do {
+        exPatternFn = EX_PATTERN_GENERATORS[Math.floor(Math.random() * EX_PATTERN_GENERATORS.length)];
+      } while (EX_PATTERN_GENERATORS.length > 1 && exPatternFn === window.exLastPatternFn);
+      window.exLastPatternFn = exPatternFn;
       exSequence = exPatternFn(usableMaxDegree);
+      // ===== سطر تشخيصي مؤقت =====
+      {
+        const uniqueDegs = [...new Set(exSequence.filter(n => n.deg !== null).map(n => n.deg))].sort((a,b)=>a-b);
+        console.log('=== تمرين جديد | المقام:', maqam, '| الحرف:', harf, '| usableMaxDegree:', usableMaxDegree, '| الدرجات الفريدة:', uniqueDegs, '===');
+      }
       // مجموعة الدرجات المستخدمة فعلياً بهالتمرين (بدون السكتات) — تُرسم هي بس على الزند
-      exVisibleDegIdxSet = new Set(exSequence.filter(n => n.deg !== null).map(n => n.deg - 1));
+      // نرسم سلّم المقام كامل على الزند (كل الدرجات المتاحة لغاية أوكتاف واحد)
+      // دايماً — مو بس الدرجات اللي فعلياً يستخدمها هالتمرين بالذات — والتمرين
+      // يشتغل فوق نفس الرسمة الكاملة (يظلّل بس الدرجة اللي يعزفها حالياً)
+      const fullScaleTop = Math.min(8, usableMaxDegree);
+      exVisibleDegIdxSet = new Set(Array.from({ length: fullScaleTop }, (_, i) => i));
 
       // مصفوفة التقدم التراكمي (بوحدة الضربة) — تُستخدم لشريط التقدم/الوقت بالمشغل
       exCumBeats = [0];
