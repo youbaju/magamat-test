@@ -316,6 +316,8 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .ctrl-btn{ width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: .7rem !important; }
   .repeat-btn{ width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: .8rem !important; }
   .exercise-new-btn{ height: 24px !important; font-size: .58rem !important; padding: 0 6px !important; }
+  .exercise-mode-toggle{ font-size: .55rem !important; }
+  .exercise-mode-toggle input[type="checkbox"]{ width: 19px !important; height: 19px !important; }
   .audio-time{ font-size: .58rem !important; min-width: 56px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .6rem !important; }
   .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
@@ -422,12 +424,32 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
-  transition: background .2s;
+  transition: background .2s, opacity .2s;
 }
 .exercise-new-btn:hover{ background: #123f70; }
+.exercise-new-btn:disabled{ background: #dbe2ea; color: #7a8794; opacity: 1; cursor: not-allowed; }
+.exercise-mode-toggle{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Cairo', sans-serif;
+  font-size: .68rem;
+  color: #1a5fa8;
+  flex-shrink: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.exercise-mode-toggle input[type="checkbox"]{
+  width: 22px;
+  height: 22px;
+  accent-color: #1a5fa8;
+  cursor: pointer;
+  margin: 0;
+}
 @media (max-width: 480px){
   .audio-controls{ flex-wrap: wrap; row-gap: 4px; } /* لو ضاق العرض، الزر ينزل صف تاني بدل ما يكسر التخطيط */
   .exercise-new-btn{ font-size: .62rem; padding: 0 7px; height: 26px; }
+  .exercise-mode-toggle{ font-size: .6rem; }
 }
 .tuning-row {
   display: flex;
@@ -1541,7 +1563,10 @@ input[type="radio"] {
           <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
         </svg>
       </button>
-      <button class="exercise-new-btn" id="exerciseNewBtn" title="تمرين جديد" style="display:none">تمرين جديد</button>
+      <label class="exercise-mode-toggle" id="exerciseModeToggleWrap" style="display:none" title="تفعيل وضع التمارين">
+        <input type="checkbox" id="exerciseModeToggle">
+      </label>
+      <button class="exercise-new-btn" id="exerciseNewBtn" title="تمرين جديد" style="display:none" disabled>تمرين جديد</button>
     </div>
     <div class="tuning-row">
       <label for="shared-tuningSelect">الدوزان : </label>
@@ -2183,9 +2208,16 @@ window.isArabicMode = false;
       const notesLayer = document.getElementById('oudNotesLayer');
       const westernBtnsRow = document.getElementById('westernBtnsRow');
       const exerciseBtnEl = document.getElementById('exerciseNewBtn');
+      const exerciseToggleEl = document.getElementById('exerciseModeToggle');
+      const exerciseToggleWrapEl = document.getElementById('exerciseModeToggleWrap');
       if(targetId === 'page-maqamat'){
         window.isArabicMode = true;
         if(westernBtnsRow) westernBtnsRow.style.display = 'none';
+        // خانة التفعيل تبدأ دايماً غير مفعّلة عند فتح تبويب المقامات (وضع مقام عادي افتراضياً)
+        if(exerciseToggleEl) exerciseToggleEl.checked = false;
+        if(exerciseBtnEl) exerciseBtnEl.disabled = true;
+        if(typeof window.exSetSharedPlayerButtonsEnabled === 'function') window.exSetSharedPlayerButtonsEnabled(true); // أزرار المشغل ترجع طبيعية (تتحكم بالسلّم العادي)
+        window.exerciseActive = false;
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         if(typeof setupArabicPlayerButtons === 'function') setupArabicPlayerButtons();
         setTimeout(() => { if(typeof window.showMaqam === 'function') window.showMaqam(); }, 100);
@@ -2193,6 +2225,7 @@ window.isArabicMode = false;
         window.isArabicMode = false;
         if(westernBtnsRow) westernBtnsRow.style.display = '';
         if(exerciseBtnEl) exerciseBtnEl.style.display = 'none'; // زر تمرين المقام خاص بالعربي بس
+        if(exerciseToggleWrapEl) exerciseToggleWrapEl.style.display = 'none';
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         setTimeout(() => { if(typeof renderAll === 'function') renderAll(); }, 50);
         setTimeout(() => { if(typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance(); }, 120);
@@ -4672,6 +4705,9 @@ if (westernGuideBtn && westernGuideModal) {
       // زر تمرين جديد
       const exNewBtnEl = document.getElementById('exerciseNewBtn');
       if (exNewBtnEl) { exNewBtnEl.textContent = 'New Exercise'; exNewBtnEl.title = 'New Exercise'; }
+      // خانة تفعيل وضع التمارين
+      const exToggleWrapEl2 = document.getElementById('exerciseModeToggleWrap');
+      if (exToggleWrapEl2) exToggleWrapEl2.title = 'Enable Exercise Mode';
       // تسميتا الدوزان والسرعة
       const tuningLbl = document.querySelector('label[for="shared-tuningSelect"]');
       if (tuningLbl) tuningLbl.textContent = 'Tuning: ';
@@ -6154,20 +6190,8 @@ if (westernGuideBtn && westernGuideModal) {
         degrees.push(current);
       }
 
-      // مقاسم إيقاعية (كل وحدة = نوار/ضربة)، كل مقسم مجموعه بالضبط ضربتين — عشان
-      // التمرين يلتزم بميزان ٢/٤ حقيقي بدون أي بيضاء. كل المقاسم بعدد نغمات
-      // زوجي (٢ أو ٤) عشان مجموع النغمات لو كان زوجي يضل التوزيع مضبوط للنهاية
-      // بدون ما يعلق بمقسم ناقص (نغمة وحدة بس متبقية بلا مقسم يناسبها)
-      const RHYTHM_CELLS_2_4 = [
-        [1, 1],               // نوار - نوار
-        [0.5, 0.5, 0.5, 0.5], // أربع كروشات
-      ];
-
-      // نضمن عدد النغمات زوجي (لو فردي نضيف نغمة جذر إضافية بالختام) عشان
-      // توزيع المقاسم (كلها بعدد زوجي من النغمات) يغطي كل نغمة بدون ما يتبقى
-      // نغمة يتيمة بلا مقسم يناسبها
-      if (degrees.length % 2 !== 0) degrees.push(1);
-
+      // كل نغمة = نوار ثابت (بدل مقاسم متنوعة) — أسهل للفهم، التركيز يصير على
+      // الدرجة والموضع بالزند بدل تتبع الإيقاع
       function pushNote(seq, deg, dur, isDesc) {
         let q = exPositions[deg - 1];
         if (exMaqamName === 'الراست' && ((deg - 1) % 7) === 6 && isDesc) {
@@ -6177,18 +6201,10 @@ if (westernGuideBtn && westernGuideModal) {
       }
 
       const seq = [];
-      let idx = 0;
-      // كل التمرين (من أول نغمة للختام) يوزّع على مقاسم ٢/٤ متتالية بدون استثناء
-      while (idx < degrees.length) {
-        const remaining = degrees.length - idx;
-        const candidates = RHYTHM_CELLS_2_4.filter(c => c.length <= remaining);
-        const cell = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : [1, 1];
-        for (let k = 0; k < cell.length; k++) {
-          const deg = degrees[idx];
-          const prev = idx > 0 ? degrees[idx - 1] : deg;
-          pushNote(seq, deg, cell[k], deg < prev);
-          idx++;
-        }
+      for (let idx = 0; idx < degrees.length; idx++) {
+        const deg = degrees[idx];
+        const prev = idx > 0 ? degrees[idx - 1] : deg;
+        pushNote(seq, deg, 1, deg < prev);
       }
 
       return seq;
@@ -6285,12 +6301,17 @@ if (westernGuideBtn && westernGuideModal) {
     }
 
     function exNextStep() {
-      if (exStepIdx >= exSequence.length) { exStopPlayback(); return; }
+      if (exStepIdx >= exSequence.length) {
+        if (typeof arRepeat !== 'undefined' && arRepeat) { exStartPlay(); return; } // التكرار مفعّل — نعيد نفس التمرين تلقائياً
+        exStopPlayback();
+        return;
+      }
       const step = exSequence[exStepIdx];
-      const EX_DURATION_SCALE = 0.7; // تقصير عام لكل الأزمنة (نوار كان يحس طويل)
       // نقرأ سرعة المشغل الحالية (window.AR_STEP_MS) بكل خطوة، عشان لو المستخدم
-      // غيّر السرعة أثناء التشغيل، التمرين يعكسها فوراً بنفس لحظة تغييرها
-      const durMs = step.dur * window.AR_STEP_MS * EX_DURATION_SCALE;
+      // غيّر السرعة أثناء التشغيل، التمرين يعكسها فوراً بنفس لحظة تغييرها —
+      // بدون أي معامل تقصير إضافي، عشان نفس رقم السرعة يعطي نفس الإحساس
+      // بالسرعة بالسلّم العادي وبالتمرين
+      const durMs = step.dur * window.AR_STEP_MS;
 
       if (step.deg !== null) {
         const degIdx = step.deg - 1;
@@ -6321,7 +6342,7 @@ if (westernGuideBtn && westernGuideModal) {
       if (window.exerciseActive && exTotalBeats > 0) {
         const elapsedBeats = exCumBeats[exStepIdx];
         progressFill.style.width = Math.min(100, (elapsedBeats / exTotalBeats) * 100) + '%';
-        const unitMs = window.AR_STEP_MS * EX_DURATION_SCALE;
+        const unitMs = window.AR_STEP_MS;
         audioTime.textContent = formatTime(elapsedBeats * unitMs / 1000) + ' / ' + formatTime(exTotalBeats * unitMs / 1000);
       }
 
@@ -6330,9 +6351,40 @@ if (westernGuideBtn && westernGuideModal) {
       exTimeoutId = setTimeout(() => { if (mySession === exPlaySessionId) exNextStep(); }, durMs);
     }
 
+    // خانة تفعيل وضع التمارين: تفعّل/تعطّل زر "تمرين جديد" بس، ما تبدأ تمرين تلقائياً
+    // يعطّل/يفعّل أزرار المشغل المشترك (تُعطّل لما الخانة مفعّلة بس ما فيه تمرين اتشغّل بعد)
+    function exSetSharedPlayerButtonsEnabled(enabled) {
+      ['shared-playBtn', 'shared-stopBtn', 'shared-rewindBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+      });
+    }
+    window.exSetSharedPlayerButtonsEnabled = exSetSharedPlayerButtonsEnabled; // نصدّرها عشان تبويب المقامات (بكتلة سكربت مختلفة) يقدر يرجّع الأزرار طبيعية
+
+    document.getElementById('exerciseModeToggle').addEventListener('change', (e) => {
+      const exBtn = document.getElementById('exerciseNewBtn');
+      if (e.target.checked) {
+        if (exBtn) exBtn.disabled = false;
+        if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); // نوقف السلّم العادي لو كان شغال
+        if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+        exSetSharedPlayerButtonsEnabled(false); // ما فيه تمرين اتشغّل بعد — الأزرار معطّلة لحد أول ضغطة على "تمرين جديد"
+      } else {
+        if (exBtn) exBtn.disabled = true;
+        // إلغاء التفعيل يوقف أي تمرين شغال ويرجّع عرض المقام العادي فوراً
+        if (window.exerciseActive) {
+          exStopPlayback();
+          window.exerciseActive = false;
+          if (typeof window.showMaqam === 'function') window.showMaqam();
+        }
+        exSetSharedPlayerButtonsEnabled(true); // ترجع تتحكم بالسلّم العادي عادي
+      }
+    });
+
     // زر "تمرين جديد": يولّد تمريناً عشوائياً جديداً على المقام/الحرف الحاليين ويشغّله فوراً
     document.getElementById('exerciseNewBtn').addEventListener('click', () => {
       if (!window.isArabicMode) return;
+      const toggle = document.getElementById('exerciseModeToggle');
+      if (!toggle || !toggle.checked) return; // ما نشتغل إلا لو خانة التفعيل مفعّلة
       const maqam = maqamSelect.value;
       const harf = harfSelect.value;
       const intervals = MAQAM_INTERVALS[maqam];
@@ -6383,6 +6435,7 @@ if (westernGuideBtn && westernGuideModal) {
       exDrawFullBoard(); // نرسم كل المربعات مرة وحدة، وبعدين بس نبدّل التظليل بكل نغمة
 
       window.exerciseActive = true; // من الحين أزرار المشغل المشترك تتحكم بالتمرين، مو السلّم العادي
+      exSetSharedPlayerButtonsEnabled(true); // أول تمرين اتولّد فعلياً — نفعّل الأزرار
       exStartPlay();
     });
 
@@ -6403,7 +6456,7 @@ if (westernGuideBtn && westernGuideModal) {
     });
     document.getElementById('shared-stopBtn').addEventListener('click', () => {
       if(!window.isArabicMode) return;
-      if (window.exerciseActive) { exStopPlayback(); return; }
+      if (window.exerciseActive) { exStopPlayback(); return; } // إيقاف بس، نضل بوضع التمرين (الخانة هي اللي تخرجنا منه)
       arResetPlayer();
     });
     document.getElementById('shared-rewindBtn').addEventListener('click', () => {
@@ -6627,9 +6680,11 @@ if (westernGuideBtn && westernGuideModal) {
         intervals.forEach(iv => { cumQ += iv; currentDegrees.push(cumQ); });
         drawArabicMaqam(harf, intervals);
         renderIntervalsTable(maqam, intervals);
-        // زر تمرين جديد — يشتغل على أي مقام، فيظهر دايماً بمجرد اختيار مقام وحرف صالحين
+        // زر تمرين جديد وخانة تفعيله — يشتغلون على أي مقام، فيظهرون دايماً بمجرد اختيار مقام وحرف صالحين
         const exBtn = document.getElementById('exerciseNewBtn');
         if (exBtn) exBtn.style.display = '';
+        const exToggleWrap = document.getElementById('exerciseModeToggleWrap');
+        if (exToggleWrap) exToggleWrap.style.display = '';
         // زر الدليل
         maqamGuideBtnName.textContent = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) ? window.MAQAM_NAME_EN[maqam] : maqam;
         if (MAQAM_GUIDE_FILES[maqam]) {
