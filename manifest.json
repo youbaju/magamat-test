@@ -1,6 +1,14 @@
 {
   "name": "مقامات - Oud & Maqam",
-  "short_name": "عود & مقامات",
+  "short_name": "عود و مقامات",
+  "name_localized": {
+    "ar": { "value": "مقامات - Oud & Maqam", "dir": "rtl" },
+    "en": { "value": "Oud & Maqamat", "dir": "ltr" }
+  },
+  "short_name_localized": {
+    "ar": { "value": "عود و مقامات", "dir": "rtl" },
+    "en": { "value": "Oud & Maqamat", "dir": "ltr" }
+  },
   "description": "المقامات العربية والسلالم الغربية على العود | Arabic Maqamat & Western Scales on Oud",
   "start_url": "./index.html",
   "scope": "./",
