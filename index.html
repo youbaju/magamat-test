@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3ab4e8">
+
+<!-- دعم إضافي لآيفون (Safari ما يقرأ manifest.json لكل شي، فنكرر أهم القيم هنا) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="عود & مقامات">
+<link rel="apple-touch-icon" href="icons/icon-512.png">
+
 <!-- SEO أساسي -->
 <title>المقامات العربية والسلالم الغربية على العود | Arabic Maqamat &amp; Western Scales on Oud | يوسف باجبير</title>
 <meta name="description" content="أول موقع عربي تفاعلي يعرض 46 مقاماً موسيقياً عربياً وسلالم غربية (Major, Minor) على زند العود بالصوت الحقيقي، مع دائرة الرابعات والخامسات وكوردات السلالم. الموقع يدعم اللغتين العربية والإنجليزية بالكامل. تعلم المقامات العربية والسلالم الغربية مجاناً. The first interactive Arabic website presenting Arabic maqamat and Western scales on an oud fretboard with real audio, available in Arabic and English.">
@@ -1476,6 +1486,17 @@ input[type="radio"] {
 }
 
 </style>
+
+<!-- PWA: تسجيل الـ Service Worker (يفعّل التخزين المحلي والعمل بدون إنترنت) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then((reg) => console.log('[PWA] Service Worker مسجّل بنجاح:', reg.scope))
+        .catch((err) => console.warn('[PWA] فشل تسجيل Service Worker:', err));
+    });
+  }
+</script>
 </head>
 <body>
 

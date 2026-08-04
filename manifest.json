@@ -1,0 +1,27 @@
+{
+  "name": "مقامات - Oud & Maqam",
+  "short_name": "عود & مقامات",
+  "description": "المقامات العربية والسلالم الغربية على العود | Arabic Maqamat & Western Scales on Oud",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "ar",
+  "dir": "rtl",
+  "background_color": "#3ab4e8",
+  "theme_color": "#3ab4e8",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
