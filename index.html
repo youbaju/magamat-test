@@ -2447,16 +2447,37 @@ window.isArabicMode = false;
     const newSize = trimmed.length;
     if (newSize < 8) return -1;
 
-    const c = new Array(newSize).fill(0);
-    for (let lag = 0; lag < newSize; lag++) {
-      for (let i = 0; i < newSize - lag; i++) c[lag] += trimmed[i] * trimmed[i+lag];
+    // نحصر نطاق البحث بس على الأزمنة (lags) المطابقة لترددات منطقية للعود (٦٠-٢٠٠٠ هرتز)
+    // بدل فحص كل الاحتمالات — هذا يسرّع الحساب بشكل كبير جداً (يشتغل ٦٠ مرة بالثانية)
+    // وبنفس الوقت يقلل "خطأ الأوكتاف" (اكتشاف نفس النغمة بترتيب هرمونيكي غلط)
+    const minLag = Math.max(2, Math.floor(sampleRate / 2000));
+    const maxLag = Math.min(newSize - 2, Math.ceil(sampleRate / 60));
+    if (maxLag <= minLag) return -1;
+
+    // نطبّع كل قيمة بعدد العناصر اللي جُمعت فيها (متوسط، مو مجموع خام) — يمنع انحياز
+    // الحساب رياضياً نحو الفترات الزمنية القصيرة (اللي فيها عناصر أكثر بالجمع بطبيعتها)،
+    // وهذا كان يسبب فشل كامل باكتشاف نغمات العود المنخفضة (زي الوتر المفتوح ~110Hz)
+    const c = new Array(maxLag + 1).fill(0);
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      let sum = 0;
+      const count = newSize - lag;
+      for (let i = 0; i < count; i++) sum += trimmed[i] * trimmed[i+lag];
+      c[lag] = sum / count;
     }
-    let d = 0; while (d < newSize-1 && c[d] > c[d+1]) d++;
-    let maxVal = -1, maxPos = -1;
-    for (let i = d; i < newSize; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; } }
-    if (maxPos <= 0) return -1;
-    let T0 = maxPos;
-    if (T0 > 0 && T0 < newSize - 1) { // تحسين دقة الموضع (Parabolic interpolation)
+    let maxVal = -Infinity, maxPos = -1;
+    for (let i = minLag; i <= maxLag; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; } }
+    if (maxPos <= minLag) return -1;
+
+    // تصحيح "خطأ الأوكتاف": نتحقق هل فيه فترة أقصر (نصف/ثلث الفترة المكتشفة) بارتباط قوي مشابه —
+    // لو موجودة، هي الأصح غالباً (النغمة الأساسية الحقيقية)، مو الفترة الأطول (اللي ممكن تكون توافقية)
+    let bestPos = maxPos;
+    for (const divisor of [2, 3]) {
+      const candidate = Math.round(maxPos / divisor);
+      if (candidate < minLag) continue;
+      if (c[candidate] >= maxVal * 0.82) { bestPos = candidate; break; }
+    }
+    let T0 = bestPos;
+    if (T0 > minLag && T0 < maxLag) { // تحسين دقة الموضع (Parabolic interpolation)
       const x1 = c[T0-1], x2 = c[T0], x3 = c[T0+1];
       const a = (x1 + x3 - 2*x2)/2, b = (x3 - x1)/2;
       if (a) T0 = T0 - b/(2*a);
