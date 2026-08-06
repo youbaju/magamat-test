@@ -2592,10 +2592,15 @@ window.isArabicMode = false;
     micBtnText = t;
     updateMicBtnVisual();
 
-    mg.addEventListener('click', () => {
+    const handleActivate = (ev) => {
+      if (ev) ev.preventDefault();
       if (verifyState === 'idle') startVerify();
       else { stopVerify(); resetAllNotesVisual(); }
-    });
+    };
+    mg.addEventListener('click', handleActivate);
+    // معالج لمس صريح بالإضافة لـclick — بعض متصفحات الجوال ما تحوّل اللمسة لنقرة (click)
+    // بثبات على عناصر SVG، فنتعامل مع touchend مباشرة كطبقة أمان إضافية
+    mg.addEventListener('touchend', handleActivate, { passive: false });
     return mg;
   };
 
