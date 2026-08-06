@@ -286,6 +286,27 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
 }
 .shared-oud-wrapper > *{ pointer-events: auto; }
 .shared-oud-wrapper svg{ max-height: 100%; max-width: 100%; }
+#micVerifyHtmlBtn{
+  position: absolute;
+  z-index: 5;
+  border-radius: 12px;
+  background: #eaf6fc;
+  border: 2px solid #3ab4e8;
+  color: #1a5fa8;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  transition: background .15s, border-color .15s;
+}
+#micVerifyHtmlBtn.listening{
+  background: #d64545;
+  border-color: #a82f2f;
+  color: #fff;
+}
 @media (max-width:1024px){
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
@@ -1558,6 +1579,7 @@ input[type="radio"] {
 
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
+    <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">Major (طبيعي)</button>
@@ -2399,7 +2421,7 @@ window.isArabicMode = false;
   let verifyState = 'idle'; // idle | listening
   let currentNoteIndex = 0;
   let expectedSequence = []; // [{freq, rect}]
-  let micBtnRect = null;
+  let micBtnRect = null; // احتفظنا بالإعلان فقط لتفادي أي مرجع قديم، غير مستخدم فعلياً بعد التحويل لزر HTML
   let micBtnText = null;
   let lastGoodTime = 0;
 
@@ -2476,15 +2498,14 @@ window.isArabicMode = false;
   }
 
   function updateMicBtnVisual(){
-    if (!micBtnRect || !micBtnText) return;
+    const btn = document.getElementById('micVerifyHtmlBtn');
+    if (!btn) return;
     if (verifyState === 'listening') {
-      micBtnRect.setAttribute('fill', '#d64545');
-      micBtnRect.setAttribute('stroke', '#a82f2f');
-      micBtnText.textContent = '⏺';
+      btn.classList.add('listening');
+      btn.textContent = '⏺';
     } else {
-      micBtnRect.setAttribute('fill', '#eaf6fc');
-      micBtnRect.setAttribute('stroke', '#3ab4e8');
-      micBtnText.textContent = '🎤';
+      btn.classList.remove('listening');
+      btn.textContent = '🎤';
     }
   }
 
@@ -2568,41 +2589,42 @@ window.isArabicMode = false;
     rafId = requestAnimationFrame(listenLoop);
   }
 
-  // بناء زر المايكروفون بنفس أسلوب أزرار اليد (يُستدعى وقت رسم الزند من الكود التاني)
-  window.createMicVerifyBtn = function(x, y, w, h, r, scale){
-    const ns = 'http://www.w3.org/2000/svg';
-    const mg = document.createElementNS(ns, 'g');
-    mg.setAttribute('id', 'micVerifyBtn');
-    mg.setAttribute('style', 'cursor:pointer;pointer-events:all;');
+  // نموضع زر HTML الحقيقي (خارج الـSVG) فوق نقطة الإحداثيات اللي كانت مخصصة له داخل الرسمة،
+  // بالاعتماد على getScreenCTM لتحويل نقطة إحداثيات الـSVG الداخلية لموقعها الفعلي على الشاشة.
+  // هذا أضمن بكثير من عنصر تفاعلي داخل الـSVG نفسه (بعض متصفحات الجوال ما تتعامل صح مع
+  // لمس عناصر SVG المتداخلة مع تحويلات/طبقات تانية بنفس الرسمة).
+  window.positionMicHtmlBtn = function(){
+    const btn = document.getElementById('micVerifyHtmlBtn');
+    const svg = document.getElementById('shared-oudSvg');
+    if (!btn || !svg || typeof window.micBtnSvgX !== 'number') return;
+    const pt = svg.createSVGPoint();
+    pt.x = window.micBtnSvgX;
+    pt.y = window.micBtnSvgY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const screenPt = pt.matrixTransform(ctm);
+    const wrapper = document.querySelector('.shared-oud-wrapper');
+    const wrapperRect = wrapper.getBoundingClientRect();
+    btn.style.left = (screenPt.x - wrapperRect.left) + 'px';
+    btn.style.top = (screenPt.y - wrapperRect.top) + 'px';
+    // نحسب حجم الزر أيضاً بنفس مقياس تكبير رسمة اليد (يتناسق حجمه تلقائياً مع حجم الشاشة)
+    const scaleFactor = Math.hypot(ctm.a, ctm.b); // معامل التكبير الفعلي من إحداثيات الـSVG لبكسل الشاشة
+    const btnSize = 64 * scaleFactor * 1.45; // نفس نسبة تكبير أزرار اليد (handScale=1.45) تقريباً
+    btn.style.width = btnSize + 'px';
+    btn.style.height = (btnSize * 0.75) + 'px';
+    btn.style.fontSize = (btnSize * 0.42) + 'px';
+  };
+  window.addEventListener('resize', () => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); });
+  window.addEventListener('orientationchange', () => { setTimeout(() => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); }, 200); });
 
-    const rectEl = document.createElementNS(ns, 'rect');
-    rectEl.setAttribute('x', x - w/2); rectEl.setAttribute('y', y - h/2);
-    rectEl.setAttribute('width', w); rectEl.setAttribute('height', h); rectEl.setAttribute('rx', r);
-    rectEl.setAttribute('fill', '#eaf6fc'); rectEl.setAttribute('stroke', '#3ab4e8'); rectEl.setAttribute('stroke-width', '2');
-    mg.appendChild(rectEl);
-
-    const t = document.createElementNS(ns, 'text');
-    t.setAttribute('x', x); t.setAttribute('y', y + 12*scale);
-    t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('font-size', String(28 * scale));
-    t.textContent = '🎤';
-    mg.appendChild(t);
-
-    micBtnRect = rectEl;
-    micBtnText = t;
-    updateMicBtnVisual();
-
-    const handleActivate = (ev) => {
-      if (ev) ev.preventDefault();
+  updateMicBtnVisual();
+  const micHtmlBtn = document.getElementById('micVerifyHtmlBtn');
+  if (micHtmlBtn) {
+    micHtmlBtn.addEventListener('click', () => {
       if (verifyState === 'idle') startVerify();
       else { stopVerify(); resetAllNotesVisual(); }
-    };
-    mg.addEventListener('click', handleActivate);
-    // معالج لمس صريح بالإضافة لـclick — بعض متصفحات الجوال ما تحوّل اللمسة لنقرة (click)
-    // بثبات على عناصر SVG، فنتعامل مع touchend مباشرة كطبقة أمان إضافية
-    mg.addEventListener('touchend', handleActivate, { passive: false });
-    return mg;
-  };
+    });
+  }
 
   // إيقاف فوري لو المستخدم بدّل التبويب/المقام/السلم أثناء التحقق، عشان ما يضل يستمع بالخلفية بدون داعي
   window.stopMicVerifyIfActive = function(){
@@ -3757,9 +3779,14 @@ function buildOudStatic(){
       return hg;
     }
     oudControlBtnsLayer.appendChild(makeSingleHandBtn(hand1X, handY));
-    // زر التحقق من العزف (مايكروفون) — بنفس مكان/حجم أزرار اليد، بموضع فاضي جاهز أصلاً (hand2X)
-    if (typeof window.createMicVerifyBtn === 'function') {
-      oudControlBtnsLayer.appendChild(window.createMicVerifyBtn(hand2X, handY, handW, handH, handR, handScale));
+    // زر التحقق (مايكروفون) صار زر HTML عادي فوق الرسمة (أضمن للمس بالجوال من عنصر SVG)
+    // نخزن إحداثياته بالـwindow عشان دالة التموضع الخارجية توصلها وتحدّث مكانه بعد كل رسم
+    window.micBtnSvgX = hand2X;
+    window.micBtnSvgY = handY;
+    if (typeof window.positionMicHtmlBtn === 'function') {
+      window.positionMicHtmlBtn();
+      // إعادة محاولة بعد لحظة قصيرة احتياطاً، تحسباً إن الرسمة ما اكتمل تخطيطها بعد وقت أول استدعاء
+      setTimeout(window.positionMicHtmlBtn, 150);
     }
 
     // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
