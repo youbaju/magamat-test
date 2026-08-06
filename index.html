@@ -1110,7 +1110,7 @@ flex-shrink: 0;
   }
 
 
-  svg#shared-oudSvg{ width:100%; height:100%; max-width:100%; display:block; margin:0 auto; object-fit:contain; pointer-events:none; }
+  svg#shared-oudSvg{ width:auto; height:auto; max-width:100%; max-height:100%; display:block; margin:0 auto; pointer-events:none; }
   svg#shared-oudSvg *{ pointer-events:none; }
   svg#shared-oudSvg #inst-oud, svg#shared-oudSvg #inst-qanun, svg#shared-oudSvg #inst-violin { pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #helpBtn { pointer-events:auto !important; cursor:pointer; }
@@ -2387,6 +2387,223 @@ window.isArabicMode = false;
 })();
 </script>
 
+<!-- ===== ميزة "تحقق من عزفي" — تحليل صوت المستخدم عبر المايكروفون ومقارنته بتسلسل النغمات المعروض ===== -->
+<script>
+(function(){
+  let audioCtxMic = null;
+  let analyserNode = null;
+  let micStream = null;
+  let rafId = null;
+  let verifyState = 'idle'; // idle | listening
+  let currentNoteIndex = 0;
+  let expectedSequence = []; // [{freq, rect}]
+  let micBtnRect = null;
+  let micBtnText = null;
+  let lastGoodTime = 0;
+
+  const CENTS_MATCH = 45;   // نطاق تسامح "صحيح" (تقريباً نصف نغمة)
+  const CENTS_WRONG = 150;  // فوق هذا يعتبر خطأ واضح (مو بس تردد غير واضح/ضجيج)
+  const HOLD_MS = 180;      // المدة اللي لازم النغمة تنضبط فيها متواصلة قبل ما تُحتسب صحيحة (يقلل نتائج خاطئة من الضجيج)
+
+  function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
+
+  // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
+  function autoCorrelate(buffer, sampleRate){
+    const SIZE = buffer.length;
+    let rms = 0;
+    for (let i = 0; i < SIZE; i++) rms += buffer[i]*buffer[i];
+    rms = Math.sqrt(rms/SIZE);
+    if (rms < 0.012) return -1; // صمت أو صوت ضعيف جداً — نتجاهله
+
+    let r1 = 0, r2 = SIZE - 1;
+    const thres = 0.2;
+    for (let i = 0; i < SIZE/2; i++) { if (Math.abs(buffer[i]) < thres) { r1 = i; break; } }
+    for (let i = 1; i < SIZE/2; i++) { if (Math.abs(buffer[SIZE-i]) < thres) { r2 = SIZE-i; break; } }
+    const trimmed = buffer.slice(r1, r2);
+    const newSize = trimmed.length;
+    if (newSize < 8) return -1;
+
+    const c = new Array(newSize).fill(0);
+    for (let lag = 0; lag < newSize; lag++) {
+      for (let i = 0; i < newSize - lag; i++) c[lag] += trimmed[i] * trimmed[i+lag];
+    }
+    let d = 0; while (d < newSize-1 && c[d] > c[d+1]) d++;
+    let maxVal = -1, maxPos = -1;
+    for (let i = d; i < newSize; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; } }
+    if (maxPos <= 0) return -1;
+    let T0 = maxPos;
+    if (T0 > 0 && T0 < newSize - 1) { // تحسين دقة الموضع (Parabolic interpolation)
+      const x1 = c[T0-1], x2 = c[T0], x3 = c[T0+1];
+      const a = (x1 + x3 - 2*x2)/2, b = (x3 - x1)/2;
+      if (a) T0 = T0 - b/(2*a);
+    }
+    const freq = sampleRate / T0;
+    return (freq > 60 && freq < 2000) ? freq : -1; // نطاق منطقي لترددات العود
+  }
+
+  // نقرأ التسلسل الحالي المعروض على الزند مباشرة من الـDOM (يشتغل بنفس الطريقة
+  // للمقام العربي والسلم الغربي والتمرين، لأنهم كلهم يرسمون بنفس الحاوية بنفس نمط data-scale-idx/data-freq)
+  function getExpectedSequence(){
+    const layer = document.getElementById('oudNotesLayer');
+    if (!layer) return [];
+    const rects = Array.from(layer.querySelectorAll('rect[data-scale-idx][data-freq]'));
+    rects.sort((a,b) => Number(a.getAttribute('data-scale-idx')) - Number(b.getAttribute('data-scale-idx')));
+    const seen = new Set();
+    const seq = [];
+    rects.forEach(r => {
+      const idx = r.getAttribute('data-scale-idx');
+      if (seen.has(idx)) return;
+      seen.add(idx);
+      const f = parseFloat(r.getAttribute('data-freq'));
+      if (!isNaN(f) && f > 0) seq.push({ freq: f, rect: r });
+    });
+    return seq;
+  }
+
+  function markNoteResult(rect, isCorrect){
+    if (!rect) return;
+    rect.setAttribute('fill', isCorrect ? '#1B7A3D' : '#c0392b');
+    rect.setAttribute('stroke', isCorrect ? '#0d5225' : '#7a231b');
+  }
+
+  function resetAllNotesVisual(){
+    expectedSequence.forEach(item => {
+      item.rect.setAttribute('fill', '#2b6fc9');
+      item.rect.setAttribute('stroke', '#1a5fa8');
+    });
+  }
+
+  function updateMicBtnVisual(){
+    if (!micBtnRect || !micBtnText) return;
+    if (verifyState === 'listening') {
+      micBtnRect.setAttribute('fill', '#d64545');
+      micBtnRect.setAttribute('stroke', '#a82f2f');
+      micBtnText.textContent = '⏺';
+    } else {
+      micBtnRect.setAttribute('fill', '#eaf6fc');
+      micBtnRect.setAttribute('stroke', '#3ab4e8');
+      micBtnText.textContent = '🎤';
+    }
+  }
+
+  async function startVerify(){
+    expectedSequence = getExpectedSequence();
+    if (expectedSequence.length === 0) {
+      alert('ما فيه سلّم أو مقام معروض حالياً على الزند للتحقق منه');
+      return;
+    }
+    currentNoteIndex = 0;
+    resetAllNotesVisual();
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      alert('محتاجين إذن الوصول للمايكروفون عشان تشتغل ميزة "تحقق من عزفي"');
+      return;
+    }
+    audioCtxMic = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtxMic.createMediaStreamSource(micStream);
+    analyserNode = audioCtxMic.createAnalyser();
+    analyserNode.fftSize = 2048;
+    source.connect(analyserNode);
+    verifyState = 'listening';
+    lastGoodTime = 0;
+    updateMicBtnVisual();
+    listenLoop();
+  }
+
+  function stopVerify(){
+    verifyState = 'idle';
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    if (audioCtxMic) { try { audioCtxMic.close(); } catch(e){} audioCtxMic = null; }
+    updateMicBtnVisual();
+  }
+
+  function listenLoop(){
+    if (verifyState !== 'listening') return;
+    const buffer = new Float32Array(analyserNode.fftSize);
+    analyserNode.getFloatTimeDomainData(buffer);
+    const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+
+    if (freq !== -1 && expectedSequence[currentNoteIndex]) {
+      const expected = expectedSequence[currentNoteIndex];
+      const cents = Math.abs(freqToCents(freq, expected.freq));
+
+      if (cents < CENTS_MATCH) {
+        if (!lastGoodTime) lastGoodTime = performance.now();
+        else if (performance.now() - lastGoodTime > HOLD_MS) {
+          markNoteResult(expected.rect, true);
+          currentNoteIndex++;
+          lastGoodTime = 0;
+          if (currentNoteIndex >= expectedSequence.length) {
+            const doneSeq = expectedSequence;
+            stopVerify();
+            setTimeout(() => {
+              alert('🎉 أحسنت! أتقنت العزف بالكامل صح من الأول للآخر');
+              doneSeq.forEach(item => {
+                item.rect.setAttribute('fill', '#2b6fc9');
+                item.rect.setAttribute('stroke', '#1a5fa8');
+              });
+            }, 250);
+            return;
+          }
+        }
+      } else if (cents > CENTS_WRONG) {
+        lastGoodTime = 0;
+        markNoteResult(expected.rect, false);
+        setTimeout(() => {
+          if (verifyState !== 'listening') return;
+          currentNoteIndex = 0;
+          resetAllNotesVisual();
+        }, 500);
+      } else {
+        lastGoodTime = 0; // قريبة بس مو مضبوطة كفاية — ما نصفّرها، بس ما نحتسبها لين تثبت أكثر
+      }
+    } else {
+      lastGoodTime = 0;
+    }
+    rafId = requestAnimationFrame(listenLoop);
+  }
+
+  // بناء زر المايكروفون بنفس أسلوب أزرار اليد (يُستدعى وقت رسم الزند من الكود التاني)
+  window.createMicVerifyBtn = function(x, y, w, h, r, scale){
+    const ns = 'http://www.w3.org/2000/svg';
+    const mg = document.createElementNS(ns, 'g');
+    mg.setAttribute('id', 'micVerifyBtn');
+    mg.setAttribute('style', 'cursor:pointer;pointer-events:all;');
+
+    const rectEl = document.createElementNS(ns, 'rect');
+    rectEl.setAttribute('x', x - w/2); rectEl.setAttribute('y', y - h/2);
+    rectEl.setAttribute('width', w); rectEl.setAttribute('height', h); rectEl.setAttribute('rx', r);
+    rectEl.setAttribute('fill', '#eaf6fc'); rectEl.setAttribute('stroke', '#3ab4e8'); rectEl.setAttribute('stroke-width', '2');
+    mg.appendChild(rectEl);
+
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y + 12*scale);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', String(28 * scale));
+    t.textContent = '🎤';
+    mg.appendChild(t);
+
+    micBtnRect = rectEl;
+    micBtnText = t;
+    updateMicBtnVisual();
+
+    mg.addEventListener('click', () => {
+      if (verifyState === 'idle') startVerify();
+      else { stopVerify(); resetAllNotesVisual(); }
+    });
+    return mg;
+  };
+
+  // إيقاف فوري لو المستخدم بدّل التبويب/المقام/السلم أثناء التحقق، عشان ما يضل يستمع بالخلفية بدون داعي
+  window.stopMicVerifyIfActive = function(){
+    if (verifyState === 'listening') { stopVerify(); resetAllNotesVisual(); }
+  };
+})();
+</script>
+
 <script>
 /* =====================================================================
    منطق صفحة دائرة الخامسات (مُحاط بـ IIFE لمنع تعارض الأسماء العامة)
@@ -3533,6 +3750,10 @@ function buildOudStatic(){
       return hg;
     }
     oudControlBtnsLayer.appendChild(makeSingleHandBtn(hand1X, handY));
+    // زر التحقق من العزف (مايكروفون) — بنفس مكان/حجم أزرار اليد، بموضع فاضي جاهز أصلاً (hand2X)
+    if (typeof window.createMicVerifyBtn === 'function') {
+      oudControlBtnsLayer.appendChild(window.createMicVerifyBtn(hand2X, handY, handW, handH, handR, handScale));
+    }
 
     // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
     function makeStringCountBtn(x, y){
@@ -4052,7 +4273,8 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
       fill: fillColor,
       stroke: isCurrent ? '#a82f2f' : '#1a5fa8',
       'stroke-width': isCurrent ? 4 : 2,
-      'data-scale-idx': scaleIdx
+      'data-scale-idx': scaleIdx,
+      'data-freq': OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset)
     });
     if(isCurrent){
       const cx = p.x, cy = p.y;
@@ -4835,6 +5057,7 @@ window.wxResume = wxResume;
 
 })();
 </script>
+
 
 <script>
 /* =====================================================================
@@ -5776,6 +5999,7 @@ window.wxResume = wxResume;
         rect.setAttribute('stroke', isCurrent ? '#a82f2f' : '#1a5fa8');
         rect.setAttribute('stroke-width', isCurrent ? 3 : 2);
         rect.setAttribute('data-scale-idx', degIdx);
+        rect.setAttribute('data-freq', posToFreq(effectiveQ));
         rect.style.cursor = 'pointer';
         layer.appendChild(rect);
 
