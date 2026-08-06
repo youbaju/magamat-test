@@ -2607,12 +2607,14 @@ window.isArabicMode = false;
     const wrapperRect = wrapper.getBoundingClientRect();
     btn.style.left = (screenPt.x - wrapperRect.left) + 'px';
     btn.style.top = (screenPt.y - wrapperRect.top) + 'px';
-    // نحسب حجم الزر أيضاً بنفس مقياس تكبير رسمة اليد (يتناسق حجمه تلقائياً مع حجم الشاشة)
+    // نحسب حجم الزر بنفس أبعاد زر اليد بالضبط (مُمررة من الكود التاني)، محوّلة لبكسل شاشة حقيقي
     const scaleFactor = Math.hypot(ctm.a, ctm.b); // معامل التكبير الفعلي من إحداثيات الـSVG لبكسل الشاشة
-    const btnSize = 64 * scaleFactor * 1.45; // نفس نسبة تكبير أزرار اليد (handScale=1.45) تقريباً
-    btn.style.width = btnSize + 'px';
-    btn.style.height = (btnSize * 0.75) + 'px';
-    btn.style.fontSize = (btnSize * 0.42) + 'px';
+    const w = (window.micBtnSvgW || 88) * scaleFactor;
+    const h = (window.micBtnSvgH || 66) * scaleFactor;
+    btn.style.width = w + 'px';
+    btn.style.height = h + 'px';
+    btn.style.borderRadius = (12 * scaleFactor) + 'px';
+    btn.style.fontSize = (h * 0.42) + 'px';
   };
   window.addEventListener('resize', () => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); });
   window.addEventListener('orientationchange', () => { setTimeout(() => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); }, 200); });
@@ -3783,6 +3785,8 @@ function buildOudStatic(){
     // نخزن إحداثياته بالـwindow عشان دالة التموضع الخارجية توصلها وتحدّث مكانه بعد كل رسم
     window.micBtnSvgX = hand2X;
     window.micBtnSvgY = handY;
+    window.micBtnSvgW = handW;
+    window.micBtnSvgH = handH;
     if (typeof window.positionMicHtmlBtn === 'function') {
       window.positionMicHtmlBtn();
       // إعادة محاولة بعد لحظة قصيرة احتياطاً، تحسباً إن الرسمة ما اكتمل تخطيطها بعد وقت أول استدعاء
