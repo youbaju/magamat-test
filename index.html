@@ -2588,7 +2588,22 @@ window.isArabicMode = false;
     return seq;
   }
 
+  // لو انعاد رسم الزند لأي سبب أثناء التحقق (يحصل أحياناً مع بعض المقامات)، مرجع rect
+  // القديم المخزّن بـexpectedSequence يصير "ميت" (منفصل عن الشاشة) — نطلع المستطيل الحقيقي
+  // المعروض حالياً بنفس رقم الدرجة، ونستخدمه دايماً بدل المرجع القديم، عشان اللون يثبت فعلياً
+  function getLiveRect(rect){
+    if (!rect || !rect.isConnected) {
+      const idxAttr = rect && rect.getAttribute ? rect.getAttribute('data-scale-idx') : null;
+      if (idxAttr !== null) {
+        const fresh = document.querySelector(`#oudNotesLayer rect[data-scale-idx="${idxAttr}"]`);
+        if (fresh) return fresh;
+      }
+    }
+    return rect;
+  }
+
   function markNoteResult(rect, isCorrect){
+    rect = getLiveRect(rect);
     if (!rect) return;
     const fillColor = isCorrect ? '#1B7A3D' : '#c0392b';
     const strokeColor = isCorrect ? '#0d5225' : '#7a231b';
@@ -2646,6 +2661,7 @@ window.isArabicMode = false;
 
   function resetAllNotesVisual(){
     expectedSequence.forEach(item => {
+      item.rect = getLiveRect(item.rect);
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
       item.rect.classList.remove('mic-current-target');
@@ -2669,7 +2685,7 @@ window.isArabicMode = false;
 
   function highlightCurrentTarget(){
     // نشيل أي تظليل سابق لـ"الهدف الحالي" من كل النغمات (النغمات المكتسبة صح تبقى خضراء براحتها)
-    expectedSequence.forEach(item => item.rect.classList.remove('mic-current-target'));
+    expectedSequence.forEach(item => { item.rect = getLiveRect(item.rect); item.rect.classList.remove('mic-current-target'); });
     const cur = expectedSequence[currentNoteIndex];
     if (cur) cur.rect.classList.add('mic-current-target');
   }
@@ -2735,6 +2751,7 @@ window.isArabicMode = false;
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
+      expected.rect = getLiveRect(expected.rect); // نضمن إننا نلوّن العنصر المعروض فعلياً على الشاشة، حتى لو انعاد رسم الزند بالخلفية
       const cents = foldedCentsDiff(freq, expected.freq);
 
       if (cents < CENTS_MATCH) {
