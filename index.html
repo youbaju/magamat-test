@@ -1580,6 +1580,7 @@ input[type="radio"] {
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
     <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
+    <div id="micDebugDisplay" style="display:none;position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;z-index:10;direction:ltr;text-align:left;white-space:nowrap;"></div>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">Major (طبيعي)</button>
@@ -2608,6 +2609,8 @@ window.isArabicMode = false;
     if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
     if (audioCtxMic) { try { audioCtxMic.close(); } catch(e){} audioCtxMic = null; }
     updateMicBtnVisual();
+    const dbg = document.getElementById('micDebugDisplay');
+    if (dbg) dbg.style.display = 'none';
   }
 
   function listenLoop(){
@@ -2615,6 +2618,14 @@ window.isArabicMode = false;
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+
+    const dbg = document.getElementById('micDebugDisplay');
+    if (dbg && expectedSequence[currentNoteIndex]) {
+      const exp = expectedSequence[currentNoteIndex];
+      const centsNow = freq !== -1 ? (1200 * Math.log2(freq / exp.freq)).toFixed(0) : '—';
+      dbg.style.display = 'block';
+      dbg.textContent = `مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت`;
+    }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
