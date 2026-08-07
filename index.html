@@ -1858,6 +1858,8 @@ input[type="radio"] {
       ٥. كل نغمة صحيحة تتلوّن تلقائياً بالأخضر الداكن، وينتقل التظليل الأصفر إلى الدرجة التالية.<br>
       ٦. إن أخطأت في نغمة، تتلوّن بالأحمر للحظة، ثم يعود التظليل الأصفر إلى النغمة ذاتها فقط لإعادة المحاولة عليها — أما النغمات التي عزفتها بشكل صحيح قبلها فتبقى خضراء دون أن تتأثر، ولا يعود تقدّمك إلى بداية السلّم.<br>
       ٧. إذا أتممت التسلسل كاملاً وبشكل صحيح من البداية إلى النهاية، ستصلك رسالة تهنئة.</p>
+      <p>🔹 <strong>تجربة أكثر من مقام أو سلم بدون توقف:</strong> الميكروفون يضل شغالاً حتى لو بدّلت المقام أو الحرف أو السلم أو اخترت كورداً جديداً وأنت لسا بوضع الاستماع — يكتشف التغيير تلقائياً ويبدأ التحقق من المحتوى الجديد فوراً، بدون ما تحتاج تضغط 🎤 من جديد لكل مقام تجربه.</p>
+      <p>🔹 <strong>ملاحظة:</strong> لو ضغطت زر ▶ (التشغيل العادي) وأنت بوضع الاستماع، يتوقف التحقق تلقائياً — لأنه على الأغلب تبي تسمع المقام الجديد أول قبل ما تختبره، ولتفادي دخول صوت التشغيل نفسه عبر المايكروفون. اضغط 🎤 من جديد لما تكون جاهز تختبر.</p>
       <p>🔹 <strong>لإيقاف المحاولة يدوياً</strong> في أي وقت، اضغط 🎤 (أو <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span>) مرة أخرى.</p>
       <p>🔹 <strong>نصائح لتحقيق أفضل دقة:</strong></p>
       <p>- اعزف بصوت واضح ومستمر (دع الوتر يرنّ ثانية واحدة على الأقل)، لا بنقرة سريعة خفيفة.<br>
@@ -2061,6 +2063,8 @@ input[type="radio"] {
       5. Each correct note automatically turns <strong>dark green</strong>, and the yellow highlight moves to the next note.<br>
       6. If you play a wrong note, it flashes <strong>red</strong> briefly, then the yellow highlight returns to that same note only, so you can retry it — notes you already played correctly before it stay green and are unaffected, and your progress does not reset to the beginning.<br>
       7. If you complete the entire sequence correctly from start to finish, you'll get a congratulatory message.</p>
+      <p>🔹 <strong>Try multiple maqamat or scales without stopping:</strong> the microphone stays active even if you switch the maqam, root, scale, or select a new chord while listening — it automatically detects the change and starts checking the new content right away, no need to tap 🎤 again for every new maqam you try.</p>
+      <p>🔹 <strong>Note:</strong> if you tap the ▶ (normal play) button while listening, verification stops automatically — since you likely want to hear the new maqam first before testing it, and to avoid the playback sound itself leaking into the microphone. Tap 🎤 again when you're ready to test.</p>
       <p>🔹 <strong>To stop the attempt manually</strong> at any time, tap 🎤 (or <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span>) again.</p>
       <p>🔹 <strong>Tips for best accuracy:</strong></p>
       <p>- Play with a clear, sustained sound (let the note ring for at least a second), not a quick light pluck.<br>
@@ -2495,6 +2499,8 @@ window.isArabicMode = false;
   let micBtnText = null;
   let lastGoodTime = 0;
   let lastBadTime = 0;
+  let lastSequenceSignature = ''; // بصمة نصية بسيطة للنغمات المعروضة حالياً (نغيّرها لو تغيّر المقام/السلم/الكورد وأنت لسا بوضع الاستماع)
+  let micSettleUntil = 0; // بعد أي إعادة مزامنة تلقائية، نتجاهل القراءات لفترة قصيرة عشان أي صدى صوت يهدأ
 
   const CENTS_MATCH = 70;   // نطاق تسامح "صحيح" — وسّعناه (كان 45) عشان يكون أسهل يقبل النغمة سواء كانت أعلى أو أنزل شوي من المطلوب
   const CENTS_WRONG = 180;  // فوق هذا يعتبر خطأ واضح (مو بس تردد غير واضح/ضجيج) — وسّعناه بنفس النسبة تقريباً
@@ -2604,6 +2610,12 @@ window.isArabicMode = false;
       if (!isNaN(f) && f > 0) seq.push({ freq: f, rect: r });
     });
     return seq;
+  }
+
+  // بصمة نصية بسيطة تمثّل "شكل" التسلسل المعروض حالياً (الطبقة + الترددات) — نقارنها كل
+  // إطار وقت الاستماع عشان نكتشف تلقائياً لو المستخدم بدّل المقام/الحرف/السلم/الكورد
+  function sequenceSignature(seq){
+    return getActiveNotesLayerId() + '|' + seq.map(it => it.freq.toFixed(1)).join(',');
   }
 
   // لو انعاد رسم الزند لأي سبب أثناء التحقق (يحصل أحياناً مع بعض المقامات)، مرجع rect
@@ -2749,6 +2761,7 @@ window.isArabicMode = false;
       ترتيب: i, scaleIdx: it.rect.getAttribute('data-scale-idx'), تردد: it.freq.toFixed(1)
     })));
     currentNoteIndex = 0;
+    lastSequenceSignature = sequenceSignature(expectedSequence);
     resetAllNotesVisual();
     try {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2793,6 +2806,32 @@ window.isArabicMode = false;
 
   function listenLoop(){
     if (verifyState !== 'listening') return;
+
+    // نكتشف تلقائياً لو المحتوى المعروض تغيّر (بدّلت المقام، الحرف، السلم، أو اخترت كورد
+    // جديد) وأنت لسا بوضع الاستماع — بدل ما نطلب منك تضغط 🎤 من جديد لكل مقام تجربه،
+    // نعيد "مزامنة" الاختبار تلقائياً على المحتوى الجديد ونكمّل الاستماع بلا انقطاع
+    const freshSeq = getExpectedSequence();
+    if (freshSeq.length === 0) {
+      // ما بقى فيه شي معروض للتحقق منه (مثلاً المستخدم غادر صفحة الزند) — نوقف بلطف
+      stopVerify();
+      return;
+    }
+    const freshSig = sequenceSignature(freshSeq);
+    if (freshSig !== lastSequenceSignature) {
+      expectedSequence = freshSeq;
+      lastSequenceSignature = freshSig;
+      currentNoteIndex = 0;
+      resetAllNotesVisual();
+      highlightCurrentTarget();
+      // لو المحتوى الجديد كورد مثلاً، يشتغل صوته تلقائياً فور اختياره — نوقف أي صوت
+      // شغّاله الموقع نفسه ونمنح مهلة قصيرة لهدوء الصدى، بنفس منطق بداية الاستماع الأولى
+      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+      micSettleUntil = performance.now() + 500;
+    }
+    if (performance.now() < micSettleUntil) {
+      rafId = requestAnimationFrame(listenLoop);
+      return;
+    }
 
     // حماية إضافية: نتأكد كل إطار إن كل الدرجات اللي خلّصناها صح لسا خضراء فعلياً على
     // الشاشة (حتى لو انعاد رسم الزند بالخلفية لأي سبب وولّد عناصر جديدة بلون أزرق افتراضي)
@@ -2938,6 +2977,17 @@ window.isArabicMode = false;
   window.stopMicVerifyIfActive = function(){
     if (verifyState === 'listening') { stopVerify(); resetAllNotesVisual(); }
   };
+
+  // لو ضغط المستخدم زر ▶ التشغيل وهو لسا بوضع "تحقق من عزفي"، على الأغلب يبي يسمع
+  // المقام/السلم/الكورد المعروض أول (بعد ما بدّله مثلاً) قبل ما يختبره فعلياً — نوقف
+  // الاستماع تلقائياً، لأنه لو تركناه شغال، صوت التشغيل نفسه بيدخل عبر المايكروفون
+  // ويُقرأ خطأً كأنه عزف المستخدم الحقيقي
+  const sharedPlayBtnForMic = document.getElementById('shared-playBtn');
+  if (sharedPlayBtnForMic) {
+    sharedPlayBtnForMic.addEventListener('click', () => {
+      if (typeof window.stopMicVerifyIfActive === 'function') window.stopMicVerifyIfActive();
+    });
+  }
 })();
 </script>
 
