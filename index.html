@@ -308,15 +308,19 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   color: #fff;
 }
 .mic-current-target{
-  stroke: #fff200 !important;
-  stroke-width: 5 !important;
-  stroke-dasharray: 7 5;
-  filter: drop-shadow(0 0 4px #000000);
+  fill: #ffe100 !important;
+  stroke: #b38600 !important;
+  stroke-width: 4 !important;
   animation: micTargetPulse 1s ease-in-out infinite;
 }
 @keyframes micTargetPulse{
-  0%, 100% { stroke-opacity: 1; }
-  50% { stroke-opacity: 0.75; }
+  0%, 100% { filter: drop-shadow(0 0 3px #ffe100); }
+  50% { filter: drop-shadow(0 0 11px #ffe100); }
+}
+/* اسم النغمة يتحول للون غامق وقت ما يصير المربع أصفر مضيء، عشان يضل مقروء بوضوح
+   (كان أبيض ثابت دايماً، وأبيض على أصفر غير واضح) */
+.mic-current-target-text{
+  fill: #1a120c !important;
 }
 @media (max-width:1024px){
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
@@ -2665,6 +2669,7 @@ window.isArabicMode = false;
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
       item.rect.classList.remove('mic-current-target');
+      setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
       item.rect._origFill = null;
       item.rect._origStroke = null;
     });
@@ -2683,11 +2688,27 @@ window.isArabicMode = false;
     }
   }
 
+  // اسم النغمة (نص) عنصر منفصل عن المستطيل نفسه (وممكن يكون فيه عنصر ثاني للعلامة #/♭)،
+  // بس الكل يشترك بنفس رقم الدرجة data-scale-idx — نبدّل لونه غامق وقت التظليل الأصفر
+  function setCurrentTargetTextClass(scaleIdx, add){
+    if (scaleIdx === null || scaleIdx === undefined) return;
+    document.querySelectorAll(`#oudNotesLayer text[data-scale-idx="${scaleIdx}"]`).forEach(t => {
+      t.classList.toggle('mic-current-target-text', add);
+    });
+  }
+
   function highlightCurrentTarget(){
     // نشيل أي تظليل سابق لـ"الهدف الحالي" من كل النغمات (النغمات المكتسبة صح تبقى خضراء براحتها)
-    expectedSequence.forEach(item => { item.rect = getLiveRect(item.rect); item.rect.classList.remove('mic-current-target'); });
+    expectedSequence.forEach(item => {
+      item.rect = getLiveRect(item.rect);
+      item.rect.classList.remove('mic-current-target');
+      setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
+    });
     const cur = expectedSequence[currentNoteIndex];
-    if (cur) cur.rect.classList.add('mic-current-target');
+    if (cur) {
+      cur.rect.classList.add('mic-current-target');
+      setCurrentTargetTextClass(cur.rect.getAttribute('data-scale-idx'), true);
+    }
   }
 
   async function startVerify(){
