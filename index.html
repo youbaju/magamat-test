@@ -322,6 +322,11 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
 .mic-current-target-text{
   fill: #1a120c !important;
 }
+/* رمز علامة التحويل (دييز/بيمول/أرباع التون) مرسوم بخطوط/مسارات SVG ملوّنة عبر stroke
+   لا fill — نغطيها هنا صراحة عشان ما تضل بيضاء غير واضحة فوق الخلفية الصفراء */
+.mic-current-target-text line, .mic-current-target-text path{
+  stroke: #1a120c !important;
+}
 @media (max-width:1024px){
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
@@ -2573,10 +2578,16 @@ window.isArabicMode = false;
     return (freq > 60 && freq < 2000) ? freq : -1; // نطاق منطقي لترددات العود
   }
 
+  // الحاوية الفعلية اللي فيها النغمات المعروضة حالياً: oudNotesLayer بوضع المقام/السلم
+  // العادي، أو chordHighlightLayer وقت ما يكون فيه كورد مختار (chordModeActive)
+  function getActiveNotesLayerId(){
+    return window.chordModeActive ? 'chordHighlightLayer' : 'oudNotesLayer';
+  }
+
   // نقرأ التسلسل الحالي المعروض على الزند مباشرة من الـDOM (يشتغل بنفس الطريقة
-  // للمقام العربي والسلم الغربي والتمرين، لأنهم كلهم يرسمون بنفس الحاوية بنفس نمط data-scale-idx/data-freq)
+  // للمقام العربي والسلم الغربي والتمرين والكورد، لأنهم كلهم يرسمون بنفس نمط data-scale-idx/data-freq)
   function getExpectedSequence(){
-    const layer = document.getElementById('oudNotesLayer');
+    const layer = document.getElementById(getActiveNotesLayerId());
     if (!layer) return [];
     const rects = Array.from(layer.querySelectorAll('rect[data-scale-idx][data-freq]'));
     rects.sort((a,b) => Number(a.getAttribute('data-scale-idx')) - Number(b.getAttribute('data-scale-idx')));
@@ -2599,7 +2610,7 @@ window.isArabicMode = false;
     if (!rect || !rect.isConnected) {
       const idxAttr = rect && rect.getAttribute ? rect.getAttribute('data-scale-idx') : null;
       if (idxAttr !== null) {
-        const fresh = document.querySelector(`#oudNotesLayer rect[data-scale-idx="${idxAttr}"]`);
+        const fresh = document.querySelector(`#${getActiveNotesLayerId()} rect[data-scale-idx="${idxAttr}"]`);
         if (fresh) return fresh;
       }
     }
@@ -2665,7 +2676,7 @@ window.isArabicMode = false;
   }
 
   function clearResultMarks(){
-    document.querySelectorAll('#oudNotesLayer .mic-result-mark').forEach(el => el.remove());
+    document.querySelectorAll(`#${getActiveNotesLayerId()} .mic-result-mark`).forEach(el => el.remove());
   }
 
   function resetAllNotesVisual(){
@@ -2693,11 +2704,13 @@ window.isArabicMode = false;
     }
   }
 
-  // اسم النغمة (نص) عنصر منفصل عن المستطيل نفسه (وممكن يكون فيه عنصر ثاني للعلامة #/♭)،
-  // بس الكل يشترك بنفس رقم الدرجة data-scale-idx — نبدّل لونه غامق وقت التظليل الأصفر
+  // اسم النغمة (نص) عنصر منفصل عن المستطيل نفسه، ورمز علامة التحويل (لو فيه) عنصر
+  // <g> منفصل مرسوم بخطوط/مسارات — الكل يشترك بنفس رقم الدرجة data-scale-idx —
+  // نبدّل لون الاثنين غامق وقت التظليل الأصفر (نفس الكلاس يغطي fill للنص وstroke للرمز)
   function setCurrentTargetTextClass(scaleIdx, add){
     if (scaleIdx === null || scaleIdx === undefined) return;
-    document.querySelectorAll(`#oudNotesLayer text[data-scale-idx="${scaleIdx}"]`).forEach(t => {
+    const layerId = getActiveNotesLayerId();
+    document.querySelectorAll(`#${layerId} text[data-scale-idx="${scaleIdx}"], #${layerId} g[data-scale-idx="${scaleIdx}"]`).forEach(t => {
       t.classList.toggle('mic-current-target-text', add);
     });
   }
@@ -2719,7 +2732,7 @@ window.isArabicMode = false;
   async function startVerify(){
     expectedSequence = getExpectedSequence();
     if (expectedSequence.length === 0) {
-      alert('ما فيه سلّم أو مقام معروض حالياً على الزند للتحقق منه');
+      alert('ما فيه سلّم أو مقام أو كورد معروض حالياً على الزند للتحقق منه');
       return;
     }
     // تشخيص: نطبع كل التسلسل مرة وحدة بالكونسول (F12 ← Console) عشان يسهل مراجعة كل الدرجات مع بعض
@@ -3364,20 +3377,26 @@ window.clearChordHighlight = clearChordHighlight;
 function renderChordHighlight(positions, active){
   chordHighlightLayer.innerHTML = '';
   if (oudNotesLayer) oudNotesLayer.style.display = 'none'; // نخفي نغمات السلم العادية عشان الكورد يبين لوحده بدون تراكب
-  positions.forEach(pos => {
+  positions.forEach((pos, chordNoteIdx) => {
     const p = OUD.getPoint(pos.string, pos.fret);
     const boxW = 64, boxH = 32;
+    const noteFreqNow = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
     const rect = el('rect', {
       x: p.x-boxW/2, y: p.y-boxH/2, width:boxW, height:boxH, rx:4,
       fill: active ? '#d64545' : '#2b6fc9',
       stroke: active ? '#a82f2f' : '#1a5fa8',
       'stroke-width': active ? 4 : 2,
+      // نفس نمط data-scale-idx/data-freq المستخدم بالمقامات والسلالم — يخلي ميزة "تحقق من
+      // عزفي" تشتغل مع الكوردات تلقائياً بترتيب النغمات الثلاث (الأساس، الثالثة، الخامسة)
+      'data-scale-idx': chordNoteIdx,
+      'data-freq': noteFreqNow,
     });
     rect.style.cursor = 'pointer';
     chordHighlightLayer.appendChild(rect);
     const label = el('text', {
       x:p.x, y:p.y+7, fill:'#fff', 'font-size':'22',
-      'font-family':"'Cairo', Arial, sans-serif", 'font-weight':'700', 'text-anchor':'middle'
+      'font-family':"'Cairo', Arial, sans-serif", 'font-weight':'700', 'text-anchor':'middle',
+      'data-scale-idx': chordNoteIdx
     });
     label.style.pointerEvents = 'none'; // عشان الضغطة الفعلية توصل للمستطيل تحته، مو تنحبس بالنص فوقه
     const pc = OUD.noteAt(pos.string, pos.fret);
@@ -3515,7 +3534,15 @@ document.querySelectorAll('.scale-btn').forEach(btn => {
     } else if (!wasMajor && willBeMajor) {
       newRoot = (state.root + 3) % 12; // من مينور لماجور: الجذر المتعلق
     }
+    // نحفظ رقم درجة الكورد المختار حالياً (لو المستخدم كان بوضع كورد) قبل ما selectRootAndType
+    // يصفّره تلقائياً، عشان نعيد اختيار نفس الدرجة بالنوع الجديد بعدين ونبقى بوضع الكورد
+    const prevChordDegree = (window.chordModeActive && window.selectedChord) ? window.selectedChord.degree : null;
     selectRootAndType(newRoot, btn.dataset.scale, wasMajor === willBeMajor ? state.letterOverride : null);
+    if (prevChordDegree !== null && typeof buildChordsForScale === 'function' && typeof selectChord === 'function') {
+      const newChords = buildChordsForScale(state.root, state.scaleType);
+      const matchingChord = newChords.find(c => c.degree === prevChordDegree);
+      if (matchingChord) selectChord(matchingChord, null);
+    }
   });
 });
 
@@ -3530,11 +3557,24 @@ document.querySelectorAll('.c-chords-type-btn').forEach(btn => {
     } else if (!wasMajor && willBeMajor) {
       newRoot = (state.root + 3) % 12;
     }
+    // نفس الفكرة: نحفظ رقم الدرجة المختارة حالياً قبل التصفير، ونعيدها بالنوع الجديد
+    const prevChordDegree = (window.chordModeActive && window.selectedChord) ? window.selectedChord.degree : null;
     // نزامن حالة أزرار النوع الرئيسية (فوق العود) كمان، عشان تبقى متطابقة
     document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === btn.dataset.scale));
     selectRootAndType(newRoot, btn.dataset.scale, wasMajor === willBeMajor ? state.letterOverride : null);
     // نبقي القائمة مفتوحة على تبويب الكوردات، ونعيد رسمها فوراً بالنوع الجديد
     showDrawerMode('chords');
+    // نعيد اختيار نفس درجة الكورد تلقائياً بالنوع الجديد (بصفتها الصحيحة الجديدة: ميجور/ماينور/دمينشد...)
+    // عشان يبقى المستخدم فعلياً بوضع الكورد، مو يرجع لعرض السلم العادي ويحتاج يضغط الكورد يدوياً من جديد
+    if (prevChordDegree !== null && typeof buildChordsForScale === 'function' && typeof selectChord === 'function') {
+      const newChords = buildChordsForScale(state.root, state.scaleType);
+      const matchingChord = newChords.find(c => c.degree === prevChordDegree);
+      if (matchingChord) {
+        const btnEls = document.querySelectorAll('#cChordsList .c-chord-btn');
+        const matchingBtnEl = btnEls[prevChordDegree - 1] || null;
+        selectChord(matchingChord, matchingBtnEl);
+      }
+    }
   });
 });
 
