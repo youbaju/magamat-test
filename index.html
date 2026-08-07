@@ -2532,11 +2532,12 @@ window.isArabicMode = false;
 
     // تصحيح "خطأ الأوكتاف": نتحقق هل فيه فترة أقصر (نصف/ثلث الفترة المكتشفة) بارتباط قوي مشابه —
     // لو موجودة، هي الأصح غالباً (النغمة الأساسية الحقيقية)، مو الفترة الأطول (اللي ممكن تكون توافقية)
+    // خفّضنا حد التشابه المطلوب (كان 0.82) لأن أخطاء الأوكتاف طلعت متكررة بالاختبار الفعلي بصوت حقيقي
     let bestPos = maxPos;
     for (const divisor of [2, 3]) {
       const candidate = Math.round(maxPos / divisor);
       if (candidate < minLag) continue;
-      if (c[candidate] >= maxVal * 0.82) { bestPos = candidate; break; }
+      if (c[candidate] >= maxVal * 0.55) { bestPos = candidate; break; }
     }
     let T0 = bestPos;
     if (T0 > minLag && T0 < maxLag) { // تحسين دقة الموضع (Parabolic interpolation)
