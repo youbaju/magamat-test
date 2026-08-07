@@ -4390,7 +4390,9 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
       stroke: isCurrent ? '#a82f2f' : '#1a5fa8',
       'stroke-width': isCurrent ? 4 : 2,
       'data-scale-idx': scaleIdx,
-      'data-freq': OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset)
+      'data-freq': OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset),
+      'data-string': pos.string,
+      'data-fret': pos.fret
     });
     if(isCurrent){
       const cx = p.x, cy = p.y;
@@ -6116,6 +6118,7 @@ window.wxResume = wxResume;
         rect.setAttribute('stroke-width', isCurrent ? 3 : 2);
         rect.setAttribute('data-scale-idx', degIdx);
         rect.setAttribute('data-freq', posToFreq(effectiveQ));
+        rect.setAttribute('data-quarters', effectiveQ); // نخزن "الوصفة" الخام (المسافة بالأرباع) عشان نقدر نعيد حساب التردد فوراً لو تغيّر الدوزان بدون إعادة رسم كامل
         rect.style.cursor = 'pointer';
         layer.appendChild(rect);
 
@@ -6187,6 +6190,26 @@ window.wxResume = wxResume;
       const tuningOffset = parseFloat(document.getElementById('shared-tuningSelect').value) || 0;
       return SOL3_FREQ * Math.pow(2, (quartersFromSol / 24) + (tuningOffset / 12));
     }
+
+    // يعيد حساب data-freq لكل النغمات المعروضة حالياً على الزند (مقام عربي أو سلم غربي)
+    // بناءً على الدوزان الحالي — يُستدعى فوراً كل ما المستخدم يغيّر الدوزان من القائمة
+    window.refreshAllNoteFrequencies = function(){
+      const layer = document.getElementById('oudNotesLayer');
+      if (!layer) return;
+      const tuningOffsetNow = parseFloat(document.getElementById('shared-tuningSelect').value) || 0;
+      layer.querySelectorAll('rect[data-scale-idx]').forEach(r => {
+        if (r.hasAttribute('data-quarters')) {
+          // مقام عربي: نعيد الحساب بنفس صيغة posToFreq
+          const q = parseFloat(r.getAttribute('data-quarters'));
+          r.setAttribute('data-freq', posToFreq(q));
+        } else if (r.hasAttribute('data-string') && r.hasAttribute('data-fret') && typeof OUD !== 'undefined' && OUD.frequencyAt) {
+          // سلم غربي: نعيد الحساب بنفس صيغة OUD.frequencyAt
+          const s = parseInt(r.getAttribute('data-string'));
+          const fr = parseInt(r.getAttribute('data-fret'));
+          r.setAttribute('data-freq', OUD.frequencyAt(s, fr, tuningOffsetNow));
+        }
+      });
+    };
 
     // ===== مشغل المقام العربي =====
     let arPlayerState = 'stopped';
@@ -7631,6 +7654,10 @@ document.getElementById('shared-playBtn').onclick = async function() {
       pitchSemitones = parseFloat(this.value);
       if (sourceNode && isPlaying) sourceNode.detune.value = pitchSemitones * 100;
       sessionStorage.setItem('oudTuningPref', this.value); // نحفظ آخر دوزان يختاره المستخدم، يبقى ثابت حتى بعد إعادة التحميل
+      // نحدّث فوراً كل الترددات المتوقعة المخزّنة على النغمات المعروضة حالياً على الزند (data-freq)
+      // — بدون هذا، أي ميزة تعتمد على "التردد المتوقع" (زي التحقق من العزف) تفضل تقارن بدوزان قديم
+      // حتى لو غيّر المستخدم الدوزان من القائمة، لأن القيمة كانت تُحسب وقت الرسم فقط، مو لحظياً.
+      if (typeof window.refreshAllNoteFrequencies === 'function') window.refreshAllNoteFrequencies();
     };
 
     function resetPlayer() {
