@@ -1799,7 +1799,7 @@ input[type="radio"] {
       <p>🔹 <strong>اختيار كورد:</strong> تظهر الكوردات السبعة بدرجاتها (I, ii, iii, IV, V, vi, vii°...)، وباسم كل كورد الكامل (مثل "دو Major" أو "رى Minor"). اضغط على أي كورد لتختاره — يشتغل صوته <strong>فوراً</strong> وتضيء نغماته الثلاث على الزند بالأزرق.</p>
       <p>🔹 <strong>إعادة سماع الكورد:</strong> استخدم زر <strong>▶ التشغيل</strong> بالمشغل بالأسفل لإعادة سماع نفس الكورد وقت ما تحب.</p>
       <p>🔹 <strong>سماع كل نغمة لحالها:</strong> يمكنك أيضاً الضغط على أي نغمة من الثلاث مباشرة (بنفس تقنية النغمة المستمرة) للتأكد من صوتها فرادى، قبل أو بدل سماع الكورد كاملاً معاً.</p>
-      <p>🔹 <strong>تحقق من عزف الكورد بالمايكروفون:</strong> زر 🎤 فوق الزند يشتغل مع الكوردات كمان — يتحقق من عزفك للثلاث نغمات وحدة وحدة بالترتيب (الأساس، ثم الثالثة، ثم الخامسة). التفاصيل الكاملة بقسم "تحقق من عزفك" أدناه.</p>
+      <p>🔹 <strong>تحقق من عزف الكورد بالمايكروفون:</strong> زر 🎤 فوق الزند يشتغل مع الكوردات كمان — يتحقق من عزفك للثلاث نغمات وحدة وحدة بترتيب تصاعدي حسب التردد الفعلي (من الأقل صوتاً للأعلى، بغض النظر إن كانت أساس أو ثالثة أو خامسة نظرياً). التفاصيل الكاملة بقسم "تحقق من عزفك" أدناه.</p>
       <p>🔹 <strong>الرجوع للسلم:</strong> اضغط تبويب "دائرة الرابعات والخامسات" بأعلى القائمة، أو اختر مقاماً جديداً من الدائرة، للرجوع لعرض السلم العادي على الزند.</p>
     </div>
 
@@ -1853,7 +1853,7 @@ input[type="radio"] {
       <p>🔹 <strong>طريقة الاستخدام:</strong></p>
       <p>١. اضغط 🎤 — في أول استخدام سيطلب منك المتصفح الإذن بالوصول إلى الميكروفون، فوافق عليه.<br>
       ٢. يتحول الزر إلى دائرة حمراء <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span> تدل على أنه يستمع إليك فعلياً في تلك اللحظة.<br>
-      ٣. اعزف الدرجات بالترتيب على عودك الحقيقي، درجةً درجة (وفي الكوردات: النغمة الأساسية أولاً، تليها الثالثة، ثم الخامسة).<br>
+      ٣. اعزف الدرجات بالترتيب على عودك الحقيقي، درجةً درجة (وفي الكوردات: من أقل نغمة تردداً إلى أعلاها صوتياً، بغض النظر كونها أساس أو ثالثة أو خامسة نظرياً).<br>
       ٤. تضيء الدرجة المطلوب عزفها حالياً بمربع أصفر نابض بكامله (مع ظهور اسم النغمة بلون داكن فوقه)، لتعرف بدقة أين وصلت.<br>
       ٥. كل نغمة صحيحة تتلوّن تلقائياً بالأخضر الداكن، وينتقل التظليل الأصفر إلى الدرجة التالية.<br>
       ٦. إن أخطأت في نغمة، تتلوّن بالأحمر للحظة، ثم يعود التظليل الأصفر إلى النغمة ذاتها فقط لإعادة المحاولة عليها — أما النغمات التي عزفتها بشكل صحيح قبلها فتبقى خضراء دون أن تتأثر، ولا يعود تقدّمك إلى بداية السلّم.<br>
@@ -2056,7 +2056,7 @@ input[type="radio"] {
       <p>🔹 <strong>How to use it:</strong></p>
       <p>1. Tap 🎤 — the first time, the browser will ask for microphone access; allow it.<br>
       2. The button turns into a red circle <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span> indicating it's actively listening.<br>
-      3. Play the notes in order, one at a time (for chords: the root note first, then the third, then the fifth).<br>
+      3. Play the notes in order, one at a time (for chords: from the lowest-pitched note up to the highest, regardless of whether it's the root, third, or fifth).<br>
       4. The note you're currently expected to play lights up as a full glowing <strong>yellow</strong> box (with its name shown in a dark color on top), so you know exactly where you are.<br>
       5. Each correct note automatically turns <strong>dark green</strong>, and the yellow highlight moves to the next note.<br>
       6. If you play a wrong note, it flashes <strong>red</strong> briefly, then the yellow highlight returns to that same note only, so you can retry it — notes you already played correctly before it stay green and are unaffected, and your progress does not reset to the beginning.<br>
@@ -3408,18 +3408,28 @@ window.clearChordHighlight = clearChordHighlight;
 function renderChordHighlight(positions, active){
   chordHighlightLayer.innerHTML = '';
   if (oudNotesLayer) oudNotesLayer.style.display = 'none'; // نخفي نغمات السلم العادية عشان الكورد يبين لوحده بدون تراكب
+  // نحسب تردد كل نغمة من الثلاث مقدماً، ونرتّبها تصاعدياً (الأقل تردداً أولاً) — عشان ميزة
+  // "تحقق من عزفي" تختبرها من الأقل للأعلى صوتياً (الترتيب الطبيعي اللي يتوقعه العازف)،
+  // مو بترتيب الأساس/الثالثة/الخامسة النظري، لأن أقرب وضعية على الزند (القلب المختار)
+  // ما تحط الأساس دايماً كأقل نغمة — أحياناً الثالثة أو الخامسة تكون أوطى منه فعلياً
+  const freqByOriginalIdx = positions.map(pos => OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset));
+  const pitchRank = freqByOriginalIdx
+    .map((freq, i) => ({ i, freq }))
+    .sort((a, b) => a.freq - b.freq)
+    .reduce((acc, item, rank) => { acc[item.i] = rank; return acc; }, {});
   positions.forEach((pos, chordNoteIdx) => {
     const p = OUD.getPoint(pos.string, pos.fret);
     const boxW = 64, boxH = 32;
-    const noteFreqNow = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
+    const noteFreqNow = freqByOriginalIdx[chordNoteIdx];
+    const pitchOrderIdx = pitchRank[chordNoteIdx];
     const rect = el('rect', {
       x: p.x-boxW/2, y: p.y-boxH/2, width:boxW, height:boxH, rx:4,
       fill: active ? '#d64545' : '#2b6fc9',
       stroke: active ? '#a82f2f' : '#1a5fa8',
       'stroke-width': active ? 4 : 2,
       // نفس نمط data-scale-idx/data-freq المستخدم بالمقامات والسلالم — يخلي ميزة "تحقق من
-      // عزفي" تشتغل مع الكوردات تلقائياً بترتيب النغمات الثلاث (الأساس، الثالثة، الخامسة)
-      'data-scale-idx': chordNoteIdx,
+      // عزفي" تشتغل مع الكوردات تلقائياً، بترتيب التردد الفعلي تصاعدياً (مو الترتيب النظري)
+      'data-scale-idx': pitchOrderIdx,
       'data-freq': noteFreqNow,
     });
     rect.style.cursor = 'pointer';
@@ -3427,7 +3437,7 @@ function renderChordHighlight(positions, active){
     const label = el('text', {
       x:p.x, y:p.y+7, fill:'#fff', 'font-size':'22',
       'font-family':"'Cairo', Arial, sans-serif", 'font-weight':'700', 'text-anchor':'middle',
-      'data-scale-idx': chordNoteIdx
+      'data-scale-idx': pitchOrderIdx
     });
     label.style.pointerEvents = 'none'; // عشان الضغطة الفعلية توصل للمستطيل تحته، مو تنحبس بالنص فوقه
     const pc = OUD.noteAt(pos.string, pos.fret);
