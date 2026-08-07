@@ -2609,6 +2609,11 @@ window.isArabicMode = false;
   function markNoteResult(rect, isCorrect){
     rect = getLiveRect(rect);
     if (!rect) return;
+    // نشيل تظليل "الهدف الحالي" الأصفر فوراً — لازم قبل ما نلوّن، لأنه CSS بـ!important
+    // وكان يطغى على لون النجاح/الخطأ (setAttribute) لين ما ينشال الكلاس، وهذا سبب بقاء
+    // آخر نغمة بالمقام صفراء دايماً (ما فيه نغمة بعدها تستدعي highlightCurrentTarget لتشيله)
+    rect.classList.remove('mic-current-target');
+    setCurrentTargetTextClass(rect.getAttribute('data-scale-idx'), false);
     const fillColor = isCorrect ? '#1B7A3D' : '#c0392b';
     const strokeColor = isCorrect ? '#0d5225' : '#7a231b';
     rect.setAttribute('fill', fillColor);
@@ -2754,6 +2759,23 @@ window.isArabicMode = false;
 
   function listenLoop(){
     if (verifyState !== 'listening') return;
+
+    // حماية إضافية: نتأكد كل إطار إن كل الدرجات اللي خلّصناها صح لسا خضراء فعلياً على
+    // الشاشة (حتى لو انعاد رسم الزند بالخلفية لأي سبب وولّد عناصر جديدة بلون أزرق افتراضي)
+    for (let i = 0; i < currentNoteIndex; i++) {
+      const item = expectedSequence[i];
+      if (!item) continue;
+      item.rect = getLiveRect(item.rect);
+      if (item.rect.getAttribute('fill') !== '#1B7A3D') {
+        item.rect.setAttribute('fill', '#1B7A3D');
+        item.rect.setAttribute('stroke', '#0d5225');
+        item.rect._origFill = '#1B7A3D';
+        item.rect._origStroke = '#0d5225';
+      }
+      item.rect.classList.remove('mic-current-target');
+      setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
+    }
+
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
@@ -2788,8 +2810,11 @@ window.isArabicMode = false;
             setTimeout(() => {
               alert('🎉 أحسنت! أتقنت العزف بالكامل صح من الأول للآخر');
               doneSeq.forEach(item => {
+                item.rect = getLiveRect(item.rect);
                 item.rect.setAttribute('fill', '#2b6fc9');
                 item.rect.setAttribute('stroke', '#1a5fa8');
+                item.rect.classList.remove('mic-current-target');
+                setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
                 item.rect._origFill = null;
                 item.rect._origStroke = null;
               });
