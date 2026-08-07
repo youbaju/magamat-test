@@ -2818,14 +2818,21 @@ window.isArabicMode = false;
     }
     const freshSig = sequenceSignature(freshSeq);
     if (freshSig !== lastSequenceSignature) {
-      expectedSequence = freshSeq;
-      lastSequenceSignature = freshSig;
+      // نوقف أي صوت شغّاله الموقع نفسه هنا أولاً، قبل ما نلتقط النغمات ونلوّن — مهم جداً:
+      // بعض دوال الإيقاف (زي إعادة ضبط مشغل المقام العربي arResetPlayer) تعيد رسم الزند
+      // من جديد بنفسها كأثر جانبي (عشان تصفّر تظليل التشغيل الأحمر)، ولو كنا لوّنّا
+      // الدرجة الأولى صفراء قبل هذا الاستدعاء، كان ينمسح فوراً بإعادة الرسم الجانبية هذي
+      // (وهذا بالضبط سبب اختفاء المربع الأصفر بعد تبديل المقام أثناء الاستماع)
+      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+      // نعيد القراءة من جديد بعد أي إعادة رسم جانبية محتملة، عشان نضمن نمسك العناصر
+      // النهائية المستقرة المعروضة فعلياً على الشاشة، لا عناصر قديمة راح تُستبدل بعد شوي
+      expectedSequence = getExpectedSequence();
+      lastSequenceSignature = sequenceSignature(expectedSequence);
       currentNoteIndex = 0;
       resetAllNotesVisual();
       highlightCurrentTarget();
-      // لو المحتوى الجديد كورد مثلاً، يشتغل صوته تلقائياً فور اختياره — نوقف أي صوت
-      // شغّاله الموقع نفسه ونمنح مهلة قصيرة لهدوء الصدى، بنفس منطق بداية الاستماع الأولى
-      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+      // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
+      // المحتوى الجديد كورد يشتغل صوته تلقائياً) تخلص وتهدأ تماماً
       micSettleUntil = performance.now() + 500;
     }
     if (performance.now() < micSettleUntil) {
