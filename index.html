@@ -5458,6 +5458,18 @@ window.wxResume = wxResume;
       pitchSemitones = parseFloat(savedTuning);
       const savedTuningSelectEl = document.getElementById('shared-tuningSelect');
       if (savedTuningSelectEl) savedTuningSelectEl.value = savedTuning;
+      // تعيين .value مباشرة ما يشغّل حدث change تلقائياً، فنستدعي تحديث الترددات يدوياً
+      // (بمحاولات متكررة قصيرة، لأن دالة التحديث والمقام الأول ممكن يترسمون بترتيب متغيّر)
+      let tuningRestoreTries = 0;
+      const tuningRestoreRetry = setInterval(() => {
+        tuningRestoreTries++;
+        if (typeof window.refreshAllNoteFrequencies === 'function') {
+          window.refreshAllNoteFrequencies();
+          clearInterval(tuningRestoreRetry);
+        } else if (tuningRestoreTries > 20) {
+          clearInterval(tuningRestoreRetry);
+        }
+      }, 150);
     }
     let currentAudioPath = '';
     let progressInterval = null;
