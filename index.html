@@ -2493,6 +2493,17 @@ window.isArabicMode = false;
 
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
+  // نفس فكرة freqToCents، بس "تطوي" فرق الأوكتافات لأقرب مسافة ممكنة (0-600 سنت) —
+  // يحل مشاكل خطأ الأوكتاف بخوارزمية الكشف (شائعة مع النغمات الرنّانة زي الأوتار المفتوحة،
+  // مثال: عزف "الرى" العادي يُكتشف أحياناً كـ"جواب الرى" بسبب توافقياته القوية) بدون
+  // التأثير على دقة التمييز بين نغمات مختلفة فعلياً (دو عن رى يبقى مرفوض زي ما هو)
+  function foldedCentsDiff(f1, f2){
+    const raw = freqToCents(f1, f2);
+    let folded = ((raw % 1200) + 1200) % 1200;
+    if (folded > 600) folded = 1200 - folded;
+    return folded;
+  }
+
   // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
   // خوارزمية YIN لكشف التردد الأساسي — بديل كامل للطريقة السابقة (الارتباط الذاتي البسيط).
   // السبب: الطريقة السابقة كانت تعاني من "خطأ الأوكتاف" بشكل متكرر مع صوت آلة حقيقي غني
@@ -2724,7 +2735,7 @@ window.isArabicMode = false;
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
-      const cents = Math.abs(freqToCents(freq, expected.freq));
+      const cents = foldedCentsDiff(freq, expected.freq);
 
       if (cents < CENTS_MATCH) {
         lastBadTime = 0; // قراءة جيدة توقف عداد الخطأ لو كان قاعد يتراكم
