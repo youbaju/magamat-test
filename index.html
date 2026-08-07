@@ -2471,11 +2471,14 @@ window.isArabicMode = false;
   let micBtnRect = null; // احتفظنا بالإعلان فقط لتفادي أي مرجع قديم، غير مستخدم فعلياً بعد التحويل لزر HTML
   let micBtnText = null;
   let lastGoodTime = 0;
+  let lastBadTime = 0;
 
   const CENTS_MATCH = 70;   // نطاق تسامح "صحيح" — وسّعناه (كان 45) عشان يكون أسهل يقبل النغمة سواء كانت أعلى أو أنزل شوي من المطلوب
   const CENTS_WRONG = 180;  // فوق هذا يعتبر خطأ واضح (مو بس تردد غير واضح/ضجيج) — وسّعناه بنفس النسبة تقريباً
   const HOLD_MS = 60;       // المدة اللي لازم النغمة تنضبط فيها متواصلة قبل ما تُحتسب صحيحة — قللناها (كانت 180)
                              // لأن صوت العود الحقيقي يتذبذب ويخفت تدريجياً بعد النقرة، عكس نغمة إلكترونية ثابتة
+  const HOLD_WRONG_MS = 200; // نفس فكرة الثبات، بس لتأكيد الخطأ — يمنع قراءة غلط عابرة وحدة (أثناء انتقال
+                              // الإصبع بين النغمات مثلاً) من تصفير كل التقدّم فوراً
 
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
@@ -2557,6 +2560,25 @@ window.isArabicMode = false;
     if (!rect) return;
     rect.setAttribute('fill', isCorrect ? '#1B7A3D' : '#c0392b');
     rect.setAttribute('stroke', isCorrect ? '#0d5225' : '#7a231b');
+    // نضيف رمز ✓/✗ فوق النغمة (مو بس تغيير اللون) — يخلي النتيجة واضحة حتى لو التباين
+    // بين الأخضر والأزرق ضعيف على شاشة معينة، ويفيد كمان أي حد يصعب عليه تمييز الألوان
+    const ns = 'http://www.w3.org/2000/svg';
+    const x = parseFloat(rect.getAttribute('x')) + parseFloat(rect.getAttribute('width'))/2;
+    const y = parseFloat(rect.getAttribute('y')) + parseFloat(rect.getAttribute('height'))/2;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y + 6);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '22');
+    t.setAttribute('font-weight', 'bold');
+    t.setAttribute('fill', '#ffffff');
+    t.setAttribute('class', 'mic-result-mark');
+    t.setAttribute('pointer-events', 'none');
+    t.textContent = isCorrect ? '✓' : '✗';
+    rect.parentNode.appendChild(t);
+  }
+
+  function clearResultMarks(){
+    document.querySelectorAll('#oudNotesLayer .mic-result-mark').forEach(el => el.remove());
   }
 
   function resetAllNotesVisual(){
@@ -2564,6 +2586,7 @@ window.isArabicMode = false;
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
     });
+    clearResultMarks();
   }
 
   function updateMicBtnVisual(){
@@ -2624,7 +2647,9 @@ window.isArabicMode = false;
     if (dbg && expectedSequence[currentNoteIndex]) {
       const exp = expectedSequence[currentNoteIndex];
       const centsNow = freq !== -1 ? (1200 * Math.log2(freq / exp.freq)).toFixed(0) : '—';
-      const holdInfo = lastGoodTime ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms` : 'غير مطابقة';
+      const holdInfo = lastGoodTime
+        ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms`
+        : (lastBadTime ? `خطأ منذ ${(performance.now()-lastBadTime).toFixed(0)}ms` : 'غير مطابقة');
       dbg.style.display = 'block';
       dbg.textContent = `مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
     }
@@ -2634,6 +2659,7 @@ window.isArabicMode = false;
       const cents = Math.abs(freqToCents(freq, expected.freq));
 
       if (cents < CENTS_MATCH) {
+        lastBadTime = 0; // قراءة جيدة توقف عداد الخطأ لو كان قاعد يتراكم
         if (!lastGoodTime) lastGoodTime = performance.now();
         else if (performance.now() - lastGoodTime > HOLD_MS) {
           markNoteResult(expected.rect, true);
@@ -2648,18 +2674,27 @@ window.isArabicMode = false;
                 item.rect.setAttribute('fill', '#2b6fc9');
                 item.rect.setAttribute('stroke', '#1a5fa8');
               });
+              clearResultMarks();
             }, 250);
             return;
           }
         }
       } else if (cents > CENTS_WRONG) {
         lastGoodTime = 0;
-        markNoteResult(expected.rect, false);
-        setTimeout(() => {
-          if (verifyState !== 'listening') return;
-          currentNoteIndex = 0;
-          resetAllNotesVisual();
-        }, 500);
+        // نطلب استمرار القراءة الخاطئة لفترة قصيرة قبل ما نحسمها خطأ فعلي — يمنع قراءة
+        // عابرة وحدة (أثناء انتقال الإصبع بين النغمات مثلاً) من تصفير كل التقدّم فوراً
+        if (!lastBadTime) lastBadTime = performance.now();
+        else if (performance.now() - lastBadTime > HOLD_WRONG_MS) {
+          lastBadTime = 0;
+          markNoteResult(expected.rect, false);
+          setTimeout(() => {
+            if (verifyState !== 'listening') return;
+            currentNoteIndex = 0;
+            resetAllNotesVisual();
+          }, 500);
+        }
+      } else {
+        lastBadTime = 0; // قريبة بس مو مضبوطة — نوقف عداد الخطأ برضه (مو خطأ واضح)
       }
       // لو كانت النغمة "قريبة بس مو مضبوطة كفاية" (بين حد التطابق وحد الخطأ الواضح)، ما نصفّر
       // عداد الثبات — نتركه كما هو وننتظر، لأن هذا غالباً مجرد تذبذب لحظي طبيعي بصوت حقيقي
