@@ -2474,7 +2474,8 @@ window.isArabicMode = false;
 
   const CENTS_MATCH = 70;   // نطاق تسامح "صحيح" — وسّعناه (كان 45) عشان يكون أسهل يقبل النغمة سواء كانت أعلى أو أنزل شوي من المطلوب
   const CENTS_WRONG = 180;  // فوق هذا يعتبر خطأ واضح (مو بس تردد غير واضح/ضجيج) — وسّعناه بنفس النسبة تقريباً
-  const HOLD_MS = 180;      // المدة اللي لازم النغمة تنضبط فيها متواصلة قبل ما تُحتسب صحيحة (يقلل نتائج خاطئة من الضجيج)
+  const HOLD_MS = 60;       // المدة اللي لازم النغمة تنضبط فيها متواصلة قبل ما تُحتسب صحيحة — قللناها (كانت 180)
+                             // لأن صوت العود الحقيقي يتذبذب ويخفت تدريجياً بعد النقرة، عكس نغمة إلكترونية ثابتة
 
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
@@ -2623,8 +2624,9 @@ window.isArabicMode = false;
     if (dbg && expectedSequence[currentNoteIndex]) {
       const exp = expectedSequence[currentNoteIndex];
       const centsNow = freq !== -1 ? (1200 * Math.log2(freq / exp.freq)).toFixed(0) : '—';
+      const holdInfo = lastGoodTime ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms` : 'غير مطابقة';
       dbg.style.display = 'block';
-      dbg.textContent = `مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت`;
+      dbg.textContent = `مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
     }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
