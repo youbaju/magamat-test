@@ -2568,8 +2568,15 @@ window.isArabicMode = false;
 
   function markNoteResult(rect, isCorrect){
     if (!rect) return;
-    rect.setAttribute('fill', isCorrect ? '#1B7A3D' : '#c0392b');
-    rect.setAttribute('stroke', isCorrect ? '#0d5225' : '#7a231b');
+    const fillColor = isCorrect ? '#1B7A3D' : '#c0392b';
+    const strokeColor = isCorrect ? '#0d5225' : '#7a231b';
+    rect.setAttribute('fill', fillColor);
+    rect.setAttribute('stroke', strokeColor);
+    // نسجّل اللون الصحيح كـ"اللون الأصلي" لهذي النغمة، عشان لو المستخدم ضغط عليها بعدين
+    // يسمعها (ميزة الموقع العادية)، ترجع لنفس لون النجاح/الخطأ بعد ما يخلص الصوت، مو تنقلب
+    // زرقاء عادية — الموقع أصلاً فيه آلية `_origFill` لهذا الغرض، بس محد كان يعبّيها قبل كذا
+    rect._origFill = fillColor;
+    rect._origStroke = strokeColor;
     clearResultMarkFor(rect); // نشيل أي علامة قديمة على نفس النغمة قبل ما نضيف الجديدة (تفادي تراكم)
     // نضيف رمز ✓/✗ بزاوية المربع (مو بنص المربع، عشان ما يتراكب مع اسم النغمة المكتوب هناك أصلاً)
     // فوق دائرة خلفية صغيرة تخلي الرمز واضح بغض النظر عن لون خلفية المربع نفسه
@@ -2620,6 +2627,8 @@ window.isArabicMode = false;
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
       item.rect.classList.remove('mic-current-target');
+      item.rect._origFill = null;
+      item.rect._origStroke = null;
     });
     clearResultMarks();
   }
@@ -2649,6 +2658,10 @@ window.isArabicMode = false;
       alert('ما فيه سلّم أو مقام معروض حالياً على الزند للتحقق منه');
       return;
     }
+    // تشخيص: نطبع كل التسلسل مرة وحدة بالكونسول (F12 ← Console) عشان يسهل مراجعة كل الدرجات مع بعض
+    console.log('[تحقق العزف] التسلسل الكامل:', expectedSequence.map((it,i) => ({
+      ترتيب: i, scaleIdx: it.rect.getAttribute('data-scale-idx'), تردد: it.freq.toFixed(1)
+    })));
     currentNoteIndex = 0;
     resetAllNotesVisual();
     try {
@@ -2689,12 +2702,13 @@ window.isArabicMode = false;
     const dbg = document.getElementById('micDebugDisplay');
     if (dbg && expectedSequence[currentNoteIndex]) {
       const exp = expectedSequence[currentNoteIndex];
+      const scaleIdxAttr = exp.rect.getAttribute('data-scale-idx');
       const centsNow = freq !== -1 ? (1200 * Math.log2(freq / exp.freq)).toFixed(0) : '—';
       const holdInfo = lastGoodTime
         ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms`
         : (lastBadTime ? `خطأ منذ ${(performance.now()-lastBadTime).toFixed(0)}ms` : 'غير مطابقة');
       dbg.style.display = 'block';
-      dbg.textContent = `مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
+      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}) | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
     }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
@@ -2716,6 +2730,8 @@ window.isArabicMode = false;
               doneSeq.forEach(item => {
                 item.rect.setAttribute('fill', '#2b6fc9');
                 item.rect.setAttribute('stroke', '#1a5fa8');
+                item.rect._origFill = null;
+                item.rect._origStroke = null;
               });
               clearResultMarks();
             }, 250);
@@ -2737,6 +2753,8 @@ window.isArabicMode = false;
             if (verifyState !== 'listening') return;
             expected.rect.setAttribute('fill', '#2b6fc9');
             expected.rect.setAttribute('stroke', '#1a5fa8');
+            expected.rect._origFill = null;
+            expected.rect._origStroke = null;
             clearResultMarkFor(expected.rect);
             highlightCurrentTarget();
           }, 500);
@@ -6478,7 +6496,7 @@ window.wxResume = wxResume;
         if (r._sourceNode) { try { r._sourceNode.stop(); } catch(e){} }
         r._isPlaying = false;
         r.setAttribute('fill', r._origFill || '#2b6fc9');
-        r.setAttribute('stroke', '#1a5fa8');
+        r.setAttribute('stroke', r._origStroke || '#1a5fa8');
         r.setAttribute('stroke-width', 2);
         window._currentPlayingRect = null;
       }
