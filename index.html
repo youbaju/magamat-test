@@ -6376,6 +6376,7 @@ window.wxResume = wxResume;
           label.setAttribute('font-weight', '700');
           label.textContent = displayBaseName(text);
           layer.appendChild(label);
+          label.setAttribute('data-scale-idx', degIdx); // كانت ناقصة هنا (موجودة بالفرع الثاني بس) — بدونها ميزة التحقق بالمايكروفون ما تلقى النص لتغيّر لونه فوق الأصفر
         }
       });
 
