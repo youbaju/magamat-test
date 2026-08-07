@@ -2835,13 +2835,10 @@ window.isArabicMode = false;
       // المحتوى الجديد كورد يشتغل صوته تلقائياً) تخلص وتهدأ تماماً
       micSettleUntil = performance.now() + 500;
     }
-    if (performance.now() < micSettleUntil) {
-      rafId = requestAnimationFrame(listenLoop);
-      return;
-    }
 
     // حماية إضافية: نتأكد كل إطار إن كل الدرجات اللي خلّصناها صح لسا خضراء فعلياً على
-    // الشاشة (حتى لو انعاد رسم الزند بالخلفية لأي سبب وولّد عناصر جديدة بلون أزرق افتراضي)
+    // الشاشة (حتى لو انعاد رسم الزند بالخلفية لأي سبب وولّد عناصر جديدة بلون أزرق افتراضي).
+    // نسويها هنا (قبل فحص مهلة الاستقرار) عشان تشتغل بكل إطار بدون استثناء، حتى أثناء المهلة
     for (let i = 0; i < currentNoteIndex; i++) {
       const item = expectedSequence[i];
       if (!item) continue;
@@ -2854,6 +2851,23 @@ window.isArabicMode = false;
       }
       item.rect.classList.remove('mic-current-target');
       setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
+    }
+    // نفس الحماية بالضبط، بس للدرجة الحالية (الهدف الأصفر): بدل ما نعتمد على إنه يتلوّن
+    // مرة وحدة بس وقت المزامنة، نعيد فرضه كل إطار — لو أي إعادة رسم متأخرة (تصير أحياناً
+    // بعد اختيار مقام جديد) ولّدت عنصر جديد بلا الكلاس، ينرسم عليه صحيح بالإطار اللي بعده
+    // مباشرة تلقائياً، بدل ما يضل غايب لين تلمس أول نغمة صح
+    const curTarget = expectedSequence[currentNoteIndex];
+    if (curTarget) {
+      curTarget.rect = getLiveRect(curTarget.rect);
+      if (!curTarget.rect.classList.contains('mic-current-target')) {
+        curTarget.rect.classList.add('mic-current-target');
+        setCurrentTargetTextClass(curTarget.rect.getAttribute('data-scale-idx'), true);
+      }
+    }
+
+    if (performance.now() < micSettleUntil) {
+      rafId = requestAnimationFrame(listenLoop);
+      return;
     }
 
     const buffer = new Float32Array(analyserNode.fftSize);
