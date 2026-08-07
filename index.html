@@ -308,14 +308,15 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   color: #fff;
 }
 .mic-current-target{
-  stroke: #f5a623 !important;
-  stroke-width: 4 !important;
-  stroke-dasharray: 6 4;
+  stroke: #fff200 !important;
+  stroke-width: 5 !important;
+  stroke-dasharray: 7 5;
+  filter: drop-shadow(0 0 4px #000000);
   animation: micTargetPulse 1s ease-in-out infinite;
 }
 @keyframes micTargetPulse{
   0%, 100% { stroke-opacity: 1; }
-  50% { stroke-opacity: 0.4; }
+  50% { stroke-opacity: 0.75; }
 }
 @media (max-width:1024px){
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
