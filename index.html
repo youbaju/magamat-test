@@ -307,6 +307,16 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   border-color: #a82f2f;
   color: #fff;
 }
+.mic-current-target{
+  stroke: #f5a623 !important;
+  stroke-width: 4 !important;
+  stroke-dasharray: 6 4;
+  animation: micTargetPulse 1s ease-in-out infinite;
+}
+@keyframes micTargetPulse{
+  0%, 100% { stroke-opacity: 1; }
+  50% { stroke-opacity: 0.4; }
+}
 @media (max-width:1024px){
   .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
@@ -2413,7 +2423,7 @@ window.isArabicMode = false;
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const targetId = btn.dataset.target;
-      sessionStorage.setItem('oudActiveTab', targetId);
+      localStorage.setItem('oudActiveTab', targetId);
       // إيقاف الأصوات قبل تغيير التبويب
       if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
       if (typeof window.exStopPlayback === 'function') window.exStopPlayback(); // طبقة أمان إضافية خاصة بتمرين المقام
@@ -2433,7 +2443,7 @@ window.isArabicMode = false;
       showPage(targetId);
       // إعادة ضبط شاملة للافتراضي عند كل تبديل تبويب (بدون تذكّر آخر اختيار)
       if (targetId === 'page-maqamat') {
-        sessionStorage.removeItem('oudArabicSelection');
+        localStorage.removeItem('oudArabicSelection');
         if (typeof window.updateMaqam === 'function') {
           window.updateMaqam('الراست');
           document.querySelectorAll('input[name="maqam"]').forEach(r => { r.checked = (r.value === 'الراست'); });
@@ -2448,7 +2458,7 @@ window.isArabicMode = false;
   });
 
   // نقرأ آخر تبويب كان مفتوح لهذي الجلسة (يبقى محفوظ حتى بعد تحديث الصفحة)، أو نستخدم الافتراضي (المقامات العربية) لجلسة جديدة
-  const savedTab = sessionStorage.getItem('oudActiveTab') || 'page-maqamat';
+  const savedTab = localStorage.getItem('oudActiveTab') || 'page-maqamat';
   showPage(savedTab);
   buttons.forEach(b => b.classList.toggle('active', b.dataset.target === savedTab));
   // تحديث نص الزر ليعكس الصفحة المحفوظة/الافتراضية
@@ -2560,21 +2570,45 @@ window.isArabicMode = false;
     if (!rect) return;
     rect.setAttribute('fill', isCorrect ? '#1B7A3D' : '#c0392b');
     rect.setAttribute('stroke', isCorrect ? '#0d5225' : '#7a231b');
-    // نضيف رمز ✓/✗ فوق النغمة (مو بس تغيير اللون) — يخلي النتيجة واضحة حتى لو التباين
-    // بين الأخضر والأزرق ضعيف على شاشة معينة، ويفيد كمان أي حد يصعب عليه تمييز الألوان
+    clearResultMarkFor(rect); // نشيل أي علامة قديمة على نفس النغمة قبل ما نضيف الجديدة (تفادي تراكم)
+    // نضيف رمز ✓/✗ بزاوية المربع (مو بنص المربع، عشان ما يتراكب مع اسم النغمة المكتوب هناك أصلاً)
+    // فوق دائرة خلفية صغيرة تخلي الرمز واضح بغض النظر عن لون خلفية المربع نفسه
     const ns = 'http://www.w3.org/2000/svg';
-    const x = parseFloat(rect.getAttribute('x')) + parseFloat(rect.getAttribute('width'))/2;
-    const y = parseFloat(rect.getAttribute('y')) + parseFloat(rect.getAttribute('height'))/2;
+    const boxX = parseFloat(rect.getAttribute('x'));
+    const boxY = parseFloat(rect.getAttribute('y'));
+    const boxW = parseFloat(rect.getAttribute('width'));
+    const cx = boxX + boxW - 4;
+    const cy = boxY - 4;
+
+    const bg = document.createElementNS(ns, 'circle');
+    bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', 15);
+    bg.setAttribute('fill', isCorrect ? '#1B7A3D' : '#c0392b');
+    bg.setAttribute('stroke', '#ffffff'); bg.setAttribute('stroke-width', '2.5');
+    bg.setAttribute('class', 'mic-result-mark');
+    bg.setAttribute('pointer-events', 'none');
+    rect.parentNode.appendChild(bg);
+
     const t = document.createElementNS(ns, 'text');
-    t.setAttribute('x', x); t.setAttribute('y', y + 6);
+    t.setAttribute('x', cx); t.setAttribute('y', cy + 7);
     t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('font-size', '22');
+    t.setAttribute('font-size', '20');
     t.setAttribute('font-weight', 'bold');
     t.setAttribute('fill', '#ffffff');
     t.setAttribute('class', 'mic-result-mark');
     t.setAttribute('pointer-events', 'none');
     t.textContent = isCorrect ? '✓' : '✗';
     rect.parentNode.appendChild(t);
+
+    rect._micMarkEls = [bg, t]; // نخزن مرجع العلامتين على نفس عنصر النغمة، عشان نقدر نشيلهم بدقة لاحقاً بدون ما نأثر على علامات نغمات ثانية
+  }
+
+  // يشيل علامة الصح/الخطأ الخاصة بنغمة وحدة بس (مو كل العلامات) — يُستخدم لما المستخدم
+  // يعيد المحاولة على نفس النغمة بعد خطأ، بدون ما يمسح تقدّمه بالنغمات الصحيحة قبلها
+  function clearResultMarkFor(rect){
+    if (rect && rect._micMarkEls) {
+      rect._micMarkEls.forEach(el => el.remove());
+      rect._micMarkEls = null;
+    }
   }
 
   function clearResultMarks(){
@@ -2585,6 +2619,7 @@ window.isArabicMode = false;
     expectedSequence.forEach(item => {
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
+      item.rect.classList.remove('mic-current-target');
     });
     clearResultMarks();
   }
@@ -2599,6 +2634,13 @@ window.isArabicMode = false;
       btn.classList.remove('listening');
       btn.textContent = '🎤';
     }
+  }
+
+  function highlightCurrentTarget(){
+    // نشيل أي تظليل سابق لـ"الهدف الحالي" من كل النغمات (النغمات المكتسبة صح تبقى خضراء براحتها)
+    expectedSequence.forEach(item => item.rect.classList.remove('mic-current-target'));
+    const cur = expectedSequence[currentNoteIndex];
+    if (cur) cur.rect.classList.add('mic-current-target');
   }
 
   async function startVerify(){
@@ -2623,6 +2665,7 @@ window.isArabicMode = false;
     verifyState = 'listening';
     lastGoodTime = 0;
     updateMicBtnVisual();
+    highlightCurrentTarget();
     listenLoop();
   }
 
@@ -2678,6 +2721,7 @@ window.isArabicMode = false;
             }, 250);
             return;
           }
+          highlightCurrentTarget();
         }
       } else if (cents > CENTS_WRONG) {
         lastGoodTime = 0;
@@ -2687,10 +2731,14 @@ window.isArabicMode = false;
         else if (performance.now() - lastBadTime > HOLD_WRONG_MS) {
           lastBadTime = 0;
           markNoteResult(expected.rect, false);
+          // ما نرجع لأول السلّم ولا نلغي النغمات اللي عزفتها صح قبل — نسيب المستخدم
+          // يعيد يحاول على نفس النغمة الحالية بس، لين يظبطها، بدون ما يخسر تقدّمه السابق
           setTimeout(() => {
             if (verifyState !== 'listening') return;
-            currentNoteIndex = 0;
-            resetAllNotesVisual();
+            expected.rect.setAttribute('fill', '#2b6fc9');
+            expected.rect.setAttribute('stroke', '#1a5fa8');
+            clearResultMarkFor(expected.rect);
+            highlightCurrentTarget();
           }, 500);
         }
       } else {
@@ -2803,7 +2851,7 @@ let currentRoot = 0;       // دو
 let currentScaleType = 'major';
 let currentLetterOverride = null;
 try {
-  const savedWestern = JSON.parse(sessionStorage.getItem('oudWesternSelection') || 'null');
+  const savedWestern = JSON.parse(localStorage.getItem('oudWesternSelection') || 'null');
   if (savedWestern) {
     currentRoot = savedWestern.root;
     currentScaleType = savedWestern.scaleType;
@@ -2815,7 +2863,7 @@ const state = { root: currentRoot, scaleType: currentScaleType, tuningOffset: 0,
 
 // نستعيد الكورد المحفوظ (لو فيه) بعد ما تُبنى دوال الكوردات لاحقاً بنفس السكربت — نأجّلها بـ setTimeout(0) لضمان اكتمال البناء الأولي للزند والدوال أولاً
 (function restoreSavedChord(){
-  const savedDegree = parseInt(sessionStorage.getItem('oudSelectedChordDegree'));
+  const savedDegree = parseInt(localStorage.getItem('oudSelectedChordDegree'));
   if (isNaN(savedDegree)) return;
   setTimeout(() => {
     if (window.isArabicMode) return; // الكورد خاص بالغربي بس
@@ -3024,7 +3072,7 @@ function selectRootAndType(root, scaleType, letterOverride){
   if (typeof window.wxStopPlayback === 'function') window.wxStopPlayback(); // نوقف تمرين المقامات الغربية لو كان شغال (بدون الخروج من وضع التمرين نفسه)
   window.chordModeActive = false;
   window.selectedChord = null;
-  sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ لأن المستخدم اختار سلم/جذر جديد صراحة
+  localStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ لأن المستخدم اختار سلم/جذر جديد صراحة
   if (typeof clearChordHighlight === 'function') clearChordHighlight();
   state.root = root;
   state.scaleType = scaleType;
@@ -3032,7 +3080,7 @@ function selectRootAndType(root, scaleType, letterOverride){
   // نزامن تظليل أزرار نوع السلم (Major/Minor...) هنا، داخل الدالة نفسها، عشان أي مكان يستدعيها
   // (بما فيها إعادة الضبط الافتراضي عند اختيار التبويب) يضمن التزامن تلقائياً بدون ما يحتاج يكرر هالسطر بنفسه
   document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === scaleType));
-  sessionStorage.setItem('oudWesternSelection', JSON.stringify({root, scaleType, letterOverride: state.letterOverride}));
+  localStorage.setItem('oudWesternSelection', JSON.stringify({root, scaleType, letterOverride: state.letterOverride}));
   updateCircleHighlight();
   updateNowPlaying();
   if (typeof resetPlayer === 'function') resetPlayer();
@@ -3266,7 +3314,7 @@ function selectChord(ch, btnEl){
   window.chordModeActive = true;
   renderChordHighlight(positions, false);
   if (typeof resetPlayer === 'function') resetPlayer(); // نوقف أي سلم تسلسلي شغال، ونرجع الزر لحالة "▶"
-  sessionStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
+  localStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
   if (typeof startChordPlaying === 'function') startChordPlaying(); // نشغّل صوت الكورد فوراً بمجرد اختياره، بدون ما ننتظر ضغطة ▶ بالمشغل — تسهيلاً لسماعه بسرعة
 }
 
@@ -3420,8 +3468,8 @@ window.oudCurrentStringCount = window.oudStringMode; // متغيّر عالمي 
 // نظام اللغة: نقرأ آخر لغة اختارها المستخدم (localStorage، تدوم حتى بعد إغلاق المتصفح)، والعربي افتراضي لأول زيارة
 window.oudLanguage = localStorage.getItem('oudLanguagePref') || 'ar';
 
-// نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي — يُحفظ بـsessionStorage عشان يفضل مع تبديلات زي عدد الأوتار، بس يُمسح صراحة عند تبديل اللغة (كود منفصل بزر اللغة)
-window.oudNoteSystem = sessionStorage.getItem('oudNoteSystemPref') || 'solfege';
+// نظام تسمية النغمات بالإنجليزي/السلالم الغربية: صولفيج (Do Re Mi) الافتراضي — يُحفظ بـlocalStorage عشان يفضل مع تبديلات زي عدد الأوتار، بس يُمسح صراحة عند تبديل اللغة (كود منفصل بزر اللغة)
+window.oudNoteSystem = localStorage.getItem('oudNoteSystemPref') || 'solfege';
 // دائرة الرابعات/الخامسات تُبنى بكود أسبق بالسكربت (قبل ما يتحدد window.oudNoteSystem فوق)، فتسمياتها كانت
 // تُرسم أول مرة وهو لسا undefined فترجع دايماً للاتيني (C,D,E...) بغض النظر عن الإعداد الفعلي (صولفيج افتراضياً) —
 // نزامنها هنا فوراً عشان تعكس القيمة الصحيحة من أول تحميل، بدل ما تنتظر أول ضغطة على زر Do/C
@@ -3429,7 +3477,7 @@ if (typeof window.refreshCircleLabels === 'function') window.refreshCircleLabels
 
 const OUD = (function(){
   // نقرأ اختيار اليد المحفوظ لهذي الجلسة (يبقى محفوظ حتى لو حدّثنا الصفحة، ويُمسح لو سكرنا التبويب وفتحناه من جديد)
-  window.isLeftHanded = (sessionStorage.getItem('oudHandPref') === 'left');
+  window.isLeftHanded = (localStorage.getItem('oudHandPref') === 'left');
   document.body.classList.toggle('hand-left-mode', window.isLeftHanded);
   window.syncHandButtonPositions = function(){
     const tabsBtn = document.getElementById('siteTabsToggle');
@@ -3839,7 +3887,7 @@ function buildOudStatic(){
         }
         window.isLeftHanded = isLeft;
         document.body.classList.toggle('hand-left-mode', isLeft);
-        sessionStorage.setItem('oudHandPref', isLeft ? 'left' : 'right');
+        localStorage.setItem('oudHandPref', isLeft ? 'left' : 'right');
         redrawOudEverything();
         // نطبّق موقع الزرين بعد إعادة الرسم الكاملة (مو قبلها)، عشان أي لمسة من إعادة الرسم ما تلغي التعديل
         if (typeof window.syncHandButtonPositions === 'function') window.syncHandButtonPositions();
@@ -3887,7 +3935,7 @@ function buildOudStatic(){
         }
         window.isLeftHanded = newIsLeft;
         document.body.classList.toggle('hand-left-mode', newIsLeft);
-        sessionStorage.setItem('oudHandPref', newIsLeft ? 'left' : 'right');
+        localStorage.setItem('oudHandPref', newIsLeft ? 'left' : 'right');
         redrawOudEverything();
         if (window.selectedChord && typeof renderChordHighlight === 'function') {
           renderChordHighlight(window.selectedChord.positions, false);
@@ -3942,9 +3990,9 @@ function buildOudStatic(){
         if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
         if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
         // يتصفّر المقام/السلم بس (يرجع لافتراضي كل تبويب) — اليد، التبويب النشط، الدوزان، والسرعة تبقى زي ما هي (خصائص شخصية ثابتة للعازف)
-        sessionStorage.removeItem('oudArabicSelection');
-        sessionStorage.removeItem('oudWesternSelection');
-        sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ كمان عشان يرجع للافتراضي مع المقام/السلم
+        localStorage.removeItem('oudArabicSelection');
+        localStorage.removeItem('oudWesternSelection');
+        localStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ كمان عشان يرجع للافتراضي مع المقام/السلم
         OUD.setStringCount(newCount);
         window.location.reload();
       });
@@ -4011,8 +4059,8 @@ function buildOudStatic(){
         const newLang = (window.oudLanguage === 'en') ? 'ar' : 'en';
         localStorage.setItem('oudLanguagePref', newLang);
         window.oudLanguage = newLang;
-        sessionStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ عشان يرجع كل شي للافتراضي بعد تبديل اللغة
-        sessionStorage.removeItem('oudNoteSystemPref'); // نمسح نظام تسمية النغمات (Do/C) كمان عشان يرجع لصولفيج الافتراضي بعد تبديل اللغة تحديداً
+        localStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ عشان يرجع كل شي للافتراضي بعد تبديل اللغة
+        localStorage.removeItem('oudNoteSystemPref'); // نمسح نظام تسمية النغمات (Do/C) كمان عشان يرجع لصولفيج الافتراضي بعد تبديل اللغة تحديداً
         window.location.reload();
       });
       return lg;
@@ -4057,7 +4105,7 @@ function buildOudStatic(){
         ng.addEventListener('click', () => {
           const newSystem = (window.oudNoteSystem === 'letter') ? 'solfege' : 'letter';
           window.oudNoteSystem = newSystem;
-          sessionStorage.setItem('oudNoteSystemPref', newSystem); // يفضل مع تبديلات الجلسة (زي عدد الأوتار)، بس يُمسح صراحة عند تبديل اللغة
+          localStorage.setItem('oudNoteSystemPref', newSystem); // يفضل مع تبديلات الجلسة (زي عدد الأوتار)، بس يُمسح صراحة عند تبديل اللغة
           t.textContent = (newSystem === 'letter') ? 'C' : 'Do';
           // نحدّث كل الأماكن المتأثرة حياً بدون إعادة تحميل الصفحة
           if (typeof window.redrawOudEverything === 'function') window.redrawOudEverything();
@@ -5453,7 +5501,7 @@ window.wxResume = wxResume;
     let isManuallyStopped = false;
     let pitchSemitones = 0;
     // نستعيد آخر دوزان محفوظ لهذي الجلسة، أو الافتراضي (عالمي) لو أول مرة
-    const savedTuning = sessionStorage.getItem('oudTuningPref');
+    const savedTuning = localStorage.getItem('oudTuningPref');
     if (savedTuning !== null) {
       pitchSemitones = parseFloat(savedTuning);
       const savedTuningSelectEl = document.getElementById('shared-tuningSelect');
@@ -5681,7 +5729,7 @@ window.wxResume = wxResume;
 
     // تهيئة عند التحميل: نستعيد آخر اختيار محفوظ لهذي الجلسة، أو الافتراضي (الراست) لجلسة جديدة
     let savedArabicSelection = null;
-    try { savedArabicSelection = JSON.parse(sessionStorage.getItem('oudArabicSelection') || 'null'); } catch(e){}
+    try { savedArabicSelection = JSON.parse(localStorage.getItem('oudArabicSelection') || 'null'); } catch(e){}
     if (savedArabicSelection && maqamat[savedArabicSelection.fasila]) {
       updateMaqam(savedArabicSelection.fasila);
       if (maqamat[savedArabicSelection.fasila].includes(savedArabicSelection.maqam)) {
@@ -6294,11 +6342,11 @@ window.wxResume = wxResume;
         range.value = bpm;
         bpmValue.textContent = bpm;
         window.AR_STEP_MS = bpmToStepMs(bpm);
-        if (save !== false) sessionStorage.setItem('oudSpeedPref', String(bpm)); // نحفظ آخر سرعة يختارها المستخدم، تبقى ثابتة حتى بعد إعادة التحميل
+        if (save !== false) localStorage.setItem('oudSpeedPref', String(bpm)); // نحفظ آخر سرعة يختارها المستخدم، تبقى ثابتة حتى بعد إعادة التحميل
       }
 
       // نستعيد آخر سرعة محفوظة لهذي الجلسة، أو الافتراضي لو أول مرة
-      const savedBpm = parseInt(sessionStorage.getItem('oudSpeedPref'));
+      const savedBpm = parseInt(localStorage.getItem('oudSpeedPref'));
       applyBpm(isNaN(savedBpm) ? DEFAULT_BPM : savedBpm, false);
 
       range.addEventListener('input', () => applyBpm(parseInt(range.value)));
@@ -7500,7 +7548,7 @@ window.wxResume = wxResume;
       const maqam = maqamSelect.value;
       const harf = harfSelect.value;
       if (!maqam || !harf) return;
-      sessionStorage.setItem('oudArabicSelection', JSON.stringify({fasila, maqam, harf}));
+      localStorage.setItem('oudArabicSelection', JSON.stringify({fasila, maqam, harf}));
 
       const intervals = MAQAM_INTERVALS[maqam];
       if (intervals) {
@@ -7702,7 +7750,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
     document.getElementById('shared-tuningSelect').onchange = function() {
       pitchSemitones = parseFloat(this.value);
       if (sourceNode && isPlaying) sourceNode.detune.value = pitchSemitones * 100;
-      sessionStorage.setItem('oudTuningPref', this.value); // نحفظ آخر دوزان يختاره المستخدم، يبقى ثابت حتى بعد إعادة التحميل
+      localStorage.setItem('oudTuningPref', this.value); // نحفظ آخر دوزان يختاره المستخدم بشكل دائم (localStorage)، يبقى ثابت حتى لو سكّر التطبيق كلياً وفتحه بعد أيام — مو بس نفس الجلسة
       // نحدّث فوراً كل الترددات المتوقعة المخزّنة على النغمات المعروضة حالياً على الزند (data-freq)
       // — بدون هذا، أي ميزة تعتمد على "التردد المتوقع" (زي التحقق من العزف) تفضل تقارن بدوزان قديم
       // حتى لو غيّر المستخدم الدوزان من القائمة، لأن القيمة كانت تُحسب وقت الرسم فقط، مو لحظياً.
