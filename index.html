@@ -2494,6 +2494,12 @@ window.isArabicMode = false;
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
   // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
+  // خوارزمية YIN لكشف التردد الأساسي — بديل كامل للطريقة السابقة (الارتباط الذاتي البسيط).
+  // السبب: الطريقة السابقة كانت تعاني من "خطأ الأوكتاف" بشكل متكرر مع صوت آلة حقيقي غني
+  // بالتوافقيات (زي العود)، حتى بعد محاولات تعديل حدود التصحيح يدوياً. خوارزمية YIN تحل
+  // هذي المشكلة بنيوياً (مو بالتخمين على حدود نسبية) عن طريق "دالة الفرق التراكمية المُطبَّعة" —
+  // بمعنى مبسّط: تدور على أول فترة زمنية "تشبه نفسها بقوة" بدل أقوى فترة تشبه نفسها، وهذا
+  // يمنع القفز لمضاعفات الفترة الصحيحة (أخطاء الأوكتاف) من الأساس.
   function autoCorrelate(buffer, sampleRate){
     const SIZE = buffer.length;
     let rms = 0;
@@ -2501,51 +2507,54 @@ window.isArabicMode = false;
     rms = Math.sqrt(rms/SIZE);
     if (rms < 0.012) return -1; // صمت أو صوت ضعيف جداً — نتجاهله
 
-    let r1 = 0, r2 = SIZE - 1;
-    const thres = 0.2;
-    for (let i = 0; i < SIZE/2; i++) { if (Math.abs(buffer[i]) < thres) { r1 = i; break; } }
-    for (let i = 1; i < SIZE/2; i++) { if (Math.abs(buffer[SIZE-i]) < thres) { r2 = SIZE-i; break; } }
-    const trimmed = buffer.slice(r1, r2);
-    const newSize = trimmed.length;
-    if (newSize < 8) return -1;
+    const halfSize = Math.floor(SIZE / 2);
+    const minTau = Math.max(2, Math.floor(sampleRate / 2000)); // يقابل ٢٠٠٠ هرتز (أعلى حد منطقي لتردد العود)
+    const maxTau = Math.min(halfSize - 1, Math.ceil(sampleRate / 60)); // يقابل ٦٠ هرتز (أدنى حد منطقي)
+    if (maxTau <= minTau) return -1;
 
-    // نحصر نطاق البحث بس على الأزمنة (lags) المطابقة لترددات منطقية للعود (٦٠-٢٠٠٠ هرتز)
-    // بدل فحص كل الاحتمالات — هذا يسرّع الحساب بشكل كبير جداً (يشتغل ٦٠ مرة بالثانية)
-    // وبنفس الوقت يقلل "خطأ الأوكتاف" (اكتشاف نفس النغمة بترتيب هرمونيكي غلط)
-    const minLag = Math.max(2, Math.floor(sampleRate / 2000));
-    const maxLag = Math.min(newSize - 2, Math.ceil(sampleRate / 60));
-    if (maxLag <= minLag) return -1;
-
-    // نطبّع كل قيمة بعدد العناصر اللي جُمعت فيها (متوسط، مو مجموع خام) — يمنع انحياز
-    // الحساب رياضياً نحو الفترات الزمنية القصيرة (اللي فيها عناصر أكثر بالجمع بطبيعتها)،
-    // وهذا كان يسبب فشل كامل باكتشاف نغمات العود المنخفضة (زي الوتر المفتوح ~110Hz)
-    const c = new Array(maxLag + 1).fill(0);
-    for (let lag = minLag; lag <= maxLag; lag++) {
+    // خطوة ١: دالة الفرق (Difference Function) — لكل فترة زمنية مرشّحة، نقيس "مدى اختلاف"
+    // الإشارة عن نفسها لو انزاحت بهذي الفترة (صفر = تطابق تام، النغمة الحقيقية تكون قريبة من صفر)
+    const d = new Float64Array(maxTau + 1);
+    for (let tau = minTau; tau <= maxTau; tau++) {
       let sum = 0;
-      const count = newSize - lag;
-      for (let i = 0; i < count; i++) sum += trimmed[i] * trimmed[i+lag];
-      c[lag] = sum / count;
+      for (let i = 0; i < halfSize; i++) {
+        const delta = buffer[i] - buffer[i + tau];
+        sum += delta * delta;
+      }
+      d[tau] = sum;
     }
-    let maxVal = -Infinity, maxPos = -1;
-    for (let i = minLag; i <= maxLag; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxPos = i; } }
-    if (maxPos <= minLag) return -1;
 
-    // تصحيح "خطأ الأوكتاف": نتحقق هل فيه فترة أقصر (نصف/ثلث الفترة المكتشفة) بارتباط قوي مشابه —
-    // لو موجودة، هي الأصح غالباً (النغمة الأساسية الحقيقية)، مو الفترة الأطول (اللي ممكن تكون توافقية)
-    // خفّضنا حد التشابه المطلوب (كان 0.82) لأن أخطاء الأوكتاف طلعت متكررة بالاختبار الفعلي بصوت حقيقي
-    let bestPos = maxPos;
-    for (const divisor of [2, 3]) {
-      const candidate = Math.round(maxPos / divisor);
-      if (candidate < minLag) continue;
-      if (c[candidate] >= maxVal * 0.55) { bestPos = candidate; break; }
+    // خطوة ٢: التطبيع التراكمي — هذي الخطوة تحديداً هي اللي تمنع خطأ الأوكتاف بنيوياً
+    const dPrime = new Float64Array(maxTau + 1);
+    dPrime[minTau] = 1;
+    let runningSum = 0;
+    for (let tau = minTau; tau <= maxTau; tau++) {
+      runningSum += d[tau];
+      dPrime[tau] = d[tau] / ((runningSum / (tau - minTau + 1)) || 1);
     }
-    let T0 = bestPos;
-    if (T0 > minLag && T0 < maxLag) { // تحسين دقة الموضع (Parabolic interpolation)
-      const x1 = c[T0-1], x2 = c[T0], x3 = c[T0+1];
+
+    // خطوة ٣: أول فترة تنزل تحت حد معين (مو أقوى فترة إطلاقاً) — هذا يضمن اختيار أقصر
+    // فترة "تشبه نفسها بما يكفي"، يعني النغمة الأساسية الحقيقية، مو مضاعفاتها
+    const YIN_THRESHOLD = 0.15;
+    let tauEstimate = -1;
+    for (let tau = minTau + 1; tau < maxTau; tau++) {
+      if (dPrime[tau] < YIN_THRESHOLD) {
+        while (tau + 1 <= maxTau && dPrime[tau + 1] < dPrime[tau]) tau++; // ننزل لأقرب قاع محلي
+        tauEstimate = tau;
+        break;
+      }
+    }
+    if (tauEstimate === -1) return -1; // ما فيه نغمة واضحة (صمت/ضجيج بحت)
+
+    // تحسين دقة الموضع (Parabolic interpolation)
+    let betterTau = tauEstimate;
+    if (tauEstimate > minTau && tauEstimate < maxTau) {
+      const x1 = dPrime[tauEstimate-1], x2 = dPrime[tauEstimate], x3 = dPrime[tauEstimate+1];
       const a = (x1 + x3 - 2*x2)/2, b = (x3 - x1)/2;
-      if (a) T0 = T0 - b/(2*a);
+      if (a) betterTau = tauEstimate - b/(2*a);
     }
-    const freq = sampleRate / T0;
+
+    const freq = sampleRate / betterTau;
     return (freq > 60 && freq < 2000) ? freq : -1; // نطاق منطقي لترددات العود
   }
 
