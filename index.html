@@ -2866,6 +2866,14 @@ window.isArabicMode = false;
     }
   });
 
+  // طبقة حماية أخيرة مستقلة تماماً عن كل ما سبق: مؤقّت setInterval يفحص كل ثلث ثانية،
+  // بغض النظر عن requestAnimationFrame أو معالجات الأحداث. بعض المتصفحات (خصوصاً سفاري
+  // بالآيباد) ممكن تؤخّر أو تتجاهل rAF/setTimeout(0) بظروف معيّنة صعب التنبؤ بيها؛ هذا
+  // المؤقّت يعمل بمعزل تام عنها، فيضمن إن المزامنة تصير عاجلاً أو آجلاً مهما صار
+  setInterval(() => {
+    if (verifyState === 'listening') performMicResyncIfNeeded();
+  }, 300);
+
   function listenLoop(){
     if (verifyState !== 'listening') return;
 
@@ -2921,8 +2929,14 @@ window.isArabicMode = false;
       const holdInfo = lastGoodTime
         ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms`
         : (lastBadTime ? `خطأ منذ ${(performance.now()-lastBadTime).toFixed(0)}ms` : 'غير مطابقة');
+      // معلومات تشخيصية إضافية: هل العنصر المرجعي لسا متصل بالـDOM فعلياً (لو "لا"، معناها
+      // مرجع قديم ما تجدّد)، واسم المقام المختار حالياً بالقائمة — يفيد لو ظهرت مشكلة
+      // مشابهة مستقبلاً على جهاز معيّن، نقدر نقارن بسرعة من غير الحاجة لأدوات مطوّر
+      const connInfo = exp.rect.isConnected ? 'متصل' : 'منفصل!';
+      const msEl = document.getElementById('maqam-select');
+      const selectedMaqamNow = msEl ? msEl.value : '—';
       dbg.style.display = 'block';
-      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}) | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
+      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}, ${connInfo}) | مقام القائمة: ${selectedMaqamNow} | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
     }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
