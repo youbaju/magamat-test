@@ -867,7 +867,19 @@ flex-shrink: 0;
   .c-selection-summary { 
     bottom: auto !important; 
     top: 42px !important;
-    width: 100% !important;
+    width: auto !important;
+    max-width: 46% !important;
+    left: 8px !important;
+    right: auto !important;
+    transform: none !important;
+    align-items: flex-start !important;
+  }
+  /* بوضع اليد اليسرى، زر المايك وزر تبديل اليد ينعكسون لجهة ثانية — نعكس هذا الصندوق
+     كمان (يلتصق يمين الشاشة بدل يسارها) عشان يضل بعيد عن زر المايك بكل الحالات */
+  body.hand-left-mode .c-selection-summary {
+    left: auto !important;
+    right: 8px !important;
+    align-items: flex-end !important;
   }
 }
 
@@ -1600,7 +1612,6 @@ input[type="radio"] {
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
     <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
-    <div id="micDebugDisplay" style="display:none;position:fixed;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;z-index:9999;direction:ltr;text-align:center;white-space:nowrap;max-width:95vw;overflow-x:auto;"></div>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">Major (طبيعي)</button>
@@ -1847,7 +1858,7 @@ input[type="radio"] {
       <p>ميزة تتيح للموقع "الاستماع" إليك أثناء عزفك على عودك الحقيقي، والتحقق تلقائياً مما إذا كنت قد عزفت المقام أو السلم أو التمرين أو الكورد المعروض على الزند بشكل صحيح — نغمةً نغمة.</p>
       <p>🔹 <strong>القاعدة العامة لعمل الميكروفون:</strong> بمجرد ضغط 🎤، يظل الميكروفون في وضع الاستماع بشكل مستمر — حتى لو بدّلت المقام أو السلم أو الكورد، وحتى بعد إتمام التسلسل بنجاح — ولا يتوقف إلا بإحدى حالتين: ضغط زر ▶ (التشغيل العادي)، أو ضغط 🎤 نفسه مرة أخرى لإيقافه يدوياً.</p>
       <p>🔹 <strong>ما يقتصر على العود فقط:</strong> بما أن الميزة تعتمد على قياس التردد الصادر من المايكروفون، يمكنك تجربتها بأي آلة موسيقية أخرى تملكها (بيانو، كمان، غيتار...)، بل تستطيع عمل الاختبار بصوتك أيضاً (بدندنة أو غناء النغمة المطلوبة) بدل العزف على آلة — طالما أن النغمة الصادرة مطابقة للتردد المطلوب، ستُقبل بنفس الطريقة تماماً.</p>
-      <p>🔹 <strong>موقع الزر:</strong> زر 🎤 يقع مباشرة أعلى الزند، بجانب زر اختيار اليد (اليمنى/اليسرى) — وهو متاح في جميع الأوضاع: المقامات العربية، السلالم الغربية، التمارين، وكذلك الكوردات.</p>
+      <p>🔹 <strong>موقع الزر:</strong> زر 🎤 يقع فوق منطقة عنق الرأس عند نهاية الزند (بجانب أسماء أوتار العود: فا، لا، رى، صول، دو، فا) — وهو متاح في جميع الأوضاع: المقامات العربية، السلالم الغربية، التمارين، وكذلك الكوردات.</p>
       <p>🔹 <strong>قبل البدء:</strong></p>
       <p>١. اضبط "الدوزان" من القائمة أسفل المشغّل بما يطابق دوزان عودك الحقيقي (عالمي، ناقص نصف تون، ناقص تون كامل، أو ناقص تون ونصف) — وهذا أمر بالغ الأهمية، إذ يعتمد الموقع في مقارنته على ترددات محسوبة بناءً على هذا الإعداد تحديداً.<br>
       ٢. استمع إلى المقام أو السلم أو التمرين أو الكورد المطلوب عبر زر ▶ العادي، بقدر ما تحتاج من مرات، قبل الشروع في التحقق.</p>
@@ -2053,7 +2064,7 @@ input[type="radio"] {
       <p>A feature that lets the site "listen" to you as you play your real oud, and automatically checks whether you played the displayed maqam, scale, exercise, or chord correctly — note by note.</p>
       <p>🔹 <strong>General rule for how the microphone works:</strong> once you tap 🎤, it stays continuously in listening mode — even if you switch the maqam, scale, or chord, and even after successfully completing a sequence — and it only stops in one of two cases: tapping the ▶ (normal play) button, or tapping 🎤 itself again to stop it manually.</p>
       <p>🔹 <strong>Not limited to the oud:</strong> since the feature works by measuring the pitch picked up by your microphone, you can try it with any other instrument you own (piano, violin, guitar...), or you can even take the test using your own voice (humming or singing the target note) instead of playing an instrument — as long as the pitch you produce matches the target frequency, it will be accepted the exact same way.</p>
-      <p>🔹 <strong>Where to find it:</strong> the 🎤 button right above the fretboard, next to the hand-orientation (left/right) button — available in every mode: Arabic maqamat, Western scales, exercises, and chords too.</p>
+      <p>🔹 <strong>Where to find it:</strong> the 🎤 button sits over the headstock area at the end of the fretboard (next to the string names: Fa, La, Re, Sol, Do, Fa) — available in every mode: Arabic maqamat, Western scales, exercises, and chords too.</p>
       <p>🔹 <strong>Before you start:</strong></p>
       <p>1. Set the "Tuning" from the menu below the player to match your real oud's tuning (Standard, Half-step down, Full-step down, or Step-and-a-half down) — this matters a lot, since the site compares against frequencies calculated specifically from this setting.<br>
       2. Listen to the target maqam, scale, exercise, or chord using the normal ▶ button, as many times as you need, before trying the verification.</p>
@@ -2807,8 +2818,6 @@ window.isArabicMode = false;
     if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
     if (audioCtxMic) { try { audioCtxMic.close(); } catch(e){} audioCtxMic = null; }
     updateMicBtnVisual();
-    const dbg = document.getElementById('micDebugDisplay');
-    if (dbg) dbg.style.display = 'none';
   }
 
   // منطق المزامنة نفسه، مستقل بدالة لحاله — نستدعيها بشكلين: بشكل سلبي (كل تِك بحلقة
@@ -2933,24 +2942,6 @@ window.isArabicMode = false;
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
-
-    const dbg = document.getElementById('micDebugDisplay');
-    if (dbg && expectedSequence[currentNoteIndex]) {
-      const exp = expectedSequence[currentNoteIndex];
-      const scaleIdxAttr = exp.rect.getAttribute('data-scale-idx');
-      const centsNow = freq !== -1 ? (1200 * Math.log2(freq / exp.freq)).toFixed(0) : '—';
-      const holdInfo = lastGoodTime
-        ? `مطابقة منذ ${(performance.now()-lastGoodTime).toFixed(0)}ms`
-        : (lastBadTime ? `خطأ منذ ${(performance.now()-lastBadTime).toFixed(0)}ms` : 'غير مطابقة');
-      // معلومات تشخيصية إضافية: هل العنصر المرجعي لسا متصل بالـDOM فعلياً (لو "لا"، معناها
-      // مرجع قديم ما تجدّد)، واسم المقام المختار حالياً بالقائمة — يفيد لو ظهرت مشكلة
-      // مشابهة مستقبلاً على جهاز معيّن، نقدر نقارن بسرعة من غير الحاجة لأدوات مطوّر
-      const connInfo = exp.rect.isConnected ? 'متصل' : 'منفصل!';
-      const msEl = document.getElementById('maqam-select');
-      const selectedMaqamNow = msEl ? msEl.value : '—';
-      dbg.style.display = 'block';
-      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}, ${connInfo}) | مقام القائمة: ${selectedMaqamNow} | حالة الصوت: ${audioCtxMic ? audioCtxMic.state : '—'} | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
-    }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
@@ -4298,10 +4289,19 @@ function buildOudStatic(){
     oudControlBtnsLayer.appendChild(makeSingleHandBtn(hand1X, handY));
     // زر التحقق (مايكروفون) صار زر HTML عادي فوق الرسمة (أضمن للمس بالجوال من عنصر SVG)
     // نخزن إحداثياته بالـwindow عشان دالة التموضع الخارجية توصلها وتحدّث مكانه بعد كل رسم
-    window.micBtnSvgX = hand2X;
-    window.micBtnSvgY = handY;
-    window.micBtnSvgW = handW;
-    window.micBtnSvgH = handH;
+    // نضعه فوق منطقة أسماء أوتار العود (فا/لا/رى/صول/دو/فا) عند نهاية الزند — قريب من جهة
+    // مفاتيح الضبط (بعيد عن صناديق النغمات عند الفرس المرئي)، عشان يضل بعيد عن أي عنصر
+    // ثاني بالواجهة (زي أزرار نوع السلم) بغض النظر عن حجم الشاشة أو اتجاهها
+    const micTargetXNatural = NECK_JOINT_END_X - handW * 0.32;
+    const micTargetYNatural = (neckYTopAtNut + neckYBotAtNut) / 2;
+    // ملاحظة: جرّبنا انعكاس هذا الموقع بنفس معادلة mirrorXForBtns بس طلعت نتيجة خارج حدود
+    // الرسمة تماماً (المحور المستخدم فيها مُعاير لمنطقة زري اليد الأوسط، مو لمنطقة عنق
+    // الرأس البعيدة) — لين نتأكد بصرياً من السلوك الصحيح بوضع اليد اليسرى، نستخدم نفس
+    // الإحداثي الطبيعي بالوضعين مؤقتاً (قد يحتاج ضبط دقيق بوضع اليد اليسرى تحديداً)
+    window.micBtnSvgX = micTargetXNatural;
+    window.micBtnSvgY = micTargetYNatural;
+    window.micBtnSvgW = handW * 0.75; // نصغّره شوي عشان يناسب مساحة عنق الرأس الأضيق نسبياً
+    window.micBtnSvgH = handH * 0.75;
     if (typeof window.positionMicHtmlBtn === 'function') {
       window.positionMicHtmlBtn();
       // إعادة محاولة بعد لحظة قصيرة احتياطاً، تحسباً إن الرسمة ما اكتمل تخطيطها بعد وقت أول استدعاء
