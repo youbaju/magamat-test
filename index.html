@@ -4412,9 +4412,9 @@ function buildOudStatic(){
       });
       return lg;
     }
-    const naturalLangX = helpBx_outer; // زر اللغة انتقل للمكان الخارجي (كان مكان زر المساعدة)، عشان يضل دايماً جنب زر Do/C المستقبلي
+    const naturalLangX = helpBx_outer; // زر اللغة يبقى بمكانه القديم (تحت الزند)، ما تغيّر
     const langBtnFinalX = window.isLeftHanded ? naturalLangX : mirrorXForBtns(naturalLangX);
-    const langBtn = makeLanguageBtn(langBtnFinalX, helpY);
+    const langBtn = makeLanguageBtn(langBtnFinalX, micBy); // micBy = نفس ارتفاع مكان زر المساعدة القديم تحت الزند (helpY صار الحين لموقع زر المساعدة الجديد فوق الزند، فما يصلح هنا)
     oudControlBtnsLayer.appendChild(langBtn);
     // أي ضغطة بأي مكان بالصفحة (مو بس الزر نفسه) توقف الوميض — "استخدم الموقع" = فهم وجود الزر
     if (!window._langPulseDismissed) {
@@ -4468,7 +4468,7 @@ function buildOudStatic(){
       }
       const naturalNoteSysX = naturalLangX + helpBtnW + handGap; // زر جديد بمكان خارجي إضافي (أبعد عن "؟")، ملاصق لزر اللغة من الخارج
       const noteSysFinalX = window.isLeftHanded ? naturalNoteSysX : mirrorXForBtns(naturalNoteSysX);
-      oudControlBtnsLayer.appendChild(makeNoteSystemBtn(noteSysFinalX, helpY));
+      oudControlBtnsLayer.appendChild(makeNoteSystemBtn(noteSysFinalX, micBy));
     }
   }
 
