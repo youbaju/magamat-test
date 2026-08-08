@@ -3618,6 +3618,8 @@ function selectChord(ch, btnEl){
   if (typeof resetPlayer === 'function') resetPlayer(); // نوقف أي سلم تسلسلي شغال، ونرجع الزر لحالة "▶"
   localStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
   if (typeof startChordPlaying === 'function') startChordPlaying(); // نشغّل صوت الكورد فوراً بمجرد اختياره، بدون ما ننتظر ضغطة ▶ بالمشغل — تسهيلاً لسماعه بسرعة
+  // نفس فكرة الخطاف بدالتي showMaqam وrenderAll — يغطي اختيار أي كورد جديد
+  if (typeof window.scheduleImmediateMicResync === 'function') window.scheduleImmediateMicResync();
 }
 
 function startChordPlaying(){
@@ -4931,6 +4933,9 @@ document.getElementById('helpCloseBtn').addEventListener('click', function() {
 window.renderAll = function renderAll(){
   if(window.isArabicMode) return;
   drawOudScale(state.root, state.scaleType);
+  // نفس فكرة الخطاف بدالة showMaqam — نقطة وحيدة تغطي كل طرق تبديل الجذر أو نوع السلم
+  // الغربي (دائرة الخامسات، أزرار النوع، إلخ) بدون الحاجة نربط كل زر لحاله
+  if (typeof window.scheduleImmediateMicResync === 'function') window.scheduleImmediateMicResync();
 }
 
 if(!window.isArabicMode) renderAll();
@@ -7929,6 +7934,10 @@ window.wxResume = wxResume;
         window.isArabicMode = false;
         currentAudioPath = `sounds/${fasilaFolder[fasila]}/${maqamFolder[maqam]}/${harf}.mp3`;
       }
+      // نستدعي مزامنة "تحقق من عزفي" هنا مباشرة (لو كانت شغالة) — أضمن نقطة وحيدة تغطي
+      // كل طرق اختيار المقام (القائمة المباشرة، أزرار عائلة المقام بالراديو، الاستعادة من
+      // localStorage، إلخ)، بدل ما نحاول نربط كل عنصر تحكم لحاله ونفوّت واحد منها بالغلط
+      if (typeof window.scheduleImmediateMicResync === 'function') window.scheduleImmediateMicResync();
     }
 
     document.getElementById('showBtn').onclick = showMaqam;
