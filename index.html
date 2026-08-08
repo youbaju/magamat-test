@@ -2811,37 +2811,69 @@ window.isArabicMode = false;
     if (dbg) dbg.style.display = 'none';
   }
 
-  function listenLoop(){
+  // منطق المزامنة نفسه، مستقل بدالة لحاله — نستدعيها بشكلين: بشكل سلبي (كل تِك بحلقة
+  // الاستماع، كإجراء احتياطي)، وبشكل فوري نشط (مباشرة لحظة ما تضغط قائمة المقام/السلم/
+  // الكورد، بدون انتظار التِك الجاي) — الاعتماد على التِك فقط ما كان يكفي دايماً على بعض
+  // الأجهزة (خصوصاً السفاري بالآيباد)، فالاستدعاء الفوري يضمن المزامنة تصير مهما كان الجهاز
+  function performMicResyncIfNeeded(){
     if (verifyState !== 'listening') return;
-
-    // نكتشف تلقائياً لو المحتوى المعروض تغيّر (بدّلت المقام، الحرف، السلم، أو اخترت كورد
-    // جديد) وأنت لسا بوضع الاستماع — بدل ما نطلب منك تضغط 🎤 من جديد لكل مقام تجربه،
-    // نعيد "مزامنة" الاختبار تلقائياً على المحتوى الجديد ونكمّل الاستماع بلا انقطاع
     const freshSeq = getExpectedSequence();
     if (freshSeq.length === 0) {
-      // ما بقى فيه شي معروض للتحقق منه (مثلاً المستخدم غادر صفحة الزند) — نوقف بلطف
       stopVerify();
       return;
     }
     const freshSig = sequenceSignature(freshSeq);
-    if (freshSig !== lastSequenceSignature) {
-      // نوقف أي صوت شغّاله الموقع نفسه هنا أولاً، قبل ما نلتقط النغمات ونلوّن — مهم جداً:
-      // بعض دوال الإيقاف (زي إعادة ضبط مشغل المقام العربي arResetPlayer) تعيد رسم الزند
-      // من جديد بنفسها كأثر جانبي (عشان تصفّر تظليل التشغيل الأحمر)، ولو كنا لوّنّا
-      // الدرجة الأولى صفراء قبل هذا الاستدعاء، كان ينمسح فوراً بإعادة الرسم الجانبية هذي
-      // (وهذا بالضبط سبب اختفاء المربع الأصفر بعد تبديل المقام أثناء الاستماع)
-      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
-      // نعيد القراءة من جديد بعد أي إعادة رسم جانبية محتملة، عشان نضمن نمسك العناصر
-      // النهائية المستقرة المعروضة فعلياً على الشاشة، لا عناصر قديمة راح تُستبدل بعد شوي
-      expectedSequence = getExpectedSequence();
-      lastSequenceSignature = sequenceSignature(expectedSequence);
-      currentNoteIndex = 0;
-      resetAllNotesVisual();
-      highlightCurrentTarget();
-      // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
-      // المحتوى الجديد كورد يشتغل صوته تلقائياً) تخلص وتهدأ تماماً
-      micSettleUntil = performance.now() + 500;
+    if (freshSig === lastSequenceSignature) return;
+    // نوقف أي صوت شغّاله الموقع نفسه هنا أولاً، قبل ما نلتقط النغمات ونلوّن — مهم جداً:
+    // بعض دوال الإيقاف (زي إعادة ضبط مشغل المقام العربي arResetPlayer) تعيد رسم الزند
+    // من جديد بنفسها كأثر جانبي (عشان تصفّر تظليل التشغيل الأحمر)، ولو كنا لوّنّا
+    // الدرجة الأولى صفراء قبل هذا الاستدعاء، كان ينمسح فوراً بإعادة الرسم الجانبية هذي
+    if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+    // نعيد القراءة من جديد بعد أي إعادة رسم جانبية محتملة، عشان نضمن نمسك العناصر
+    // النهائية المستقرة المعروضة فعلياً على الشاشة، لا عناصر قديمة راح تُستبدل بعد شوي
+    expectedSequence = getExpectedSequence();
+    lastSequenceSignature = sequenceSignature(expectedSequence);
+    currentNoteIndex = 0;
+    resetAllNotesVisual();
+    highlightCurrentTarget();
+    // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
+    // المحتوى الجديد كورد يشتغل صوته تلقائياً) تخلص وتهدأ تماماً
+    micSettleUntil = performance.now() + 500;
+  }
+
+  // نستدعي المزامنة فوراً (بدون انتظار أي تِك) — نأجّلها خطوة واحدة فقط (0ms) عشان نضمن
+  // إن أي معالج حدث ثاني مرتبط بنفس الضغطة (زي إعادة رسم الزند الفعلية) خلص تنفيذه أول
+  function scheduleImmediateMicResync(){
+    setTimeout(performMicResyncIfNeeded, 0);
+  }
+  window.scheduleImmediateMicResync = scheduleImmediateMicResync;
+
+  // نربط المزامنة الفورية بكل عنصر تحكم ممكن يغيّر المحتوى المعروض على الزند — بأسلوب
+  // "تفويض الأحداث" (Event Delegation) على document نفسه، عشان تشتغل بغض النظر عن توقيت
+  // إنشاء العناصر أو ترتيب تسجيل باقي المستمعين بالكود
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!t || !t.id) return;
+    if (t.id === 'maqam-select' || t.id === 'harf-select' || t.id === 'shared-tuningSelect') {
+      scheduleImmediateMicResync();
     }
+  });
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t) return;
+    if (t.closest && (t.closest('.scale-btn') || t.closest('.c-chords-type-btn') || t.closest('.c-chord-btn'))) {
+      scheduleImmediateMicResync();
+    }
+  });
+
+  function listenLoop(){
+    if (verifyState !== 'listening') return;
+
+    // فحص احتياطي سلبي (كل تِك)، بالإضافة للاستدعاء الفوري النشط أعلاه — طبقة حماية مزدوجة
+    performMicResyncIfNeeded();
+    // الدالة أعلاه ممكن توقف التحقق بالكامل من الداخل (لو ما عاد فيه محتوى معروض للتحقق
+    // منه) — لازم نتأكد نتوقف هنا كمان، وإلا كملنا الكود تحت على متغيرات صوتية صارت فاضية
+    if (verifyState !== 'listening') return;
 
     // حماية إضافية: نتأكد كل إطار إن كل الدرجات اللي خلّصناها صح لسا خضراء فعلياً على
     // الشاشة (حتى لو انعاد رسم الزند بالخلفية لأي سبب وولّد عناصر جديدة بلون أزرق افتراضي).
