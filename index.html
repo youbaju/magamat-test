@@ -2829,6 +2829,11 @@ window.isArabicMode = false;
     // من جديد بنفسها كأثر جانبي (عشان تصفّر تظليل التشغيل الأحمر)، ولو كنا لوّنّا
     // الدرجة الأولى صفراء قبل هذا الاستدعاء، كان ينمسح فوراً بإعادة الرسم الجانبية هذي
     if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+    // نفس فحص استئناف السياق الصوتي (بالأسفل بحلقة الاستماع)، بس هنا بأقرب لحظة ممكنة
+    // من التفاعل نفسه (مو بس بالتِك التالي)
+    if (audioCtxMic && audioCtxMic.state === 'suspended') {
+      audioCtxMic.resume();
+    }
     // نعيد القراءة من جديد بعد أي إعادة رسم جانبية محتملة، عشان نضمن نمسك العناصر
     // النهائية المستقرة المعروضة فعلياً على الشاشة، لا عناصر قديمة راح تُستبدل بعد شوي
     expectedSequence = getExpectedSequence();
@@ -2917,6 +2922,14 @@ window.isArabicMode = false;
       return;
     }
 
+    // بعض المتصفحات (خصوصاً سفاري بالآيفون/الآيباد) تعلّق (Suspend) السياق الصوتي تلقائياً
+    // كإجراء توفير طاقة، أحياناً بمجرد أي تفاعل بالصفحة (زي اختيار مقام جديد) — لو صار
+    // هذا، الكشف يفضل معطّل تماماً (يرجع بيانات فاضية) بصمت بدون أي خطأ ظاهر. نتأكد
+    // نستأنفه فوراً كل إطار لو لقيناه معلّق، بدل ما يفضل ميت للأبد بصمت
+    if (audioCtxMic && audioCtxMic.state === 'suspended') {
+      audioCtxMic.resume();
+    }
+
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
     const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
@@ -2936,7 +2949,7 @@ window.isArabicMode = false;
       const msEl = document.getElementById('maqam-select');
       const selectedMaqamNow = msEl ? msEl.value : '—';
       dbg.style.display = 'block';
-      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}, ${connInfo}) | مقام القائمة: ${selectedMaqamNow} | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
+      dbg.textContent = `درجة ${currentNoteIndex+1}/${expectedSequence.length} (idx=${scaleIdxAttr}, ${connInfo}) | مقام القائمة: ${selectedMaqamNow} | حالة الصوت: ${audioCtxMic ? audioCtxMic.state : '—'} | مكتشف: ${freq !== -1 ? freq.toFixed(1) : '—'}Hz | متوقع: ${exp.freq.toFixed(1)}Hz | فرق: ${centsNow} سنت | ${holdInfo}`;
     }
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
