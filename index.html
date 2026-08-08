@@ -2823,7 +2823,9 @@ window.isArabicMode = false;
     try {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
-      showMicCustomNotice('محتاجين إذن الوصول للمايكروفون عشان تشتغل ميزة "تحقق من عزفي"', 6000);
+      // ما نعرض رسالة مخصصة هنا عمداً — نافذة إذن المتصفح نفسها (اللي طلعت قبل هذا
+      // الرفض) كافية توضح للمستخدم وش صار، وإضافة رسالة ثانية فوقها تصير إزعاج غير ضروري
+      updateMicBtnVisual();
       // نسجّل بـGoogle Analytics حالة رفض إذن المايكروفون — يفيد لو لاحظنا نسبة عالية من
       // الرفض، يعني ناس يحاولون يستخدمون الميزة بس ما توصلهم أو يترددون بمنح الإذن
       if (typeof window.gtag === 'function') window.gtag('event', 'mic_verify_permission_denied');
