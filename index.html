@@ -1860,6 +1860,7 @@ input[type="radio"] {
       ٧. إذا أتممت التسلسل كاملاً وبشكل صحيح من البداية إلى النهاية، ستصلك رسالة تهنئة، ثم تعود الدرجة الأولى للإضاءة الصفراء من جديد، والاستماع يستمر دون توقف — جاهز فوراً لمحاولة أخرى.</p>
       <p>🔹 <strong>تجربة أكثر من مقام أو سلم دون توقف:</strong> يظل الميكروفون يعمل حتى إن بدّلت المقام أو المحطّ أو السلم أو اخترت كورداً جديداً وأنت لا تزال في وضع الاستماع — يكتشف الموقع التغيير تلقائياً ويبدأ التحقق من المحتوى الجديد فوراً، دون الحاجة لضغط 🎤 من جديد لكل مقام تجربه.</p>
       <p>🔹 <strong>ملاحظة:</strong> إذا ضغطت زر ▶ (التشغيل العادي) وأنت في وضع الاستماع، يتوقف التحقق تلقائياً — لأنك على الأغلب ترغب في سماع المقام الجديد أولاً قبل اختباره، ولتفادي دخول صوت التشغيل نفسه عبر الميكروفون. اضغط 🎤 من جديد متى كنت جاهزاً للاختبار.</p>
+      <p>🔹 <strong>التحقق مع وضع التمارين ("تمرين جديد"):</strong> لو كنت بوضع تمرين نشط، التحقق يتبع <strong>نفس النمط الفعلي</strong> اللي التمرين ولّده (ثلاثيات، أربيجيو، سداسيات، مشي لحني...) بترتيبه بالضبط — مو ترتيباً تصاعدياً بسيطاً. يعني لو التمرين يطلب منك تعزف "الأولى، الثالثة، الخامسة، الثامنة، الخامسة، الثالثة، الأولى" (نمط أربيجيو مثلاً)، التحقق يطلب نفس هذا الترتيب بالضبط، حتى لو تكررت نفس الدرجة أكثر من مرة بمواضع مختلفة بالتمرين.</p>
       <p>🔹 <strong>لإيقاف المحاولة يدوياً</strong> في أي وقت، اضغط 🎤 (أو <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span>) مرة أخرى.</p>
       <p>🔹 <strong>نصائح لتحقيق أفضل دقة:</strong></p>
       <p>- اعزف بصوت واضح ومستمر (دع الوتر يرنّ ثانية واحدة على الأقل)، لا بنقرة سريعة خفيفة.<br>
@@ -2066,6 +2067,7 @@ input[type="radio"] {
       7. If you complete the entire sequence correctly from start to finish, you'll get a congratulatory message, then the first note lights up yellow again and listening continues uninterrupted — ready for another attempt right away.</p>
       <p>🔹 <strong>Try multiple maqamat or scales without stopping:</strong> the microphone stays active even if you switch the maqam, root, scale, or select a new chord while listening — it automatically detects the change and starts checking the new content right away, no need to tap 🎤 again for every new maqam you try.</p>
       <p>🔹 <strong>Note:</strong> if you tap the ▶ (normal play) button while listening, verification stops automatically — since you likely want to hear the new maqam first before testing it, and to avoid the playback sound itself leaking into the microphone. Tap 🎤 again when you're ready to test.</p>
+      <p>🔹 <strong>Verifying with Exercise mode ("New Exercise"):</strong> if an exercise is active, verification follows the <strong>exact actual pattern</strong> the exercise generated (thirds, arpeggio, sixths, melodic walk...) in its precise order — not a simple ascending order. So if the exercise asks you to play "1st, 3rd, 5th, 8th, 5th, 3rd, 1st" (an arpeggio pattern, for example), verification asks for that exact same order, even when the same degree repeats at different points in the exercise.</p>
       <p>🔹 <strong>To stop the attempt manually</strong> at any time, tap 🎤 (or <span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:#d64545; vertical-align:middle;"></span>) again.</p>
       <p>🔹 <strong>Tips for best accuracy:</strong></p>
       <p>- Play with a clear, sustained sound (let the note ring for at least a second), not a quick light pluck.<br>
@@ -2599,9 +2601,51 @@ window.isArabicMode = false;
     return window.chordModeActive ? 'chordHighlightLayer' : 'oudNotesLayer';
   }
 
+  // لو فيه تمرين نشط (زر "تمرين جديد")، التسلسل الفعلي اللي المفروض تعزفه مو بالضرورة
+  // تصاعدي بسيط (٠،١،٢،٣...) — أنماط التمرين (ثلاثيات، أربيجيو، سداسيات، مشي لحني...)
+  // ترجع وتتكرر بترتيب معيّن (زي ١-٣-٥-٨-٥-٣-١ بالأربيجيو). هذي الدالة تقرأ التسلسل
+  // الحقيقي اللي التمرين ولّده (window.exSequence) بنفس ترتيبه بالضبط، وتحسب تردد كل
+  // خطوة بالدوزان الحالي وقت الاستدعاء (مو تردد محفوظ من وقت توليد التمرين، عشان
+  // يعكس آخر دوزان اخترته حتى لو غيّرته بعد ما بدأ التمرين)
+  function getExerciseExpectedSequence(){
+    const isExerciseActive = window.exerciseActive || window.wxExerciseActive;
+    const seq = window.exSequence;
+    if (!isExerciseActive || !Array.isArray(seq) || seq.length === 0) return null;
+    const layer = document.getElementById(getActiveNotesLayerId());
+    if (!layer) return null;
+    const tuningOffsetNow = parseFloat(document.getElementById('shared-tuningSelect')?.value) || 0;
+    const result = [];
+    seq.forEach(step => {
+      if (step.deg === null || step.deg === undefined) return; // خطوة سكوت (صمت) — نتخطاها، ما فيها نغمة نتحقق منها
+      const degIdx = step.deg - 1;
+      let freq = null;
+      if (window.isArabicMode && typeof window.posToFreq === 'function' && typeof step.effQ === 'number') {
+        // مقام عربي: effQ رقم "أرباع من صول" — نحوّله لتردد فعلي بالدوزان الحالي
+        freq = window.posToFreq(step.effQ);
+      } else if (!window.isArabicMode && step.effQ && typeof step.effQ === 'object') {
+        // سلم غربي: effQ عبارة عن {string, fret, freq} — نعيد حساب التردد بالدوزان
+        // الحالي بدل ما نعتمد على .freq المخزّن (ممكن يكون قديم لو تغيّر الدوزان بعدها)
+        if (typeof OUD !== 'undefined' && OUD.frequencyAt && typeof step.effQ.string === 'number' && typeof step.effQ.fret === 'number') {
+          freq = OUD.frequencyAt(step.effQ.string, step.effQ.fret, tuningOffsetNow);
+        } else if (typeof step.effQ.freq === 'number') {
+          freq = step.effQ.freq; // احتياط لو ما قدرنا نعيد الحساب لأي سبب
+        }
+      }
+      if (freq === null || isNaN(freq) || freq <= 0) return;
+      const rect = layer.querySelector(`rect[data-scale-idx="${degIdx}"]`);
+      if (!rect) return;
+      result.push({ freq, rect });
+    });
+    return result.length > 0 ? result : null;
+  }
+
   // نقرأ التسلسل الحالي المعروض على الزند مباشرة من الـDOM (يشتغل بنفس الطريقة
-  // للمقام العربي والسلم الغربي والتمرين والكورد، لأنهم كلهم يرسمون بنفس نمط data-scale-idx/data-freq)
+  // للمقام العربي والسلم الغربي والكورد، لأنهم كلهم يرسمون بنفس الحاوية بنفس نمط
+  // data-scale-idx/data-freq) — إلا لو فيه تمرين نشط، وقتها نتبع ترتيبه الحقيقي بدل
+  // الترتيب التصاعدي البسيط (شوف getExerciseExpectedSequence أعلاه)
   function getExpectedSequence(){
+    const exerciseSeq = getExerciseExpectedSequence();
+    if (exerciseSeq) return exerciseSeq;
     const layer = document.getElementById(getActiveNotesLayerId());
     if (!layer) return [];
     const rects = Array.from(layer.querySelectorAll('rect[data-scale-idx][data-freq]'));
@@ -2620,6 +2664,7 @@ window.isArabicMode = false;
 
   // بصمة نصية بسيطة تمثّل "شكل" التسلسل المعروض حالياً (الطبقة + الترددات) — نقارنها كل
   // إطار وقت الاستماع عشان نكتشف تلقائياً لو المستخدم بدّل المقام/الحرف/السلم/الكورد
+  // (أو ولّد تمرين جديد بنمط مختلف — الترتيب يختلف فيتغيّر النص حتى لو نفس الترددات)
   function sequenceSignature(seq){
     return getActiveNotesLayerId() + '|' + seq.map(it => it.freq.toFixed(1)).join(',');
   }
@@ -6642,6 +6687,9 @@ window.wxResume = wxResume;
       const tuningOffset = parseFloat(document.getElementById('shared-tuningSelect').value) || 0;
       return SOL3_FREQ * Math.pow(2, (quartersFromSol / 24) + (tuningOffset / 12));
     }
+    // نعرّضها على window عشان سكربت "تحقق من عزفي" (IIFE منفصلة) يقدر يستخدمها لحساب
+    // تردد نغمات تمرين المقام العربي بالدوزان الحالي دايماً (تقرأ القائمة مباشرة وقت النداء)
+    window.posToFreq = posToFreq;
 
     // يعيد حساب data-freq لكل النغمات المعروضة حالياً على الزند (مقام عربي أو سلم غربي)
     // بناءً على الدوزان الحالي — يُستدعى فوراً كل ما المستخدم يغيّر الدوزان من القائمة
