@@ -2900,7 +2900,11 @@ window.isArabicMode = false;
           lastGoodTime = 0;
           if (currentNoteIndex >= expectedSequence.length) {
             const doneSeq = expectedSequence;
-            stopVerify();
+            // ما نوقف الاستماع بالكامل هنا (ما ننادي stopVerify) — نبقيه شغال، عشان تقدر
+            // تعيد نفس المحتوى أو تبدّل لمقام/سلم/كورد ثاني فوراً بدون ما تحتاج تضغط 🎤
+            // من جديد، بنفس مبدأ "الاستماع المستمر" اللي طبّقناه لتبديل المحتوى أثناء التحقق
+            lastGoodTime = 0;
+            lastBadTime = 0;
             // نسجّل بـGoogle Analytics إتمام محاولة تحقق كاملة بنجاح — نفرّق بينه وبين
             // "mic_verify_start" عشان نعرف نسبة الإتمام الفعلية، مو بس كم شخص جرّب الزر
             if (typeof window.gtag === 'function') {
@@ -2919,7 +2923,18 @@ window.isArabicMode = false;
                 item.rect._origStroke = null;
               });
               clearResultMarks();
+              // نرجّع للبداية جاهزين لمحاولة جديدة — نفس المحتوى، أو محتوى جديد لو بدّلته
+              // وأنت تشوف رسالة التهنئة (نعيد القراءة من جديد احتياطاً بدل الاعتماد على
+              // القديم). لو المستخدم أوقف الاستماع بنفسه أو ضغط ▶ خلال الرسالة، ما نسوي شي
+              if (verifyState === 'listening') {
+                currentNoteIndex = 0;
+                expectedSequence = getExpectedSequence();
+                lastSequenceSignature = sequenceSignature(expectedSequence);
+                resetAllNotesVisual();
+                highlightCurrentTarget();
+              }
             }, 250);
+            rafId = requestAnimationFrame(listenLoop);
             return;
           }
           highlightCurrentTarget();
