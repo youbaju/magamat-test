@@ -2525,15 +2525,12 @@ window.isArabicMode = false;
 
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
-  // نفس فكرة freqToCents، بس "تطوي" فرق الأوكتافات لأقرب مسافة ممكنة (0-600 سنت) —
-  // يحل مشاكل خطأ الأوكتاف بخوارزمية الكشف (شائعة مع النغمات الرنّانة زي الأوتار المفتوحة،
-  // مثال: عزف "الرى" العادي يُكتشف أحياناً كـ"جواب الرى" بسبب توافقياته القوية) بدون
-  // التأثير على دقة التمييز بين نغمات مختلفة فعلياً (دو عن رى يبقى مرفوض زي ما هو)
-  function foldedCentsDiff(f1, f2){
-    const raw = freqToCents(f1, f2);
-    let folded = ((raw % 1200) + 1200) % 1200;
-    if (folded > 600) folded = 1200 - folded;
-    return folded;
+  // ملاحظة تاريخية: كانت هنا دالة "تطوي" فرق الأوكتافات (foldedCentsDiff) عشان تتجاوز
+  // أخطاء كشف الأوكتاف بالخوارزمية (شائعة بالأوتار الرنّانة). لكن هذا كان يقبل بالغلط
+  // عزف الأوكتاف الخاطئ فعلياً (جواب النغمة أو قرارها) كأنه نفس النغمة الصحيحة — قرار
+  // واعي بإلغائها بالكامل: الدقة أهم من التساهل، والأوكتاف الغلط خطأ حقيقي لازم يُرفض
+  function exactCentsDiff(f1, f2){
+    return Math.abs(freqToCents(f1, f2));
   }
 
   // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
@@ -3032,7 +3029,7 @@ window.isArabicMode = false;
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
       expected.rect = getLiveRect(expected.rect); // نضمن إننا نلوّن العنصر المعروض فعلياً على الشاشة، حتى لو انعاد رسم الزند بالخلفية
-      const cents = foldedCentsDiff(freq, expected.freq);
+      const cents = exactCentsDiff(freq, expected.freq);
 
       if (cents < getCentsMatchThreshold()) {
         lastBadTime = 0; // قراءة جيدة توقف عداد الخطأ لو كان قاعد يتراكم
