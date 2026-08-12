@@ -1601,6 +1601,7 @@ input[type="radio"] {
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
     <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
+    <div id="DIAGNOSTIC_BAR" style="display:none; position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:999999; background:rgba(0,0,0,.9); color:#0f0; padding:10px 16px; border-radius:10px; font-size:14px; font-family:monospace; direction:ltr; text-align:center; white-space:nowrap; max-width:95vw; overflow-x:auto; border:2px solid #0f0;"></div>
     <div id="micCustomNoticeBackdrop" style="display:none; position:fixed; inset:0; z-index:999998; background:rgba(20,14,8,.55); align-items:center; justify-content:center; padding:20px;">
       <div id="micCustomNotice" role="alert" style="max-width:min(92vw,440px); background:linear-gradient(180deg,#fffaf0,#fbf1dd); border:2px solid #c9a14a; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.45); padding:22px 26px; text-align:center; font-family:'Cairo',Arial,sans-serif; color:#3d2f18; position:relative; opacity:0; transform:scale(.85); transition:opacity .22s ease, transform .22s ease;">
         <div id="micCustomNoticeText" style="font-size:18px; font-weight:700; line-height:1.7;"></div>
@@ -3048,6 +3049,16 @@ window.isArabicMode = false;
       const expected = expectedSequence[currentNoteIndex];
       expected.rect = getLiveRect(expected.rect); // نضمن إننا نلوّن العنصر المعروض فعلياً على الشاشة، حتى لو انعاد رسم الزند بالخلفية
       const cents = exactCentsDiff(freq, expected.freq);
+
+      // === نسخة تشخيصية بس: تحديث حي للشريط المرئي بأسفل الشاشة ===
+      const diagBar = document.getElementById('DIAGNOSTIC_BAR');
+      if (diagBar) {
+        diagBar.style.display = 'block';
+        const ratio = (freq / expected.freq).toFixed(3);
+        const degIdxNow = expected.rect.getAttribute('data-scale-idx');
+        diagBar.textContent = `درجة #${degIdxNow} | متوقع: ${expected.freq.toFixed(2)}Hz | مكتشف: ${freq.toFixed(2)}Hz | النسبة: ${ratio} | فرق: ${cents.toFixed(0)} سنت`;
+      }
+      // === نهاية الجزء التشخيصي ===
 
       if (cents < getCentsMatchThreshold()) {
         lastBadTime = 0; // قراءة جيدة توقف عداد الخطأ لو كان قاعد يتراكم
