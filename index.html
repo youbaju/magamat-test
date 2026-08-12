@@ -2508,6 +2508,9 @@ window.isArabicMode = false;
   let micBtnText = null;
   let lastGoodTime = 0;
   let lastBadTime = 0;
+  let recentFreqReadings = []; // آخر عدة قراءات صالحة (مو -1) — نستخدم "الوسيط" منها بدل القراءة اللحظية الخام،
+                                // عشان نتجاوز نقرات عزف نادرة يغيب فيها التردد الأساسي فعلياً (ظاهرة صوتية حقيقية
+                                // بالآلات الوترية، مو خلل كشف) بدون التأثير على الدقة لو كانت النغمة فعلاً غلط
   let lastSequenceSignature = ''; // بصمة نصية بسيطة للنغمات المعروضة حالياً (نغيّرها لو تغيّر المقام/السلم/الكورد وأنت لسا بوضع الاستماع)
   let micSettleUntil = 0; // بعد أي إعادة مزامنة تلقائية، نتجاهل القراءات لفترة قصيرة عشان أي صدى صوت يهدأ
 
@@ -2534,6 +2537,18 @@ window.isArabicMode = false;
     let folded = ((raw % 1200) + 1200) % 1200;
     if (folded > 600) folded = 1200 - folded;
     return folded;
+  }
+
+  // فلتر الوسيط (Median Filter) — تقنية معالجة إشارة معروفة ومضمونة لتصفية القراءات
+  // الشاذة العابرة (Outliers) بدون التأثير على القراءات الحقيقية المتكررة. بعض نقرات
+  // العزف الفردية — لظروف صوتية حقيقية بمكان/قوة النقرة، مو خلل بالكود — تُنتج موجة
+  // يغيب منها التردد الأساسي شبه كلياً لحظياً، بينما باقي النقرات لنفس النغمة تُقرأ صح
+  // تماماً. الوسيط يحل هذا: لو أغلب القراءات بالنافذة الزمنية الأخيرة صحيحة وقراءة واحدة
+  // شاذة، الوسيط يتجاهل الشاذة تلقائياً — ولو أغلب القراءات فعلاً غلط، يعكس هذا صح
+  function medianOf(arr){
+    const sorted = [...arr].sort((a,b) => a-b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
   }
 
   // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
@@ -2824,6 +2839,7 @@ window.isArabicMode = false;
       ترتيب: i, scaleIdx: it.rect.getAttribute('data-scale-idx'), تردد: it.freq.toFixed(1)
     })));
     currentNoteIndex = 0;
+    recentFreqReadings = [];
     lastSequenceSignature = sequenceSignature(expectedSequence);
     resetAllNotesVisual();
     try {
@@ -2940,6 +2956,7 @@ window.isArabicMode = false;
     expectedSequence = getExpectedSequence();
     lastSequenceSignature = sequenceSignature(expectedSequence);
     currentNoteIndex = 0;
+    recentFreqReadings = [];
     resetAllNotesVisual();
     highlightCurrentTarget();
     // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
@@ -3035,7 +3052,14 @@ window.isArabicMode = false;
 
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
-    const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+    const rawFreq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+
+    // نجمع القراءات الصالحة الأخيرة (٣٥٠ ملي ثانية) ونستخدم "الوسيط" منها بدل القراءة
+    // اللحظية الخام مباشرة — يمتص نقرات العزف النادرة اللي يغيب فيها التردد الأساسي لحظياً
+    const nowTick = performance.now();
+    if (rawFreq !== -1) recentFreqReadings.push({ t: nowTick, f: rawFreq });
+    recentFreqReadings = recentFreqReadings.filter(r => nowTick - r.t <= 350);
+    const freq = recentFreqReadings.length > 0 ? medianOf(recentFreqReadings.map(r => r.f)) : -1;
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
@@ -3049,6 +3073,7 @@ window.isArabicMode = false;
           markNoteResult(expected.rect, true);
           currentNoteIndex++;
           lastGoodTime = 0;
+          recentFreqReadings = []; // قراءات النغمة السابقة ما تختلط بقراءات النغمة الجديدة
           if (currentNoteIndex >= expectedSequence.length) {
             const doneSeq = expectedSequence;
             // نحفظ البصمة وقت الإكمال بالضبط — عشان نتأكد بعدين (داخل setTimeout المؤجّل)
@@ -3088,6 +3113,7 @@ window.isArabicMode = false;
               // لو المستخدم أوقف الاستماع بنفسه أو ضغط ▶ خلال الرسالة، ما نسوي شي
               if (verifyState === 'listening') {
                 currentNoteIndex = 0;
+                recentFreqReadings = [];
                 expectedSequence = getExpectedSequence();
                 lastSequenceSignature = sequenceSignature(expectedSequence);
                 resetAllNotesVisual();
@@ -3107,6 +3133,7 @@ window.isArabicMode = false;
         else if (performance.now() - lastBadTime > HOLD_WRONG_MS) {
           lastBadTime = 0;
           markNoteResult(expected.rect, false);
+          recentFreqReadings = []; // نبدأ قراءات نظيفة لإعادة المحاولة، بدون بقايا القراءات الخاطئة السابقة
           // نفس فكرة الحارس بالإكمال الناجح: نحفظ البصمة الحالية، ولو تغيّرت خلال الانتظار
           // (يعني المستخدم بدّل المقام بسرعة)، نتجاهل هذا التصفير المؤجّل بدل ما يكتب فوق
           // مزامنة جديدة أحدث منه
