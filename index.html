@@ -1601,7 +1601,6 @@ input[type="radio"] {
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
     <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
-    <div id="DIAGNOSTIC_BAR" style="display:none; position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:999999; background:rgba(0,0,0,.9); color:#0f0; padding:10px 16px; border-radius:10px; font-size:14px; font-family:monospace; direction:ltr; text-align:center; white-space:nowrap; max-width:95vw; overflow-x:auto; border:2px solid #0f0;"></div>
     <div id="micCustomNoticeBackdrop" style="display:none; position:fixed; inset:0; z-index:999998; background:rgba(20,14,8,.55); align-items:center; justify-content:center; padding:20px;">
       <div id="micCustomNotice" role="alert" style="max-width:min(92vw,440px); background:linear-gradient(180deg,#fffaf0,#fbf1dd); border:2px solid #c9a14a; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.45); padding:22px 26px; text-align:center; font-family:'Cairo',Arial,sans-serif; color:#3d2f18; position:relative; opacity:0; transform:scale(.85); transition:opacity .22s ease, transform .22s ease;">
         <div id="micCustomNoticeText" style="font-size:18px; font-weight:700; line-height:1.7;"></div>
@@ -2510,6 +2509,9 @@ window.isArabicMode = false;
   let micBtnText = null;
   let lastGoodTime = 0;
   let lastBadTime = 0;
+  let recentFreqReadings = []; // آخر عدة قراءات صالحة (مو -1) — نستخدم "الوسيط" منها بدل القراءة اللحظية الخام،
+                                // عشان نتجاوز نقرات عزف نادرة يغيب فيها التردد الأساسي فعلياً (ظاهرة صوتية حقيقية
+                                // بالآلات الوترية، مو خلل كشف) بدون التأثير على الدقة لو كانت النغمة فعلاً غلط
   let lastSequenceSignature = ''; // بصمة نصية بسيطة للنغمات المعروضة حالياً (نغيّرها لو تغيّر المقام/السلم/الكورد وأنت لسا بوضع الاستماع)
   let micSettleUntil = 0; // بعد أي إعادة مزامنة تلقائية، نتجاهل القراءات لفترة قصيرة عشان أي صدى صوت يهدأ
 
@@ -2527,12 +2529,29 @@ window.isArabicMode = false;
 
   function freqToCents(f1, f2){ return 1200 * Math.log2(f1 / f2); }
 
-  // ملاحظة تاريخية: كانت هنا دالة "تطوي" فرق الأوكتافات (foldedCentsDiff) عشان تتجاوز
-  // أخطاء كشف الأوكتاف بالخوارزمية (شائعة بالأوتار الرنّانة). لكن هذا كان يقبل بالغلط
-  // عزف الأوكتاف الخاطئ فعلياً (جواب النغمة أو قرارها) كأنه نفس النغمة الصحيحة — قرار
-  // واعي بإلغائها بالكامل: الدقة أهم من التساهل، والأوكتاف الغلط خطأ حقيقي لازم يُرفض
-  function exactCentsDiff(f1, f2){
-    return Math.abs(freqToCents(f1, f2));
+  // نطوي فرق الأوكتافات لأقرب مسافة ممكنة (0-600 سنت) — قرار واعي (راجع النقاش) بعد فحص
+  // شامل جداً أثبت إن بعض الأوتار الحقيقية (لظروف صوتية فيزيائية بالوتر نفسه، مو خلل
+  // بالكود ولا بخوارزمية الكشف) تُنتج صوت يُكتشف بأوكتاف مختلف عن المتوقع بثبات تام —
+  // نقبل القرار والجواب معاً كنغمة صحيحة، بدل ما تصير الميزة غير قابلة للاستخدام على
+  // بعض الأعواد. نحتفظ بدقة التمييز الكاملة بين نغمات مختلفة فعلياً (دو عن رى يبقى مرفوض)
+  function foldedCentsDiff(f1, f2){
+    const raw = freqToCents(f1, f2);
+    let folded = ((raw % 1200) + 1200) % 1200;
+    if (folded > 600) folded = 1200 - folded;
+    return folded;
+  }
+
+  // فلتر الوسيط (Median Filter) — تقنية معالجة إشارة معروفة ومضمونة لتصفية القراءات
+  // الشاذة العابرة (Outliers) بدون التأثير على القراءات الحقيقية المتكررة. أثبتنا بتحليل
+  // تسجيل صوتي حقيقي (راجع النقاش) إن بعض نقرات العزف الفردية — لظروف صوتية حقيقية
+  // بمكان/قوة النقرة، مو خلل بالكود — تُنتج موجة يغيب منها التردد الأساسي شبه كلياً لحظياً،
+  // بينما باقي النقرات لنفس النغمة تُقرأ صح تماماً. الوسيط يحل هذا: لو أغلب القراءات
+  // بالنافذة الزمنية الأخيرة صحيحة وقراءة واحدة شاذة، الوسيط يتجاهل الشاذة تلقائياً —
+  // ولو أغلب القراءات فعلاً غلط (نغمة مختلفة حقاً)، الوسيط يعكس هذا صح بدون أي تساهل
+  function medianOf(arr){
+    const sorted = [...arr].sort((a,b) => a-b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
   }
 
   // خوارزمية الارتباط الذاتي (Autocorrelation) لاستخراج التردد الأساسي من إشارة صوتية خام
@@ -2817,6 +2836,7 @@ window.isArabicMode = false;
       ترتيب: i, scaleIdx: it.rect.getAttribute('data-scale-idx'), تردد: it.freq.toFixed(1)
     })));
     currentNoteIndex = 0;
+    recentFreqReadings = [];
     lastSequenceSignature = sequenceSignature(expectedSequence);
     resetAllNotesVisual();
     try {
@@ -2950,6 +2970,7 @@ window.isArabicMode = false;
     expectedSequence = getExpectedSequence();
     lastSequenceSignature = sequenceSignature(expectedSequence);
     currentNoteIndex = 0;
+    recentFreqReadings = [];
     resetAllNotesVisual();
     highlightCurrentTarget();
     // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
@@ -3043,22 +3064,19 @@ window.isArabicMode = false;
 
     const buffer = new Float32Array(analyserNode.fftSize);
     analyserNode.getFloatTimeDomainData(buffer);
-    const freq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+    const rawFreq = autoCorrelate(buffer, audioCtxMic.sampleRate);
+
+    // نجمع القراءات الصالحة الأخيرة (٣٥٠ ملي ثانية) ونستخدم "الوسيط" منها بدل القراءة
+    // اللحظية الخام مباشرة — يمتص نقرات العزف النادرة اللي يغيب فيها التردد الأساسي لحظياً
+    const nowTick = performance.now();
+    if (rawFreq !== -1) recentFreqReadings.push({ t: nowTick, f: rawFreq });
+    recentFreqReadings = recentFreqReadings.filter(r => nowTick - r.t <= 350);
+    const freq = recentFreqReadings.length > 0 ? medianOf(recentFreqReadings.map(r => r.f)) : -1;
 
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
       expected.rect = getLiveRect(expected.rect); // نضمن إننا نلوّن العنصر المعروض فعلياً على الشاشة، حتى لو انعاد رسم الزند بالخلفية
-      const cents = exactCentsDiff(freq, expected.freq);
-
-      // === نسخة تشخيصية بس: تحديث حي للشريط المرئي بأسفل الشاشة ===
-      const diagBar = document.getElementById('DIAGNOSTIC_BAR');
-      if (diagBar) {
-        diagBar.style.display = 'block';
-        const ratio = (freq / expected.freq).toFixed(3);
-        const degIdxNow = expected.rect.getAttribute('data-scale-idx');
-        diagBar.textContent = `درجة #${degIdxNow} | متوقع: ${expected.freq.toFixed(2)}Hz | مكتشف: ${freq.toFixed(2)}Hz | النسبة: ${ratio} | فرق: ${cents.toFixed(0)} سنت`;
-      }
-      // === نهاية الجزء التشخيصي ===
+      const cents = foldedCentsDiff(freq, expected.freq);
 
       if (cents < getCentsMatchThreshold()) {
         lastBadTime = 0; // قراءة جيدة توقف عداد الخطأ لو كان قاعد يتراكم
@@ -3067,6 +3085,7 @@ window.isArabicMode = false;
           markNoteResult(expected.rect, true);
           currentNoteIndex++;
           lastGoodTime = 0;
+          recentFreqReadings = []; // قراءات النغمة السابقة ما تختلط بقراءات النغمة الجديدة
           if (currentNoteIndex >= expectedSequence.length) {
             const doneSeq = expectedSequence;
             // نحفظ البصمة وقت الإكمال بالضبط — عشان نتأكد بعدين (داخل setTimeout المؤجّل)
@@ -3106,6 +3125,7 @@ window.isArabicMode = false;
               // لو المستخدم أوقف الاستماع بنفسه أو ضغط ▶ خلال الرسالة، ما نسوي شي
               if (verifyState === 'listening') {
                 currentNoteIndex = 0;
+                recentFreqReadings = [];
                 expectedSequence = getExpectedSequence();
                 lastSequenceSignature = sequenceSignature(expectedSequence);
                 resetAllNotesVisual();
@@ -3135,6 +3155,7 @@ window.isArabicMode = false;
             درجة: expected.rect.getAttribute('data-scale-idx')
           });
           markNoteResult(expected.rect, false);
+          recentFreqReadings = []; // نبدأ قراءات نظيفة لإعادة المحاولة، بدون بقايا القراءات الخاطئة السابقة
           // نفس فكرة الحارس بالإكمال الناجح: نحفظ البصمة الحالية، ولو تغيّرت خلال الانتظار
           // (يعني المستخدم بدّل المقام بسرعة)، نتجاهل هذا التصفير المؤجّل بدل ما يكتب فوق
           // مزامنة جديدة أحدث منه
