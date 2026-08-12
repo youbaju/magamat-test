@@ -3118,6 +3118,11 @@ window.isArabicMode = false;
                 lastSequenceSignature = sequenceSignature(expectedSequence);
                 resetAllNotesVisual();
                 highlightCurrentTarget();
+                // مهلة استقرار قصيرة هنا كمان (نفس فكرة إعادة المزامنة عند تبديل المحتوى) —
+                // آخر نغمة عزفتها (اللي كمّلت التسلسل بنجاح) ممكن تفضل ترن بالهواء لحظات،
+                // وبدون هالمهلة كانت تُلتقط فوراً كتأكيد "صحيح" للدرجة الأولى الجديدة
+                // (خصوصاً مع طي الأوكتاف)، فيتقدّم التسلسل تلقائياً قبل ما توصل تشوف الشاشة
+                micSettleUntil = performance.now() + 500;
               }
             }, 250);
             rafId = requestAnimationFrame(listenLoop);
