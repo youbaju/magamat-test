@@ -78,7 +78,214 @@
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  // نضيف زر "رجوع للفهرس" تلقائياً بنهاية كل قسم شرح — بدل ما نكرره يدوياً بكل قسم من
+  // الـ٣٦ قسم (١٨ عربي + ١٨ إنجليزي)، نولّده مرة وحدة بالكود بمجرد ما الصفحة تحمّل
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.help-section').forEach(function(sec){
+      // حماية ضد التكرار: لو فيه زر مضاف مسبقاً بهذا القسم (لأي سبب، حتى لو الكود
+      // اتنفّذ أكثر من مرة)، ما نضيف وحد ثاني فوقه
+      if (sec.querySelector('.help-back-to-toc')) return;
+      const isEnglish = sec.id.indexOf('-en-') !== -1;
+      const btn = document.createElement('div');
+      btn.className = 'help-back-to-toc';
+      btn.textContent = isEnglish ? '↑ Back to Index' : '↑ رجوع للفهرس';
+      btn.onclick = function(){
+        window.scrollToHelpSection(isEnglish ? 'help-toc-en' : 'help-toc-ar');
+      };
+      sec.appendChild(btn);
+    });
+
+    // بحث فوري داخل صفحة الشرح — يفحص عنوان ومحتوى كل قسم (عربي أو إنجليزي كل لحاله)
+    // ويطلع قائمة نتائج قابلة للضغط تحت صندوق البحث مباشرة، بدون ما تحتاج تفتح كل قسم يدوياً
+    function setupHelpSearch(inputId, resultsId, lang){
+      const input = document.getElementById(inputId);
+      const results = document.getElementById(resultsId);
+      if (!input || !results) return;
+      const sections = Array.from(document.querySelectorAll('.help-section')).filter(function(sec){
+        return sec.id.indexOf('-' + lang + '-') !== -1;
+      });
+      // نجهّز نص قابل للبحث لكل قسم مسبقاً (مرة وحدة، مو بكل ضغطة) — نستبعد نص عناصر
+      // التنقّل المُضافة بالكود (زر "رجوع للفهرس") من هذا النص، عشان البحث عن كلمة
+      // "فهرس" مثلاً ما يطابق كل قسم بالغلط بس لأنه يحتوي هذا الزر، ويقتصر المطابقة
+      // على المحتوى التعليمي الحقيقي بالقسم فقط
+      const searchableText = new Map();
+      sections.forEach(function(sec){
+        const clone = sec.cloneNode(true);
+        const navBtn = clone.querySelector('.help-back-to-toc');
+        if (navBtn) navBtn.remove();
+        searchableText.set(sec, clone.textContent.toLowerCase());
+      });
+      const noResultText = lang === 'ar' ? 'لا يوجد نتائج للبحث' : 'No matching results';
+      const resultsCountText = lang === 'ar'
+        ? function(n){ return n + (n === 1 ? ' نتيجة' : ' نتائج'); }
+        : function(n){ return n + (n === 1 ? ' result' : ' results'); };
+      input.addEventListener('input', function(){
+        const query = input.value.trim().toLowerCase();
+        results.innerHTML = '';
+        if (!query) { results.classList.remove('open'); return; }
+        const matches = sections.filter(function(sec){
+          return searchableText.get(sec).indexOf(query) !== -1;
+        });
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'help-search-noresult';
+          empty.innerHTML = '<span class="help-search-noresult-icon">🔍</span><span>' + noResultText + '</span>';
+          results.appendChild(empty);
+        } else {
+          const countHeader = document.createElement('div');
+          countHeader.className = 'help-search-results-count';
+          countHeader.textContent = resultsCountText(matches.length);
+          results.appendChild(countHeader);
+          matches.forEach(function(sec){
+            const h3 = sec.querySelector('h3');
+            const item = document.createElement('div');
+            item.className = 'help-search-result-item';
+            const label = document.createElement('span');
+            label.textContent = h3 ? h3.textContent : sec.id;
+            const arrow = document.createElement('span');
+            arrow.className = 'help-search-result-arrow';
+            arrow.textContent = lang === 'ar' ? '←' : '→';
+            item.appendChild(label);
+            item.appendChild(arrow);
+            item.onclick = function(){
+              window.scrollToHelpSection(sec.id);
+              results.classList.remove('open');
+              input.value = '';
+            };
+            results.appendChild(item);
+          });
+        }
+        results.classList.add('open');
+      });
+      // نقفل قائمة النتائج لو ضغطت بره الصندوق
+      document.addEventListener('click', function(e){
+        if (!input.contains(e.target) && !results.contains(e.target)) {
+          results.classList.remove('open');
+        }
+      });
+    }
+    setupHelpSearch('helpSearchAr', 'helpSearchResultsAr', 'ar');
+    setupHelpSearch('helpSearchEn', 'helpSearchResultsEn', 'en');
+  });
 </script>
+
+<style>
+.help-search-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+.help-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  border: 1px solid #e3d5b8;
+  border-radius: 8px;
+  background: #fff;
+  color: #3d2f18;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.help-search-input:focus {
+  border-color: #c9a14a;
+  box-shadow: 0 0 0 3px rgba(201,161,74,.18);
+}
+.help-search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid #e3d5b8;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.18);
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.help-search-results.open { display: block; }
+.help-search-results-count {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #a08a5f;
+  padding: 8px 14px;
+  background: #fdfaf3;
+  border-bottom: 1px solid #f2ead9;
+  position: sticky;
+  top: 0;
+}
+.help-search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3d2f18;
+  padding: 11px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f2ead9;
+  transition: background .12s ease, color .12s ease;
+}
+.help-search-result-item:last-child { border-bottom: none; }
+.help-search-result-arrow {
+  flex-shrink: 0;
+  color: #c9a14a;
+  font-size: 0.95rem;
+  transition: transform .12s ease;
+}
+.help-search-result-item:hover, .help-search-result-item:active {
+  background: #fbeed4;
+  color: #8a4a1c;
+}
+.help-search-result-item:hover .help-search-result-arrow {
+  transform: translateX(-3px);
+}
+.help-search-noresult {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.85rem;
+  color: #a08a5f;
+  padding: 18px 14px;
+  text-align: center;
+}
+.help-search-noresult-icon {
+  font-size: 1.1rem;
+  opacity: .5;
+}
+</style>
+
+<style>
+.help-back-to-toc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #c9a14a, #a9803a);
+  box-shadow: 0 2px 6px rgba(169,128,58,.4);
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.help-back-to-toc:hover, .help-back-to-toc:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(169,128,58,.5);
+  opacity: 0.92;
+}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1274,32 +1481,51 @@ flex-shrink: 0;
   font-weight: 800;
   font-size: 1rem;
   color: #5c3414;
-  margin: 0 0 10px;
+  margin: 0 0 4px;
   text-align: center;
 }
+.help-toc-hint {
+  font-family: 'Cairo', Arial, sans-serif;
+  font-size: 0.82rem;
+  color: #5c3414;
+  text-align: start;
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+.help-toc-hint p { margin: 0 0 6px; }
+.help-toc-hint p:last-child { margin-bottom: 0; }
+.help-toc-hint strong { color: #3d2f18; }
 .help-toc-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  columns: 2;
-  column-gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
 }
 .help-toc-item {
   display: block;
   font-family: 'Cairo', Arial, sans-serif;
   font-size: 0.85rem;
-  color: #1a6fa8;
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  padding: 4px 0;
+  font-weight: 600;
+  color: #3d2f18;
+  text-decoration: none;
+  padding: 9px 12px;
   cursor: pointer;
-  border: none;
-  background: none;
+  border: 1px solid #e3d5b8;
+  background: #fffdf8;
+  border-radius: 8px;
   text-align: start;
-  break-inside: avoid;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 .help-toc-item:hover, .help-toc-item:active {
-  color: #c9342b;
+  background: #fbeed4;
+  border-color: #c9a14a;
+  color: #8a4a1c;
+  box-shadow: 0 2px 6px rgba(201,161,74,.25);
+}
+@media (max-width: 480px) {
+  .help-toc-list { grid-template-columns: 1fr; }
 }
 .help-section h3 {
   color: #5c3414;
@@ -1665,8 +1891,16 @@ input[type="radio"] {
     <button class="help-close-btn" id="helpCloseBtn" onclick="document.getElementById('page-help').style.display='none';">✕ إغلاق</button>
     <h2 class="help-title">دليل استخدام الموقع</h2>
 
-    <div class="help-toc">
+    <div class="help-toc" id="help-toc-ar">
       <div class="help-toc-title">فهرس</div>
+      <div class="help-toc-hint">
+        <p>🔹 <strong>الوصول المباشر:</strong> اضغط على أي فقرة بالفهرس تحت، وتنتقل تلقائياً لشرحها بالتفصيل.</p>
+        <p>🔹 <strong>البحث السريع:</strong> اكتب أي كلمة بصندوق البحث تحت (حتى لو جزء من كلمة بس)، ويطلع لك كل قسم يذكرها بمحتواه كامل — مو بس بعنوانه — فتلقى أي معلومة بسرعة بدون ما تفتح كل قسم يدوياً.</p>
+      </div>
+      <div class="help-search-wrap">
+        <input type="text" id="helpSearchAr" class="help-search-input" placeholder="🔍 ابحث داخل الشرح..." autocomplete="off">
+        <div class="help-search-results" id="helpSearchResultsAr"></div>
+      </div>
       <ol class="help-toc-list">
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-1')">١. زر تبديل اللغة</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-2')">٢. زر تبديل نظام تسمية النغمات (Do/C)</li>
@@ -1816,6 +2050,7 @@ input[type="radio"] {
       <p>🔹 <strong>تقييم واحد لكل زائر:</strong> بعد إرسال تقييمك، ما تقدر ترسل تقييم ثاني من نفس الجهاز/المتصفح (النجوم تصير مقفلة)، عشان يضل المعدل العام دقيق ويعكس رأي كل زائر مرة وحدة بس.</p>
       <p>🔹 <strong>عندك ملاحظة أو اقتراح؟</strong> فيه رابط "تواصل معنا" داخل صفحة التقييم يوديك مباشرة لصفحة التواصل بالموقع، لو حبيت توضح رأيك بالتفصيل (خصوصاً لو كان تقييمك منخفض ولك سبب معيّن).</p>
       <p>🔹 <strong>المعدل العام:</strong> يظهر بأسفل صفحة التقييم للجميع — متوسط كل التقييمات المُرسلة، وعدد الأشخاص اللي قيّموا.</p>
+    </div>
     <div class="help-section" id="help-sec-ar-16">
       <h3>١٦. تمارين المقامات والسلالم</h3>
       <p>بالإضافة لسماع المقام أو السلم كاملاً، يوفر الموقع مولّد تمارين تلقائي يبني لك تمريناً عزفياً عشوائياً مبني على درجات المقام/السلم المختار — يشتغل على المقامات العربية والسلالم الغربية معاً.</p>
@@ -1885,8 +2120,16 @@ input[type="radio"] {
     <button class="help-close-btn" id="helpCloseBtnEn" onclick="document.getElementById('page-help-en').style.display='none';">✕ Close</button>
     <h2 class="help-title">Website User Guide</h2>
 
-    <div class="help-toc">
+    <div class="help-toc" id="help-toc-en">
       <div class="help-toc-title">Index</div>
+      <div class="help-toc-hint">
+        <p>🔹 <strong>Direct access:</strong> Tap any item in the index below, and you'll jump straight to its detailed explanation.</p>
+        <p>🔹 <strong>Quick search:</strong> Type any word in the search box below (even a partial word), and every section that mentions it anywhere in its content — not just its title — will show up, so you can find what you need without opening each section manually.</p>
+      </div>
+      <div class="help-search-wrap">
+        <input type="text" id="helpSearchEn" class="help-search-input" placeholder="🔍 Search inside the guide..." autocomplete="off">
+        <div class="help-search-results" id="helpSearchResultsEn"></div>
+      </div>
       <ol class="help-toc-list">
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-1')">1. Language Toggle Button</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-2')">2. Note-Naming System Toggle (Do/C)</li>
@@ -2023,6 +2266,7 @@ input[type="radio"] {
       <p>🔹 <strong>One rating per visitor:</strong> After submitting your rating, you can't submit another one from the same device/browser (the stars become locked), so the overall average stays accurate and reflects each visitor's opinion just once.</p>
       <p>🔹 <strong>Have feedback or a suggestion?</strong> There's a "Contact Us" link inside the rating page that takes you directly to the site's contact page, if you'd like to explain your opinion in more detail (especially if your rating was low and you have a specific reason).</p>
       <p>🔹 <strong>Overall average:</strong> Shown at the bottom of the rating page for everyone — the average of all submitted ratings, and the number of people who rated.</p>
+    </div>
     <div class="help-section" id="help-sec-en-16">
       <h3>16. Maqam &amp; Scale Exercises</h3>
       <p>In addition to hearing the full maqam or scale, the site includes an automatic exercise generator that builds a random practice exercise based on the degrees of the selected maqam/scale — it works on both Arabic maqamat and Western scales.</p>
