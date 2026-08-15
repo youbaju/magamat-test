@@ -97,6 +97,29 @@
   }
   .en-section { direction: ltr; text-align: left; }
   .en-section h2 { border-right: none; border-left: 4px solid #c9a14a; padding-right: 0; padding-left: 12px; }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #e8c782;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid #c9a14a;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    margin-top: 18px;
+    transition: background 0.2s;
+  }
+  .back-link:hover { background: rgba(255,255,255,0.18); }
+  .footer .back-link {
+    color: #8a4a1c;
+    background: #faf6ee;
+    border-color: #e3d5b8;
+    margin-top: 16px;
+  }
+  .footer .back-link:hover { background: #f3e9d3; }
 </style>
 </head>
 <body>
@@ -104,6 +127,7 @@
 <div class="header">
   <h1>سياسة الخصوصية</h1>
   <div class="sub">تطبيق وموقع "عود و مقامات" — East &amp; West Oud Maqamat</div>
+  <a href="./" class="back-link">← الرجوع إلى التطبيق</a>
 </div>
 
 <div class="container">
@@ -201,7 +225,8 @@
 
   <div class="footer">
     عود و مقامات — East &amp; West Oud Maqamat<br>
-    جميع الحقوق محفوظة
+    جميع الحقوق محفوظة<br>
+    <a href="./" class="back-link">← الرجوع إلى التطبيق / Back to App</a>
   </div>
 
 </div>
