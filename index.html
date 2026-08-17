@@ -1751,7 +1751,7 @@ input[type="radio"] {
   input[type="radio"] { width: 16px; height: 16px; }
   .dropdown-label { font-size: 0.9rem; padding: 8px 12px; }
   .dropdown-select { font-size: 0.9rem; padding: 8px 12px; }
-  .show-btn { font-size: 1rem; padding: 12px; margin-bottom: 20px; }  
+  .show-btn { font-size: 1rem; padding: 12px; margin-bottom: 20px; }
   .audio-player { max-width: 100%; }
 }
 
@@ -3832,7 +3832,18 @@ function showDrawerMode(mode){
   document.getElementById('cTabChords').classList.toggle('active', mode === 'chords');
   document.getElementById('cCirclePane').style.display = (mode === 'circle') ? 'flex' : 'none';
   document.getElementById('cChordsPane').style.display = (mode === 'chords') ? 'flex' : 'none';
-  if (mode === 'chords') renderChordsList();
+  if (mode === 'chords') {
+    renderChordsList();
+    // لو دخلنا تبويب الكوردات وما فيه كورد مختار أصلاً (وضع الكورد غير مفعّل)،
+    // نختار أول كورد بالسلم الحالي تلقائياً — نفس مبدأ باقي التبويبات (المقامات
+    // العربية والغربية) اللي دايماً تعرض اختياراً افتراضياً على الزند بمجرد
+    // التبديل، بدل ترك الزند يعرض السلم القديم بينما تبويب الكوردات نشط ظاهرياً
+    if (!window.chordModeActive && typeof buildChordsForScale === 'function' && typeof selectChord === 'function') {
+      const firstChordBtn = document.querySelector('#cChordsList .c-chord-btn');
+      const chords = buildChordsForScale(state.root, state.scaleType);
+      if (firstChordBtn && chords.length) selectChord(chords[0], firstChordBtn);
+    }
+  }
 }
 document.getElementById('cTabCircle').addEventListener('click', () => {
   // لو كان الزند يعرض كورداً (وضع الكورد فعّال)، نرجّعه لعرض السلم الحالي عادياً
