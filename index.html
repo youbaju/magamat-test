@@ -86,7 +86,7 @@
       // اتنفّذ أكثر من مرة)، ما نضيف وحد ثاني فوقه
       if (sec.querySelector('.help-back-to-toc')) return;
       const isEnglish = sec.id.indexOf('-en-') !== -1;
-      const btn = document.createElement('div');
+      const btn = document.createElement('div'); 
       btn.className = 'help-back-to-toc';
       btn.textContent = isEnglish ? '↑ Back to Index' : '↑ رجوع للفهرس';
       btn.onclick = function(){
@@ -2775,6 +2775,16 @@ window.isArabicMode = false;
   let lastSequenceSignature = ''; // بصمة نصية بسيطة للنغمات المعروضة حالياً (نغيّرها لو تغيّر المقام/السلم/الكورد وأنت لسا بوضع الاستماع)
   let micSettleUntil = 0; // بعد أي إعادة مزامنة تلقائية، نتجاهل القراءات لفترة قصيرة عشان أي صدى صوت يهدأ
 
+  // بعد إكمال التسلسل صح بالكامل، بدل ما ننتظر مهلة ثابتة (كانت تفشل مع رنين طويل بأوتار
+  // القرار الغليظة)، ننتظر فعلياً حتى نسمع صمت حقيقي (أو نوصل لسقف أقصى زمني كحماية أخيرة)
+  // قبل ما نبدأ نقارن من جديد — يمنع رنين آخر نغمة (اللي غالباً نفس درجة النغمة الأولى
+  // بأوكتاف مختلف، فتتطابق مع طي الأوكتاف) من كونها تُحتسب "صح" تلقائياً بدون ما يعزفها المستخدم فعلياً
+  let waitingForSilenceAfterSuccess = false;
+  let quietStreakStart = 0;
+  let silenceWaitDeadline = 0;
+  const SILENCE_REQUIRED_MS = 400; // مدة الصمت المتواصل المطلوبة قبل ما نعتبره هدأ فعلاً
+  const SILENCE_MAX_WAIT_MS = 6000; // سقف أقصى — حتى لو ما صار صمت تام (ضجيج خلفية مثلاً)، نكمل بعده لأي حال
+
   // نطاق تسامح "صحيح" — قيمة صغيرة جداً وموحّدة لكل الأوضاع (عربي وغربي وكورد)، لا يمكن
   // تمييزها بالأذن (أقل بكثير من أصغر مسافة موسيقية موجودة أصلاً، وهي ربع التون = ٥٠ سنت
   // بالمقامات العربية) — نتجنب أي نطاق واسع يسمح بقبول نغمة مخطئة فعلياً على إنها صحيحة
@@ -3141,6 +3151,8 @@ window.isArabicMode = false;
     rafId = null;
     if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
     if (audioCtxMic) { try { audioCtxMic.close(); } catch(e){} audioCtxMic = null; }
+    waitingForSilenceAfterSuccess = false; // نلغي انتظار الصمت لو كان شغال، ما فيه داعي له بعد الإيقاف اليدوي
+    quietStreakStart = 0;
     updateMicBtnVisual();
   }
 
@@ -3220,6 +3232,10 @@ window.isArabicMode = false;
     recentFreqReadings = [];
     resetAllNotesVisual();
     highlightCurrentTarget();
+    // تبديل المحتوى (مقام/سلم/كورد جديد) يلغي أي انتظار صمت كان شغال من إكمال سابق —
+    // المستخدم واضح إنه انتقل لمحتوى جديد، فمهلة الاستقرار القصيرة العادية تكفي هنا
+    waitingForSilenceAfterSuccess = false;
+    quietStreakStart = 0;
     // مهلة قصيرة قبل ما نبدأ نقارن فعلياً، عشان أي صدى/بقايا صوت (خصوصاً لو كان
     // المحتوى الجديد كورد يشتغل صوته تلقائياً) تخلص وتهدأ تماماً
     micSettleUntil = performance.now() + 500;
@@ -3315,6 +3331,28 @@ window.isArabicMode = false;
     analyserNode.getFloatTimeDomainData(buffer);
     const rawFreq = autoCorrelate(buffer, audioCtxMic.sampleRate);
 
+    // لو قاعدين ننتظر صمت حقيقي بعد إكمال ناجح (رنين النغمة الأخيرة لسا محتمل يسمع):
+    // ما نقارن ولا نطابق أي شي هنا — نكتفي بمراقبة autoCorrelate نفسه (يرجّع -1- أصلاً
+    // لو الصوت هادئ تحت عتبة RMS)، ولو استمر الهدوء متواصل لمدة SILENCE_REQUIRED_MS
+    // (أو انتهت المهلة القصوى)، نعتبره هدأ فعلاً ونكمل عادي من الإطار الجاي
+    if (waitingForSilenceAfterSuccess) {
+      const nowSilenceTick = performance.now();
+      if (rawFreq === -1) {
+        if (!quietStreakStart) quietStreakStart = nowSilenceTick;
+      } else {
+        quietStreakStart = 0; // لسا فيه صوت واضح — نصفّر عداد الهدوء المتواصل
+      }
+      const quietLongEnough = quietStreakStart && (nowSilenceTick - quietStreakStart >= SILENCE_REQUIRED_MS);
+      const deadlineHit = nowSilenceTick >= silenceWaitDeadline;
+      if (quietLongEnough || deadlineHit) {
+        waitingForSilenceAfterSuccess = false;
+        quietStreakStart = 0;
+        recentFreqReadings = []; // نبدأ قراءات نظيفة تماماً، بدون أي بقايا من رنين النغمة السابقة
+      }
+      rafId = requestAnimationFrame(listenLoop);
+      return;
+    }
+
     // نجمع القراءات الصالحة الأخيرة (٣٥٠ ملي ثانية) ونستخدم "الوسيط" منها بدل القراءة
     // اللحظية الخام مباشرة — يمتص نقرات العزف النادرة اللي يغيب فيها التردد الأساسي لحظياً
     const nowTick = performance.now();
@@ -3379,13 +3417,14 @@ window.isArabicMode = false;
                 lastSequenceSignature = sequenceSignature(expectedSequence);
                 resetAllNotesVisual();
                 highlightCurrentTarget();
-                // مهلة استقرار أطول هنا تحديداً (ثانيتين، مو نص ثانية زي باقي حالات
-                // المزامنة) — آخر نغمة عزفتها (اللي كمّلت التسلسل بنجاح، غالباً الجواب)
-                // ممكن تفضل ترن بالهواء لثواني كاملة على عود حقيقي (لاحظنا هذا فعلياً
-                // بتسجيلات صوتية حقيقية)، وبدون مهلة كافية كانت تُلتقط كتأكيد "صحيح"
-                // للدرجة الأولى الجديدة فوراً (خصوصاً مع طي الأوكتاف)، فيتقدّم التسلسل
-                // تلقائياً للنغمة الثانية قبل ما توصل تشوف الشاشة أصلاً
-                micSettleUntil = performance.now() + 2000;
+                // بدل مهلة ثابتة (كانت ثانيتين وما كانت تكفي دايماً — رنين آخر نغمة على
+                // عود حقيقي، خصوصاً بأوتار القرار الغليظة أو بغرفة فيها صدى، ممكن يستمر
+                // أطول من كذا): ننتظر فعلياً لين نسمع صمت حقيقي متواصل، بسقف أقصى كحماية
+                // (SILENCE_MAX_WAIT_MS) لو ما صار صمت تام لأي سبب (ضجيج خلفية مثلاً)
+                waitingForSilenceAfterSuccess = true;
+                quietStreakStart = 0;
+                silenceWaitDeadline = performance.now() + SILENCE_MAX_WAIT_MS;
+                micSettleUntil = 0;
               }
             }, 250);
             rafId = requestAnimationFrame(listenLoop);
