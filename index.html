@@ -5481,11 +5481,29 @@ function playOudNote(freq, duration){
 /* ===== نغمة مستمرة بدون أي تكرار (Sustain حقيقي) - تشتغل من الضغطة الأولى لين الضغطة الثانية ===== */
 let currentSustainedNote = null; // {oscillators, masterGain, rectEl}
 
+// طيف توافقي أقرب لطابع البيانو الحقيقي: توافقيات أكثر (لحد الثامن)، بمكاسب تتناقص
+// تدريجياً بمعدل يشبه طيف البيانو الفعلي (مو تناقص حاد زي موجة مثلثية بسيطة)، وكل توافقي
+// موجة جيبية نقية (بدل مثلثية) عشان نتحكم بمزيج الطيف بدقة بدل الاعتماد على شكل الموجة نفسها.
+// ملاحظة مهمة: ما نضيف أي "تمديد" (inharmonicity) للتوافقيات رغم إنه موجود بالبيانو الحقيقي —
+// لأن هذي النغمة تُستخدم كمرجع دوزان فعلي (المستخدم يقارن عليها وتر عوده بالأذن)، وأي انحراف
+// عن التوافقيات الرياضية الدقيقة (مضاعفات صحيحة تماماً للتردد الأساسي) يسبب نبضاً/دوياً محسوساً
+// (Beating) عند المقارنة مع توافقيات الوتر الحقيقي — يُحسّ وكأن الصوت "ما يتزامن" مع الدوزان
 const SUSTAINED_PARTIALS = [
-  { mult: 1,   gain: 1.0,  type: 'triangle' },
-  { mult: 2,   gain: 0.12, type: 'sine' },
-  { mult: 3,   gain: 0.04, type: 'sine' },
+  { mult: 1, gain: 1.00, type: 'sine' },
+  { mult: 2, gain: 0.45, type: 'sine' },
+  { mult: 3, gain: 0.22, type: 'sine' },
+  { mult: 4, gain: 0.13, type: 'sine' },
+  { mult: 5, gain: 0.08, type: 'sine' },
+  { mult: 6, gain: 0.05, type: 'sine' },
+  { mult: 7, gain: 0.03, type: 'sine' },
+  { mult: 8, gain: 0.02, type: 'sine' },
 ];
+
+// يحسب تردد التوافقي الفعلي — مضاعف صحيح دقيق تماماً للتردد الأساسي (بدون أي تمديد)،
+// عشان يبقى صالح كمرجع دوزان دقيق
+function partialFreq(baseFreq, p){
+  return baseFreq * p.mult;
+}
 
 function startSustainedNote(freq){
   const ctx = getAudioContext();
@@ -5497,7 +5515,7 @@ function startSustainedNote(freq){
   const oscillators = SUSTAINED_PARTIALS.map(p => {
     const osc = ctx.createOscillator();
     osc.type = p.type;
-    osc.frequency.setValueAtTime(freq * p.mult, now);
+    osc.frequency.setValueAtTime(partialFreq(freq, p), now);
     const partialGain = ctx.createGain();
     partialGain.gain.setValueAtTime(p.gain, now);
     osc.connect(partialGain);
@@ -5505,6 +5523,29 @@ function startSustainedNote(freq){
     osc.start(now);
     return osc;
   });
+  // "نقرة" مطرقة قصيرة جداً عند بداية النغمة — دفعة ضجيج قصيرة مفلترة (Highpass) تخفت
+  // خلال أجزاء من الثانية، تحاكي إحساس "ضربة المطرقة" الأولى بالبيانو الحقيقي، بدل بداية
+  // ناعمة صافية بالكامل زي الموجات الصناعية المجردة
+  try {
+    const hammerDur = 0.05;
+    const bufferSize = Math.floor(ctx.sampleRate * hammerDur);
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuffer;
+    const hammerFilter = ctx.createBiquadFilter();
+    hammerFilter.type = 'highpass';
+    hammerFilter.frequency.setValueAtTime(Math.max(800, freq * 2), now);
+    const hammerGain = ctx.createGain();
+    hammerGain.gain.setValueAtTime(0.06, now);
+    hammerGain.gain.exponentialRampToValueAtTime(0.001, now + hammerDur);
+    noiseSrc.connect(hammerFilter);
+    hammerFilter.connect(hammerGain);
+    hammerGain.connect(masterGain);
+    noiseSrc.start(now);
+    noiseSrc.stop(now + hammerDur);
+  } catch(e){}
   return { oscillators, masterGain };
 }
 
@@ -5514,8 +5555,8 @@ function retuneSustainedNoteHandle(handle, newFreq){
   const ctx = getAudioContext();
   const now = ctx.currentTime;
   handle.oscillators.forEach((osc, i) => {
-    const mult = SUSTAINED_PARTIALS[i] ? SUSTAINED_PARTIALS[i].mult : 1;
-    osc.frequency.setValueAtTime(newFreq * mult, now);
+    const p = SUSTAINED_PARTIALS[i] || SUSTAINED_PARTIALS[0];
+    osc.frequency.setValueAtTime(partialFreq(newFreq, p), now);
   });
 }
 
@@ -6083,7 +6124,6 @@ window.wxResume = wxResume;
     /* محرك العود ورسمه أصبحا مشتركين الآن (انظر buildOudStatic الرئيسية بأعلى الملف) */
 
     // ترجمة أسماء الفصائل الأساسية التسع (بالنقحرة الأكاديمية المعروفة بمصادر إنجليزية متخصصة زي Maqam World)
-    // ملاحظة: أسماء المقامات الفرعية الأقل شهرة (زي "البسته نكار") لسا ما تُرجمت، تحتاج تحقق من مصادر متخصصة قبل الترجمة
     const FAMILY_NAME_EN = {
       "الراست": "Rast", "البياتي": "Bayati", "الكرد": "Kurd", "الحجاز": "Hijaz",
       "النهاوند": "Nahawand", "السيكاه": "Sikah", "الصبا": "Saba",
@@ -7350,15 +7390,19 @@ window.wxResume = wxResume;
       // صول = 196 Hz، كل ربع تون = 2^(1/24)
       const SOL_FREQ = 196;
       const quartersFromSol = Math.round(Math.log2(freq / SOL_FREQ) * 24);
-      playArNote(quartersFromSol, duration);
+      // مهم: freq اللي وصلنا هنا أصلاً محسوب بالدوزان المطبَّق (من OUD.frequencyAt بمحرك
+      // السلالم الغربية) — فنمرر alreadyTuned=true عشان playArNote ما يطبّق الدوزان مرة
+      // ثانية من فوق (كان يصير تطبيق مزدوج للدوزان، يخلي السلالم الغربية تُعزف بدوزان خاطئ
+      // تماماً، بعكس المقامات العربية اللي تستدعي playArNote مباشرة بموضع خام غير مدوزن)
+      playArNote(quartersFromSol, duration, true);
     };
 
-    function playArNote(quartersFromSol, customDuration) {
+    function playArNote(quartersFromSol, customDuration, alreadyTuned) {
       const ctx2 = getAudioContext();
       const now = ctx2.currentTime;
 
       if (!samplesLoading && !samplesLoaded && !samplesLoadGaveUp) {
-        loadOudSamples().then(() => playArNote(quartersFromSol));
+        loadOudSamples().then(() => playArNote(quartersFromSol, customDuration, alreadyTuned));
         return;
       }
 
@@ -7378,9 +7422,13 @@ window.wxResume = wxResume;
       source.buffer = buf;
       source.playbackRate.value = playbackRate;
 
-      const tuningOffset = parseFloat(document.getElementById('shared-tuningSelect').value) || 0;
-      if (tuningOffset !== 0) {
-        source.playbackRate.value *= Math.pow(2, tuningOffset / 12);
+      // لو الدوزان مطبَّق أصلاً على quartersFromSol نفسها (جاية من playArNoteByFreq بمسار
+      // السلالم الغربية)، ما نطبّقه مرة ثانية هنا — تجنّباً لتطبيق مزدوج يخرب الدوزان الفعلي
+      if (!alreadyTuned) {
+        const tuningOffset = parseFloat(document.getElementById('shared-tuningSelect').value) || 0;
+        if (tuningOffset !== 0) {
+          source.playbackRate.value *= Math.pow(2, tuningOffset / 12);
+        }
       }
 
       const gain = ctx2.createGain();
