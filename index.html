@@ -8021,7 +8021,12 @@ window.wxResume = wxResume;
         if (window.isArabicMode) {
           if (typeof window.arResetPlayer === 'function') window.arResetPlayer(); // نوقف السلّم العادي لو كان شغال
         } else {
-          if (typeof resetPlayer === 'function') resetPlayer(); // نوقف السلّم الغربي العادي لو كان شغال
+          // مهم: نستدعي window.resetPlayer صراحة، مو الاسم المجرّد resetPlayer — فيه دالة ثانية
+          // بنفس الاسم بالضبط معرّفة جوّا IIFE لاحقة بالكود (خاصة بإيقاف المشغّل المشترك
+          // للتمارين المُصنّعة، مو السلم العادي)، وبما إن هذا الكود نفسه شغال جوّا نفس الـ IIFE،
+          // الاسم المجرّد resetPlayer كان يتحل خطأً للدالة المحلية (الخطأ) بدل الدالة العامة
+          // الصحيحة — فالسلم الغربي كان يستمر شغال بالخلفية بدون ما يتوقف فعلياً
+          if (typeof window.resetPlayer === 'function') window.resetPlayer(); // نوقف السلّم الغربي العادي لو كان شغال
         }
         if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
         exSetSharedPlayerButtonsEnabled(false); // ما فيه تمرين اتشغّل بعد — الأزرار معطّلة لحد أول ضغطة على "تمرين جديد"
