@@ -557,7 +557,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .tuning-select { font-size: .6rem !important; padding: 1px 16px 1px 2px !important; flex: 1 1 auto !important; min-width: 80px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .58rem !important; padding: 1px 3px !important; }
   .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
-  .speed-bpm-value { font-size: .6rem !important; min-width: 26px !important; }
+  .speed-bpm-value { font-size: .6rem !important; width: 26px !important; min-width: 26px !important; }
 }
 
 /* تعديل خاص بزر الدوزان بالوضع العمودي للجوال فقط: القاعدة أعلاه كانت تحجز مساحة
@@ -579,9 +579,9 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
      بدلاً عنه الحقل الرقمي القابل للكتابة المباشرة + زري +/− فقط — يوفر مساحة
      أكبر لخانة الدوزان المجاورة، والمستخدم يقدر يكتب أي رقم مباشرة بدل السحب */
   .speed-range { display: none !important; }
-  .speed-slider-inline { flex: 0 0 auto !important; gap: 6px !important; }
-  .speed-bpm-value { min-width: 38px !important; font-size: .68rem !important; padding: 3px 4px !important; }
-  .speed-step-btn { width: 24px !important; height: 24px !important; flex: 0 0 24px !important; }
+  .speed-slider-inline { flex: 0 0 auto !important; gap: 3px !important; }
+  .speed-bpm-value { width: 22px !important; min-width: 22px !important; font-size: .62rem !important; padding: 2px 1px !important; }
+  .speed-step-btn { width: 20px !important; height: 20px !important; flex: 0 0 20px !important; }
 }
 
 /* ===== الوضع الأفقي على الجوال: مساحة عمودية محدودة جدًا، نصغّر العناصر الثانوية لصالح العود ===== */
@@ -607,7 +607,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .audio-time{ font-size: .58rem !important; min-width: 56px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .6rem !important; }
   .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
-  .speed-bpm-value { font-size: .58rem !important; min-width: 26px !important; }
+  .speed-bpm-value { font-size: .58rem !important; width: 26px !important; min-width: 26px !important; }
   .tuning-row { justify-content: flex-end !important; flex-wrap: wrap !important; gap: 4px !important; }
   .tuning-row label { font-size: .6rem !important; color: #111 !important; font-weight: 700 !important; white-space: nowrap !important; flex-shrink: 0 !important; }
   .tuning-select { font-size: .6rem !important; padding: 1px 16px 1px 2px !important; }
@@ -838,6 +838,7 @@ flex-shrink: 0;
   border: 1px solid #b8d4ea;
   border-radius: 5px;
   padding: 2px 5px;
+  width: 30px;
   min-width: 30px;
   text-align: center;
   flex: 0 0 auto;
@@ -1889,6 +1890,12 @@ function wireCustomSelect(selectEl) {
   // الغلاف نفسه (مو للزر اللي جواه)، وإلا الغلاف ينكمش لعرض نصه بس ويصير الزر ضيق جداً
   wrap.style.flex = '1';
   wrap.style.minWidth = '0';
+  // نضبط حد أقصى معقول للعرض — بالوضع الأفقي (فيه مساحة فاضية كبيرة) بدون هذا الحد
+  // الصندوق يتمدد أكثر من اللازم، فيصير فيه فراغ كبير بين النص (يمين، بسبب RTL)
+  // والسهم (يسار، بمكانه الثابت من الصندوق نفسه) — يبان وكأنهم منفصلين عن بعض
+  if (selectEl.classList.contains('tuning-select')) {
+    wrap.style.maxWidth = '190px';
+  }
 
   const btn = document.createElement('div');
   btn.className = selectEl.className; // نفس كلاس الـ select الأصلي (dropdown-select أو tuning-select) عشان يطابق نفس التنسيق تماماً
