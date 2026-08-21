@@ -1709,7 +1709,7 @@ input[type="radio"] {
 .dropdown-select {
   width: 100%;
   max-width: 100%;
-  padding: 6px 6px;
+  padding: 6px 30px 6px 6px;
   font-family: "Cairo", sans-serif;
   font-size: 0.82rem;
   border: none;
@@ -1719,6 +1719,14 @@ input[type="radio"] {
   outline: none;
   direction: rtl;
   cursor: pointer;
+  /* سهم مخصص بلون أزرق غامق وتباين قوي، بدل سهم المتصفح الافتراضي الباهت */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%230a2f52' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: left 8px center;
+  background-size: 14px 9px;
 }
 .show-btn {
   display: block;
@@ -2420,9 +2428,9 @@ input[type="radio"] {
         <div class="right-opt"><label for="r5a" style="color:#aaa;">أخرى</label><input type="radio" name="maqam" id="r5a" disabled></div>
       </li>
     </ul>
-    <div class="dropdown-label">المقام</div>
+    <div class="dropdown-label">اختر المقام من القائمة</div>
     <select class="dropdown-select" id="maqam-select"></select>
-    <div class="dropdown-label" id="harfLabel">الحرف</div>
+    <div class="dropdown-label" id="harfLabel">اختر الحرف من القائمة</div>
     <select class="dropdown-select" id="harf-select">
       <option value="sol">صول</option>
       <option value="solHalfDiaz">صول نصف دييز</option>
@@ -6219,8 +6227,8 @@ window.wxResume = wxResume;
       // عنواني قائمتي "المقام" و"الحرف" كانوا منسيين كمان — نفس المصطلحات المستخدمة أصلاً بصفحة الشرح الإنجليزية (Maqam / Letter)
       document.querySelectorAll('.dropdown-label').forEach(lbl => {
         const t = lbl.textContent.trim();
-        if (t === 'المقام') lbl.textContent = 'Maqam';
-        else if (t === 'الحرف') lbl.textContent = 'Letter';
+        if (t === 'اختر المقام من القائمة') lbl.textContent = 'Select Maqam from the List';
+        else if (t === 'اختر الحرف من القائمة') lbl.textContent = 'Select Letter from the List';
       });
     }
 
