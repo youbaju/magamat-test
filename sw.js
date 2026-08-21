@@ -29,7 +29,7 @@
  * التعديلات العادية على محتوى index.html ما تحتاج هذا أبداً بعد الآن.
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const PRECACHE_NAME = `maqamat-precache-${CACHE_VERSION}`;
 const RUNTIME_AUDIO_CACHE = `maqamat-runtime-audio-${CACHE_VERSION}`;
 
