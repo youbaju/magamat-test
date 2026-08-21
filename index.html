@@ -842,13 +842,6 @@ flex-shrink: 0;
   text-align: center;
   flex: 0 0 auto;
   outline: none;
-  /* نشيل أسهم الزيادة/النقصان الافتراضية اللي يضيفها المتصفح لحقول type="number" */
-  -moz-appearance: textfield;
-}
-.speed-bpm-value::-webkit-outer-spin-button,
-.speed-bpm-value::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 .speed-bpm-value:focus { border-color: #2a6a8a; background: #fff; }
 
@@ -2144,9 +2137,9 @@ window.wireCustomSelect = wireCustomSelect;
       <label for="shared-speedRange">السرعة : </label>
       <div class="speed-slider-inline">
         <button type="button" class="speed-step-btn" id="shared-speedMinus" aria-label="إنقاص السرعة">−</button>
-        <input type="range" class="speed-range" id="shared-speedRange" min="20" max="165" value="43" step="1">
+        <input type="text" class="speed-bpm-value" id="shared-speedBpmValue" value="43" inputmode="numeric" pattern="[0-9]*">
         <button type="button" class="speed-step-btn" id="shared-speedPlus" aria-label="زيادة السرعة">+</button>
-        <input type="number" class="speed-bpm-value" id="shared-speedBpmValue" value="43" min="20" max="165" step="1" inputmode="numeric">
+        <input type="range" class="speed-range" id="shared-speedRange" min="20" max="165" value="43" step="1">
       </div>
     </div>
   </div>
@@ -7531,6 +7524,14 @@ window.wxResume = wxResume;
         const parsed = parseInt(bpmValue.value);
         applyBpm(isNaN(parsed) ? parseInt(range.value) : parsed);
       }
+      // نمنع كتابة أي شيء غير أرقام أثناء الكتابة نفسها — الحقل type="text" (مو
+      // number) عمداً، عشان يقبل التحديد/التظليل الكامل بمتصفحات الجوال (type="number"
+      // فيه قيد معروف يمنع التظليل الكامل بمتصفحات الجوال)، فلازم نصفّي يدوياً بدل
+      // ما نعتمد على تحقق المتصفح التلقائي
+      bpmValue.addEventListener('input', () => {
+        const digitsOnly = bpmValue.value.replace(/[^0-9]/g, '');
+        if (digitsOnly !== bpmValue.value) bpmValue.value = digitsOnly;
+      });
       bpmValue.addEventListener('change', applyTypedBpm);
       bpmValue.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); applyTypedBpm(); bpmValue.blur(); }
