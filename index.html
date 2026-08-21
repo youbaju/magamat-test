@@ -4606,7 +4606,7 @@ function buildOudStatic(){
   helpG.appendChild(el('rect', {
     x: helpBx - helpBtnW/2, y: helpY - helpBtnH/2,
     width: helpBtnW, height: helpBtnH, rx: instBtnR,
-    fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
+    fill: '#a3d0ec', stroke: '#3ab4e8', 'stroke-width': '2'
   }));
   const helpTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   helpTxt.setAttribute('x', helpBx);
@@ -4615,7 +4615,7 @@ function buildOudStatic(){
   helpTxt.setAttribute('font-family', "Arial, sans-serif");
   helpTxt.setAttribute('font-size', '68');
   helpTxt.setAttribute('font-weight', '800');
-  helpTxt.setAttribute('fill', '#1a5fa8');
+  helpTxt.setAttribute('fill', '#0a2f52');
   helpTxt.textContent = '?';
   if (window.oudLanguage !== 'en') {
     // نستثني هالعنصر من التصحيح التلقائي، ونطبّق منطقنا الخاص يراعي حالة انعكاس اليد الحالية
@@ -4720,7 +4720,7 @@ function buildOudStatic(){
       const hg = el('g', { id: 'handToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
       const rect = el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
+        fill: '#a3d0ec', stroke: '#3ab4e8', 'stroke-width': '2'
       });
       hg.appendChild(rect);
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -4729,7 +4729,7 @@ function buildOudStatic(){
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       t.setAttribute('font-size', String(24 * handScale));
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', '#1a5fa8');
+      t.setAttribute('fill', '#0a2f52');
       t.textContent = (window.oudLanguage === 'en')
         ? (window.isLeftHanded ? 'Left' : 'Right')
         : (window.isLeftHanded ? 'يسار' : 'يمين');
@@ -4777,7 +4777,7 @@ function buildOudStatic(){
       const sg = el('g', { id: 'stringCountBtn', style: 'cursor:pointer;pointer-events:all;' });
       sg.appendChild(el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
+        fill: '#a3d0ec', stroke: '#3ab4e8', 'stroke-width': '2'
       }));
       const numStr = (OUD.STRING_COUNT === 6) ? '6' : '5';
       const wordStr = (window.oudLanguage === 'en') ? 'Strings' : 'أوتار';
@@ -4788,7 +4788,7 @@ function buildOudStatic(){
       wordEl.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       wordEl.setAttribute('font-size', String(22 * handScale));
       wordEl.setAttribute('font-weight', '800');
-      wordEl.setAttribute('fill', '#1a5fa8');
+      wordEl.setAttribute('fill', '#0a2f52');
       wordEl.textContent = wordStr;
       sg.appendChild(wordEl);
       const numEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -4822,7 +4822,7 @@ function buildOudStatic(){
       lg.classList.toggle('lang-btn-pulse', !window._langPulseDismissed); // نطبّق الوميض بس لو المستخدم ما تفاعل مع الموقع لسا (علم عالمي ثابت، مو مرتبط بلحظة الإنشاء)
       lg.appendChild(el('rect', {
         x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
-        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2', class: 'lang-btn-rect'
+        fill: '#a3d0ec', stroke: '#3ab4e8', 'stroke-width': '2', class: 'lang-btn-rect'
       }));
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       t.setAttribute('x', x);
@@ -4830,7 +4830,7 @@ function buildOudStatic(){
       t.setAttribute('dominant-baseline', 'middle');
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', '#1a5fa8');
+      t.setAttribute('fill', '#0a2f52');
       t.setAttribute('y', y + 2);
       lg.appendChild(t);
 
@@ -4907,7 +4907,7 @@ function buildOudStatic(){
         const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
         ng.appendChild(el('rect', {
           x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
-          fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
+          fill: '#a3d0ec', stroke: '#3ab4e8', 'stroke-width': '2'
         }));
         const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         t.setAttribute('x', x); t.setAttribute('y', y + 14);
@@ -4915,7 +4915,7 @@ function buildOudStatic(){
         t.setAttribute('font-family', "Arial, sans-serif");
         t.setAttribute('font-size', '46');
         t.setAttribute('font-weight', '800');
-        t.setAttribute('fill', '#1a5fa8');
+        t.setAttribute('fill', '#0a2f52');
         t.textContent = (window.oudNoteSystem === 'letter') ? 'C' : 'Do';
         ng.appendChild(t);
         ng.addEventListener('click', () => {
@@ -4985,7 +4985,10 @@ function buildOudStatic(){
     g2.appendChild(t);
   }
 
-  // شعار رؤية 2030
+  // شعار رؤية 2030 — الصورة نفسها فيها خلفية بيضاء مرسومة داخلها (مو شفافة) بهامش كبير
+  // حوالين الشعار الفعلي (~15-20% من كل جهة، قِسناها بدقة من بكسلات الصورة الحقيقية)،
+  // فبدل ما نعرض الصورة كاملة بهامشها الزائد، نقصّها لتُظهر جزء الشعار الملوّن فقط
+  // باستخدام SVG متداخلة (نافذة قص)، ونحط خلفها بطاقة بيضاء بحجم مطابق تماماً لزر التقييم/التواصل
   const oudFooterGroup = el('g', { id: 'oudFooterGroup' });
   const visionSize = 280;
   const gap = 60;
@@ -4999,10 +5002,46 @@ function buildOudStatic(){
   const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
   const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
   const btnX2 = ratingBtnX2 - gap - btnW;
+
+  // --- قص الصورة على حدود الشعار الفعلي (قِسناها بالبكسل: يسار 236، أعلى 107، يمين 981، أسفل 605 من أصل 1191×734) ---
+  const IMG_NATIVE_W = 1191, IMG_NATIVE_H = 734;
+  const CROP_LEFT = 236, CROP_TOP = 107, CROP_RIGHT = 981, CROP_BOTTOM = 605;
+  const cropW = CROP_RIGHT - CROP_LEFT, cropH = CROP_BOTTOM - CROP_TOP;
+  const cardPad = 12;
+  // نطابق عرض البطاقة تقريباً مع عرض زر التقييم/التواصل (btnW) نفسه — بما إن نسبة أبعاد
+  // الشعار (طولي عريض) تختلف عن نسبة الزر (مستطيل)، نحافظ على النسبة الصحيحة للشعار
+  // (بدون أي تمطيط) وناخذ العرض كمرجع أساسي للمطابقة
+  const cropDisplayW = btnW - cardPad * 2;
+  const cropDisplayH = Math.round(cropDisplayW * (cropH / cropW));
+  const cropScale = cropDisplayW / cropW;
+  const fullImgDisplayW = Math.round(IMG_NATIVE_W * cropScale);
+  const fullImgDisplayH = Math.round(IMG_NATIVE_H * cropScale);
+  const imgOffsetX = Math.round(CROP_LEFT * cropScale);
+  const imgOffsetY = Math.round(CROP_TOP * cropScale);
+  const cardW = cropDisplayW + cardPad * 2, cardH = cropDisplayH + cardPad * 2;
+  // نمركز البطاقة داخل نفس مربع 280×280 القديم، عشان باقي حسابات التخطيط تفضل صحيحة
+  const cardX = visionX + (visionSize - cardW) / 2;
+  const cardY = visionY + (visionSize - cardH) / 2;
+
+  const visionCard = el('rect', {
+    x: cardX, y: cardY, width: cardW, height: cardH,
+    rx: 14, fill: '#ffffff'
+  });
+  oudFooterGroup.appendChild(visionCard);
+
+  const visionClipId = 'visionLogoClip';
+  const visionClipPath = el('clipPath', { id: visionClipId });
+  const visionClipRect = el('rect', {
+    x: cardX + cardPad, y: cardY + cardPad, width: cropDisplayW, height: cropDisplayH, rx: 4
+  });
+  visionClipPath.appendChild(visionClipRect);
+  oudFooterGroup.appendChild(visionClipPath);
+
   const visionImg = el('image', {
-    x: visionX, y: visionY,
-    width: visionSize, height: visionSize,
-    preserveAspectRatio: 'xMidYMid meet'
+    x: cardX + cardPad - imgOffsetX, y: cardY + cardPad - imgOffsetY,
+    width: fullImgDisplayW, height: fullImgDisplayH,
+    preserveAspectRatio: 'xMidYMid meet',
+    'clip-path': `url(#${visionClipId})`
   });
   visionImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', 'images/2030_vision.png');
   visionImg.setAttribute('href', 'images/2030_vision.png');
