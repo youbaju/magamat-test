@@ -593,6 +593,19 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .social-grid a{ padding: 8px 6px !important; gap: 4px !important; }
   .social-grid a svg{ width: 20px !important; height: 20px !important; }
   .social-grid a span{ font-size: .68rem !important; }
+  /* لوحة اختيار المقام (فصائل + قائمتي المقام والحرف) — كانت بارتفاع كامل الشاشة (100vh)
+     بدون تصغير للوضع الأفقي القصير، فيصير محتواها (خصوصاً قائمة الحرف بالأسفل) قريب
+     جداً من حافة الشاشة أو يحتاج تمرير عشان توصله بالكامل، وهذا يسبب صعوبة تفاعل حقيقية
+     مع القائمة المنسدلة على بعض المتصفحات — نصغّر كل عنصر داخلها هنا عشان يبين المحتوى
+     كامل بدون تمرير */
+  .panel-title{ padding: 6px 0 !important; font-size: 0.85rem !important; }
+  .options-list{ padding: 1px 8px !important; }
+  .options-list li{ padding: 1px 0 !important; }
+  .right-opt, .left-opt{ font-size: 0.65rem !important; }
+  .sep{ height: 12px !important; margin: 0 4px !important; }
+  input[type="radio"]{ width: 10px !important; height: 10px !important; }
+  .dropdown-label{ font-size: 0.65rem !important; padding: 2px 8px !important; }
+  .dropdown-select{ font-size: 0.7rem !important; padding: 3px 26px 3px 3px !important; }
 }
 
 /* =====================================================================
