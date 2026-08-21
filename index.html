@@ -1933,6 +1933,7 @@ input[type="radio"] {
       <p>يوجد زر بجانب زر المساعدة تحت زند العود يبدّل لغة التطبيق بالكامل بين <strong>العربية</strong> و<strong>الإنجليزية</strong> — يتبادل نص الزر تلقائياً بين اسم اللغة الحالية بالعربي والإنجليزي (مثلاً "عربي" ↔ "Arabic")، لكي يكون واضحاً لأي زائر مهما كانت اللغة التي يقرأها.</p>
       <p>🔹 اضغط الزر لتبديل اللغة فوراً (تُعاد الصفحة تلقائياً لتطبيق اللغة الجديدة على كل عناصر التطبيق).</p>
       <p>🔹 اختيارك يُحفظ ويبقى مفعّلاً حتى لو أغلقت المتصفح ورجعت إلى التطبيق لاحقاً.</p>
+      <p>🔹 <strong>الوضع الليلي:</strong> يدعم التطبيق تلقائياً الوضع الليلي حسب إعدادات جوالك أو متصفحك — إذا كان جهازك مضبوط على الوضع الليلي، ستظهر ألوان التطبيق داكنة تلقائياً لراحة أكبر للعين، بدون أي إعداد إضافي مطلوب منك داخل التطبيق نفسه.</p>
     </div>
 
     <div class="help-section" id="help-sec-ar-2">
@@ -2169,6 +2170,7 @@ input[type="radio"] {
       <p>Next to the help button below the fretboard, there's a button that switches the entire site's language between <strong>Arabic</strong> and <strong>English</strong> — its text automatically alternates between the current language's name in Arabic and in English (e.g. "Arabic" ↔ "عربي"), so it's clear to any visitor regardless of which script they read.</p>
       <p>🔹 Press the button to switch language instantly (the page reloads automatically to apply the new language everywhere).</p>
       <p>🔹 Your choice is saved and stays even if you close the browser and come back later.</p>
+      <p>🔹 <strong>Dark Mode:</strong> The app automatically supports dark mode based on your phone or browser settings — if your device is set to dark mode, the app's colors will automatically switch to a darker palette for greater eye comfort, with no extra setup needed inside the app itself.</p>
     </div>
 
     <div class="help-section" id="help-sec-en-2">
@@ -2605,6 +2607,83 @@ input[type="radio"] {
   .rating-star-num { margin-top:-10px; }
   .rating-star-wrap.locked { cursor:default; }
   .rating-star-num { font-size:.8rem; color:#777; font-weight:700; font-family:'Cairo',sans-serif; }
+</style>
+
+<!-- =====================================================================
+     الوضع الليلي (Dark Mode) — قسم مستقل بالكامل، تراكب فوق التصميم الأصلي
+     بدون تعديل أي قاعدة CSS موجودة مسبقاً (صفر مخاطرة على الوضع الفاتح).
+     يعتمد على تفضيل نظام التشغيل/المتصفح (prefers-color-scheme: dark) —
+     أي إن الوضع الليلي بالجوال أو المتصفح لازم يكون مفعّل عشان تنطبق هذي القواعد.
+     ملاحظة: هذا "التمرير الأول" يغطي الخلفيات والألواح الهيكلية الرئيسية (الصفحات،
+     اللوحات الجانبية، شريط التبويبات، عناصر صفحة الشرح) — زند العود نفسه (الخشب)
+     تُرك بلونه الطبيعي عمداً لأنه يتناسق بصرياً مع خلفية داكنة، حسب رأينا الأولي.
+===================================================================== -->
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f0e4d0;
+  }
+  html, body {
+    background: #1a120c;
+  }
+  /* الصفحات الرئيسية (المقامات العربية، الدائرة، الشرح، التواصل الاجتماعي) */
+  #page-circle.active,
+  #page-maqamat,
+  #page-help, #page-help-en,
+  #page-social.active {
+    background: #1a120c;
+    color: #f0e4d0;
+  }
+  /* اللوحات الجانبية المنسدلة (قائمة السلالم، الإعدادات، إلخ) */
+  .panel, .c-panel {
+    background: #241a12;
+    border-color: #4a3826;
+    color: #f0e4d0;
+  }
+  /* شريط التبويبات العلوي */
+  .site-tabs {
+    background: #241a12;
+    border-bottom-color: #4a3826;
+  }
+  .site-tab-btn {
+    background: #2e2015;
+    color: #f0e4d0;
+  }
+  /* عناصر بحث ودليل صفحة الشرح */
+  .help-search-input,
+  .help-search-results,
+  .help-toc-item {
+    background: #241a12;
+    color: #f0e4d0;
+    border-color: #4a3826;
+  }
+  .help-search-results-count {
+    background: #2e2015;
+    border-bottom-color: #4a3826;
+  }
+  /* عناصر التحكم بالمقام (زر الدوزان، دليل المقام، أبعاده) */
+  .tuning-select,
+  .maqam-guide-btn,
+  .maqam-guide-container,
+  .maqam-intervals-btn,
+  .maqam-intervals-table,
+  .speed-step-btn {
+    background: #241a12;
+    color: #f0e4d0;
+    border-color: #4a3826;
+  }
+  /* شريط التحكم بالتشغيل السفلي (أزرار ▶⏹⏮، شريط التقدم، الدوزان والسرعة) */
+  .audio-player {
+    background: #241a12;
+    border-color: #4a3826;
+  }
+  .audio-progress {
+    background: #4a3826;
+  }
+  .now-playing {
+    color: #f0e4d0;
+  }
+}
 </style>
 
 <script>
@@ -4995,6 +5074,16 @@ function buildOudStatic(){
   const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
   const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
   const btnX2 = ratingBtnX2 - gap - btnW;
+  // بطاقة بيضاء خلف شعار الرؤية — الشعار له هامش شفاف/أبيض داخلي (نفس الملاحظة أعلاه)،
+  // وبالوضع الفاتح الحالي هذي البطاقة غير محسوسة إطلاقاً (بيضاء على أبيض)، لكنها ضرورية
+  // لأي خلفية داكنة مستقبلية (وضع ليلي) عشان الشعار يبين كـ"شارة" نظيفة بدل مستطيل غريب
+  const visionCardInset = 42; // بوحدات الرسمة — يعطي هامش معقول حوالين الشعار الفعلي داخل البطاقة
+  const visionCard = el('rect', {
+    x: visionX - visionCardInset, y: visionY - visionCardInset,
+    width: visionSize + visionCardInset * 2, height: visionSize + visionCardInset * 2,
+    rx: 20, fill: '#ffffff'
+  });
+  oudFooterGroup.appendChild(visionCard);
   const visionImg = el('image', {
     x: visionX, y: visionY,
     width: visionSize, height: visionSize,
