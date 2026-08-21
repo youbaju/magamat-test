@@ -1741,6 +1741,42 @@ input[type="radio"] {
   background-position: left 8px center;
   background-size: 14px 9px;
 }
+/* ===== قائمة اختيار مخصصة (Custom Select) — بديلة عن <select> الأصلي =====
+   السبب: قائمة <select> الأصلية يرسمها نظام التشغيل/المتصفح، وتبيّن إن طريقة عرضها
+   (وزر "تمت" تحديداً بالوضع الأفقي) تختلف بين متصفح Chrome العادي وتطبيق TWA المثبت
+   من Google Play. القائمة هنا مبنية بالكامل بكودنا (HTML/CSS/JS)، فتشتغل بنفس الشكل
+   والسلوك ١٠٠٪ بكل الحالات (متصفح، PWA، تطبيق TWA) بدون أي اعتماد على واجهة النظام. */
+.custom-select-wrap { position: relative; }
+.custom-select-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+}
+.custom-select-list.open { display: block; }
+.custom-select-option {
+  padding: 7px 10px;
+  font-family: "Cairo", sans-serif;
+  font-size: 0.82rem;
+  color: #0a2f52;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.custom-select-option:last-child { border-bottom: none; }
+.custom-select-option:hover, .custom-select-option:active { background: #eaf6fd; }
+.custom-select-option.selected { background: #d7edfa; font-weight: 700; }
+@media (max-height:540px) and (orientation:landscape){
+  .custom-select-list { max-height: 150px; }
+  .custom-select-option { font-size: 0.7rem !important; padding: 4px 8px !important; }
+}
+
 .show-btn {
   display: block;
   width: 100%;
@@ -1781,6 +1817,101 @@ input[type="radio"] {
 }
 
 </style>
+
+<!-- قائمة اختيار مخصصة (Custom Select) — تستبدل واجهة اختيار <select> الأصلية اللي يرسمها
+     نظام التشغيل، عشان نضمن نفس الشكل والسلوك بالضبط بكل بيئة (متصفح، PWA، تطبيق TWA
+     المثبت من Google Play). العنصر <select> الأصلي يبقى موجوداً وشغّالاً بالـ DOM (مخفي
+     بصرياً فقط) كمصدر وحيد للقيمة، عشان كل الكود الحالي اللي يتعامل معه (.value،
+     .selectedIndex، .options, addEventListener('change'...)) يستمر يشتغل بدون أي تغيير. -->
+<script>
+function wireCustomSelect(selectEl) {
+  if (!selectEl || selectEl._customSelectApi) return selectEl && selectEl._customSelectApi;
+
+  selectEl.style.position = 'absolute';
+  selectEl.style.opacity = '0';
+  selectEl.style.pointerEvents = 'none';
+  selectEl.style.height = '0';
+  selectEl.style.width = '0';
+  selectEl.style.overflow = 'hidden';
+  selectEl.tabIndex = -1;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'custom-select-wrap';
+
+  const btn = document.createElement('div');
+  btn.className = selectEl.className; // نفس كلاس الـ select الأصلي (dropdown-select أو tuning-select) عشان يطابق نفس التنسيق تماماً
+  btn.setAttribute('role', 'button');
+  btn.tabIndex = 0;
+  btn.style.userSelect = 'none';
+
+  const list = document.createElement('div');
+  list.className = 'custom-select-list';
+
+  wrap.appendChild(btn);
+  wrap.appendChild(list);
+  selectEl.insertAdjacentElement('afterend', wrap);
+
+  function currentLabel() {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    return opt ? opt.textContent : '';
+  }
+
+  function buildList() {
+    list.innerHTML = '';
+    Array.from(selectEl.options).forEach((opt, i) => {
+      // نتجاهل أي خيار مخفي (زي حروف الزند اللي تتجاوز عدد الأوتار الحالي 5/6) — نفس
+      // المنطق اللي يستخدمه <select> الأصلي (opt.style.display='none' يخفيه من القائمة)
+      if (opt.style.display === 'none') return;
+      const row = document.createElement('div');
+      row.className = 'custom-select-option' + (i === selectEl.selectedIndex ? ' selected' : '');
+      row.textContent = opt.textContent;
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectEl.selectedIndex = i;
+        closeList();
+        refresh();
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function outsideClickHandler(e) {
+    if (!list.contains(e.target) && e.target !== btn) closeList();
+  }
+  function openList() {
+    buildList();
+    list.classList.add('open');
+    const sel = list.querySelector('.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+    document.addEventListener('click', outsideClickHandler, { capture: true });
+  }
+  function closeList() {
+    list.classList.remove('open');
+    document.removeEventListener('click', outsideClickHandler, { capture: true });
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (list.classList.contains('open')) closeList(); else openList();
+  });
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+  });
+
+  function refresh() {
+    btn.textContent = currentLabel();
+    btn.dir = selectEl.getAttribute('dir') || '';
+    if (list.classList.contains('open')) buildList();
+  }
+
+  refresh();
+  const api = { refresh, closeList };
+  selectEl._customSelectApi = api;
+  return api;
+}
+window.wireCustomSelect = wireCustomSelect;
+</script>
 
 <!-- PWA: تسجيل الـ Service Worker (يفعّل التخزين المحلي والعمل بدون إنترنت) -->
 <script>
@@ -6498,6 +6629,7 @@ window.wxResume = wxResume;
         maqamSelect.appendChild(opt);
       });
       if (list.length) { maqamSelect.value = list[0]; setDefaultHarf(list[0]); }
+      if (maqamSelect._customSelectApi) maqamSelect._customSelectApi.refresh();
     }
     window.updateMaqam = updateMaqam; // نصدّرها للنطاق العام عشان يقدر يوصلها كود بسكربت منفصل (زي زر تبديل التبويب)
 
@@ -6633,6 +6765,7 @@ window.wxResume = wxResume;
         const markerText = (window.oudLanguage === 'en') ? '   ( Root )' : '   ( محط المقام )';
         harfSelect.options[idx].textContent = harfSelect.options[idx].dataset.original + markerText;
       }
+      if (harfSelect._customSelectApi) harfSelect._customSelectApi.refresh();
     }
     window.setDefaultHarf = setDefaultHarf; // نكشفها عالمياً عشان زر Do/C (بمجال مختلف) يقدر يستدعيها
     maqamSelect.addEventListener('change', () => setDefaultHarf(maqamSelect.value));
@@ -6667,6 +6800,17 @@ window.wxResume = wxResume;
       });
     } else {
       updateMaqam('الراست');
+    }
+
+    // نربط القوائم الثلاث (المقام، الحرف، الدوزان) بواجهة اختيار مخصصة كاملة التحكم بنا،
+    // بدل الاعتماد على <select> الأصلي اللي يرسمه نظام التشغيل بطريقة تختلف بين المتصفح
+    // العادي وتطبيق TWA المثبت من Google Play (خصوصاً زر "تمت" بالوضع الأفقي). يجب أن
+    // يحصل هذا هنا تحديداً (بعد اكتمال تحديد المقام/الحرف/الدوزان الأولي) عشان القائمة
+    // المخصصة تبدأ بعرض القيمة الصحيحة من أول لحظة.
+    if (typeof window.wireCustomSelect === 'function') {
+      window.wireCustomSelect(maqamSelect);
+      window.wireCustomSelect(harfSelect);
+      window.wireCustomSelect(document.getElementById('shared-tuningSelect'));
     }
 
     // مراجع للعناصر المشتركة مع تبويب المقامات الغربية
