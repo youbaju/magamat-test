@@ -7,6 +7,10 @@
 <!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3ab4e8">
+<meta name="color-scheme" content="light">
+<!-- يمنع خاصية "Force Dark" التلقائية بمتصفحات أندرويد (زي Chrome) من محاولة تخمين/عكس
+     ألوان الصفحة بنفسها لو المستخدم بوضع ليلي — يضمن بقاء التصميم بحالته الفاتحة الأصلية
+     ثابتاً دائماً، بغض النظر عن إعدادات الجهاز أو المتصفح -->
 
 <!-- دعم إضافي لآيفون (Safari ما يقرأ manifest.json لكل شي، فنكرر أهم القيم هنا) -->
 <meta name="apple-mobile-web-app-capable" content="yes">
