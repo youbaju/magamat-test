@@ -554,7 +554,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .shared-oud-area .audio-player{ max-width: 95vw !important; }
   .tuning-row { flex-wrap: wrap !important; gap: 3px !important; }
   .tuning-row label { font-size: .6rem !important; color: #111 !important; font-weight: 700 !important; white-space: nowrap !important; flex-shrink: 0 !important; }
-  .tuning-select { font-size: .6rem !important; padding: 1px 2px !important; flex: 1 1 auto !important; min-width: 80px !important; }
+  .tuning-select { font-size: .6rem !important; padding: 1px 16px 1px 2px !important; flex: 1 1 auto !important; min-width: 80px !important; }
   #shared-tuningSelect { flex: 1 1 0 !important; min-width: 0 !important; font-size: .58rem !important; padding: 1px 3px !important; }
   .speed-slider-inline { flex: 1 1 0 !important; min-width: 0 !important; }
   .speed-bpm-value { font-size: .6rem !important; min-width: 26px !important; }
@@ -586,7 +586,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .speed-bpm-value { font-size: .58rem !important; min-width: 26px !important; }
   .tuning-row { justify-content: flex-end !important; flex-wrap: wrap !important; gap: 4px !important; }
   .tuning-row label { font-size: .6rem !important; color: #111 !important; font-weight: 700 !important; white-space: nowrap !important; flex-shrink: 0 !important; }
-  .tuning-select { font-size: .6rem !important; padding: 1px 2px !important; }
+  .tuning-select { font-size: .6rem !important; padding: 1px 16px 1px 2px !important; }
   #page-social.active{ padding: calc(var(--tabs-h) + 12px) 16px 12px !important; }
   .social-page-content h2{ font-size: 1rem !important; margin: 0 0 10px !important; }
   .social-grid{ gap: 8px !important; }
@@ -742,7 +742,7 @@ flex-shrink: 0;
 }
 .tuning-select {
   flex: 1;
-  padding: 3px 6px;
+  padding: 3px 22px 3px 6px;
   font-family: "Cairo", sans-serif;
   font-size: 0.7rem;
   border: 1px solid #b8d4ea;
@@ -753,6 +753,15 @@ flex-shrink: 0;
   outline: none;
   cursor: pointer;
   direction: rtl;
+  /* سهم مخصص بلون كحلي غامق — نفس سهم قائمتي المقام والحرف بالضبط — عشان يوضح
+     إن هذا العنصر قابل للضغط ويفتح قائمة، بدل ما يبان مجرد صندوق نص ثابت */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%230a2f52' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: left 6px center;
+  background-size: 12px 8px;
 }
 
 .speed-slider-inline {
@@ -1903,14 +1912,20 @@ function wireCustomSelect(selectEl) {
     // عرض القائمة: عرض مريح ثابت دايماً (٢٦٠-٣٢٠ بكسل تقريباً)، بغض النظر عن عرض
     // الزر نفسه (اللي ممكن يكون ضيق جداً، زي زر الدوزان بصف flex ضيق)
     const width = Math.max(260, Math.min(rect.width, 320, vw - margin * 2));
-    let left = rect.left;
-    if (left + width > vw - margin) left = vw - width - margin;
+    // نلصق القائمة بالحافة اليمنى للزر (مو اليسرى) — ينسجم مع اتجاه القراءة العربي
+    // (RTL)، عشان القائمة تحس إنها "طالعة" من الزر نفسه، مو معلّقة بعيدة عنه
+    let left = rect.right - width;
     if (left < margin) left = margin;
+    if (left + width > vw - margin) left = vw - width - margin;
     const spaceBelow = vh - rect.bottom;
     const spaceAbove = rect.top;
-    const desiredMaxHeight = 260;
+    // الارتفاع المطلوب فعلياً حسب عدد الخيارات الحقيقي (مو رقم ثابت كبير دايماً) — عشان
+    // قائمة قصيرة (زي الدوزان بـ٤ خيارات بس) تفتح ملاصقة تماماً للزر، بدل ما تحجز مساحة
+    // كبيرة غير مستخدمة تخليها تبان بعيدة لفوق الشاشة بدون داعي
+    const naturalHeight = list.scrollHeight;
+    const desiredMaxHeight = Math.min(260, naturalHeight || 260);
     let top, maxHeight;
-    if (spaceBelow >= 140 || spaceBelow >= spaceAbove) {
+    if (spaceBelow >= desiredMaxHeight + margin || spaceBelow >= spaceAbove) {
       top = rect.bottom + 4;
       maxHeight = Math.min(desiredMaxHeight, vh - top - margin);
     } else {
