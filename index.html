@@ -560,6 +560,23 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   .speed-bpm-value { font-size: .6rem !important; min-width: 26px !important; }
 }
 
+/* تعديل خاص بزر الدوزان بالوضع العمودي للجوال فقط: القاعدة أعلاه كانت تحجز مساحة
+   فاضية كبيرة يمين النص وقليلة جداً يسار السهم (مكان السهم فعلياً)، فيصير النص
+   قريب/متراكب مع السهم. هنا نعكس الاتجاه الصحيح (مساحة فاضية كافية يسار السهم، قليلة
+   يمين النص) ونصغّر السهم نفسه شوي — بدون أي تأثير على الوضع الأفقي أو الشاشات الكبيرة */
+@media (max-width:600px) and (orientation:portrait){
+  .tuning-select {
+    padding: 1px 6px 1px 16px !important;
+    background-size: 9px 6px !important;
+    background-position: left 4px center !important;
+  }
+  /* نفس العكس بالإنجليزي (LTR) — السهم والحشو يتحولون لليمين بدل اليسار */
+  .tuning-select[dir="ltr"] {
+    padding: 1px 16px 1px 6px !important;
+    background-position: right 4px center !important;
+  }
+}
+
 /* ===== الوضع الأفقي على الجوال: مساحة عمودية محدودة جدًا، نصغّر العناصر الثانوية لصالح العود ===== */
 @media (max-height:540px) and (orientation:landscape){
   .shared-oud-area{ gap: 2px; padding: 4px 12px; }
@@ -770,6 +787,14 @@ flex-shrink: 0;
   align-items: center;
   gap: 4px;
   min-width: 0;
+}
+/* بالوضع الإنجليزي، اتجاه زر الدوزان يتحول لـ LTR (نُقرأ العنصر الأصلي المخفي عبر
+   خاصية dir ونطبّقها على زرنا المخصص أيضاً بدالة refresh — راجع wireCustomSelect).
+   لازم نعكس مكان السهم والحشو معه، وإلا يضل بمكانه القديم (يسار) رغم إن الاتجاه صار LTR */
+.tuning-select[dir="ltr"] {
+  direction: ltr;
+  padding: 3px 22px 3px 6px;
+  background-position: right 6px center;
 }
 .speed-step-btn {
   width: 22px;
