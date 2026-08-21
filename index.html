@@ -575,6 +575,13 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
     padding: 1px 16px 1px 6px !important;
     background-position: right 4px center !important;
   }
+  /* نخفي شريط انزلاق السرعة بالوضع العمودي بس (تصير مساحته ضيقة جداً)، ونستخدم
+     بدلاً عنه الحقل الرقمي القابل للكتابة المباشرة + زري +/− فقط — يوفر مساحة
+     أكبر لخانة الدوزان المجاورة، والمستخدم يقدر يكتب أي رقم مباشرة بدل السحب */
+  .speed-range { display: none !important; }
+  .speed-slider-inline { flex: 0 0 auto !important; gap: 6px !important; }
+  .speed-bpm-value { min-width: 38px !important; font-size: .68rem !important; padding: 3px 4px !important; }
+  .speed-step-btn { width: 24px !important; height: 24px !important; flex: 0 0 24px !important; }
 }
 
 /* ===== الوضع الأفقي على الجوال: مساحة عمودية محدودة جدًا، نصغّر العناصر الثانوية لصالح العود ===== */
@@ -823,6 +830,7 @@ flex-shrink: 0;
   cursor: pointer;
 }
 .speed-bpm-value {
+  font-family: "Cairo", sans-serif;
   font-size: .65rem;
   font-weight: 700;
   color: #1a3a52;
@@ -833,7 +841,16 @@ flex-shrink: 0;
   min-width: 30px;
   text-align: center;
   flex: 0 0 auto;
+  outline: none;
+  /* نشيل أسهم الزيادة/النقصان الافتراضية اللي يضيفها المتصفح لحقول type="number" */
+  -moz-appearance: textfield;
 }
+.speed-bpm-value::-webkit-outer-spin-button,
+.speed-bpm-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.speed-bpm-value:focus { border-color: #2a6a8a; background: #fff; }
 
 
 /* =====================================================================
@@ -2129,7 +2146,7 @@ window.wireCustomSelect = wireCustomSelect;
         <button type="button" class="speed-step-btn" id="shared-speedMinus" aria-label="إنقاص السرعة">−</button>
         <input type="range" class="speed-range" id="shared-speedRange" min="20" max="165" value="43" step="1">
         <button type="button" class="speed-step-btn" id="shared-speedPlus" aria-label="زيادة السرعة">+</button>
-        <span class="speed-bpm-value" id="shared-speedBpmValue">43</span>
+        <input type="number" class="speed-bpm-value" id="shared-speedBpmValue" value="43" min="20" max="165" step="1" inputmode="numeric">
       </div>
     </div>
   </div>
@@ -7502,10 +7519,22 @@ window.wxResume = wxResume;
       function applyBpm(bpm, save) {
         bpm = Math.max(parseInt(range.min), Math.min(parseInt(range.max), bpm));
         range.value = bpm;
-        bpmValue.textContent = bpm;
+        bpmValue.value = bpm;
         window.AR_STEP_MS = bpmToStepMs(bpm);
         if (save !== false) localStorage.setItem('oudSpeedPref', String(bpm)); // نحفظ آخر سرعة يختارها المستخدم، تبقى ثابتة حتى بعد إعادة التحميل
       }
+
+      // كتابة رقم مباشرة بالحقل: نطبّق القيمة عند الخروج من الحقل (blur) أو الضغط
+      // على Enter — ونتأكد من إن الرقم بالمدى المسموح (٢٠-١٦٥)، ولو كتب رقم فاضي
+      // أو غير صالح نرجّع القيمة الحالية الصحيحة بدل ما نخلي الحقل فاضي أو خاطئ
+      function applyTypedBpm() {
+        const parsed = parseInt(bpmValue.value);
+        applyBpm(isNaN(parsed) ? parseInt(range.value) : parsed);
+      }
+      bpmValue.addEventListener('change', applyTypedBpm);
+      bpmValue.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); applyTypedBpm(); bpmValue.blur(); }
+      });
 
       // نستعيد آخر سرعة محفوظة لهذي الجلسة، أو الافتراضي لو أول مرة
       const savedBpm = parseInt(localStorage.getItem('oudSpeedPref'));
