@@ -1933,7 +1933,6 @@ input[type="radio"] {
       <p>يوجد زر بجانب زر المساعدة تحت زند العود يبدّل لغة التطبيق بالكامل بين <strong>العربية</strong> و<strong>الإنجليزية</strong> — يتبادل نص الزر تلقائياً بين اسم اللغة الحالية بالعربي والإنجليزي (مثلاً "عربي" ↔ "Arabic")، لكي يكون واضحاً لأي زائر مهما كانت اللغة التي يقرأها.</p>
       <p>🔹 اضغط الزر لتبديل اللغة فوراً (تُعاد الصفحة تلقائياً لتطبيق اللغة الجديدة على كل عناصر التطبيق).</p>
       <p>🔹 اختيارك يُحفظ ويبقى مفعّلاً حتى لو أغلقت المتصفح ورجعت إلى التطبيق لاحقاً.</p>
-      <p>🔹 <strong>الوضع الليلي:</strong> يدعم التطبيق تلقائياً الوضع الليلي حسب إعدادات جوالك أو متصفحك — إذا كان جهازك مضبوط على الوضع الليلي، ستظهر ألوان التطبيق داكنة تلقائياً لراحة أكبر للعين، بدون أي إعداد إضافي مطلوب منك داخل التطبيق نفسه.</p>
     </div>
 
     <div class="help-section" id="help-sec-ar-2">
@@ -2170,7 +2169,6 @@ input[type="radio"] {
       <p>Next to the help button below the fretboard, there's a button that switches the entire site's language between <strong>Arabic</strong> and <strong>English</strong> — its text automatically alternates between the current language's name in Arabic and in English (e.g. "Arabic" ↔ "عربي"), so it's clear to any visitor regardless of which script they read.</p>
       <p>🔹 Press the button to switch language instantly (the page reloads automatically to apply the new language everywhere).</p>
       <p>🔹 Your choice is saved and stays even if you close the browser and come back later.</p>
-      <p>🔹 <strong>Dark Mode:</strong> The app automatically supports dark mode based on your phone or browser settings — if your device is set to dark mode, the app's colors will automatically switch to a darker palette for greater eye comfort, with no extra setup needed inside the app itself.</p>
     </div>
 
     <div class="help-section" id="help-sec-en-2">
@@ -2607,83 +2605,6 @@ input[type="radio"] {
   .rating-star-num { margin-top:-10px; }
   .rating-star-wrap.locked { cursor:default; }
   .rating-star-num { font-size:.8rem; color:#777; font-weight:700; font-family:'Cairo',sans-serif; }
-</style>
-
-<!-- =====================================================================
-     الوضع الليلي (Dark Mode) — قسم مستقل بالكامل، تراكب فوق التصميم الأصلي
-     بدون تعديل أي قاعدة CSS موجودة مسبقاً (صفر مخاطرة على الوضع الفاتح).
-     يعتمد على تفضيل نظام التشغيل/المتصفح (prefers-color-scheme: dark) —
-     أي إن الوضع الليلي بالجوال أو المتصفح لازم يكون مفعّل عشان تنطبق هذي القواعد.
-     ملاحظة: هذا "التمرير الأول" يغطي الخلفيات والألواح الهيكلية الرئيسية (الصفحات،
-     اللوحات الجانبية، شريط التبويبات، عناصر صفحة الشرح) — زند العود نفسه (الخشب)
-     تُرك بلونه الطبيعي عمداً لأنه يتناسق بصرياً مع خلفية داكنة، حسب رأينا الأولي.
-===================================================================== -->
-<style>
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #f0e4d0;
-  }
-  html, body {
-    background: #1a120c;
-  }
-  /* الصفحات الرئيسية (المقامات العربية، الدائرة، الشرح، التواصل الاجتماعي) */
-  #page-circle.active,
-  #page-maqamat,
-  #page-help, #page-help-en,
-  #page-social.active {
-    background: #1a120c;
-    color: #f0e4d0;
-  }
-  /* اللوحات الجانبية المنسدلة (قائمة السلالم، الإعدادات، إلخ) */
-  .panel, .c-panel {
-    background: #241a12;
-    border-color: #4a3826;
-    color: #f0e4d0;
-  }
-  /* شريط التبويبات العلوي */
-  .site-tabs {
-    background: #241a12;
-    border-bottom-color: #4a3826;
-  }
-  .site-tab-btn {
-    background: #2e2015;
-    color: #f0e4d0;
-  }
-  /* عناصر بحث ودليل صفحة الشرح */
-  .help-search-input,
-  .help-search-results,
-  .help-toc-item {
-    background: #241a12;
-    color: #f0e4d0;
-    border-color: #4a3826;
-  }
-  .help-search-results-count {
-    background: #2e2015;
-    border-bottom-color: #4a3826;
-  }
-  /* عناصر التحكم بالمقام (زر الدوزان، دليل المقام، أبعاده) */
-  .tuning-select,
-  .maqam-guide-btn,
-  .maqam-guide-container,
-  .maqam-intervals-btn,
-  .maqam-intervals-table,
-  .speed-step-btn {
-    background: #241a12;
-    color: #f0e4d0;
-    border-color: #4a3826;
-  }
-  /* شريط التحكم بالتشغيل السفلي (أزرار ▶⏹⏮، شريط التقدم، الدوزان والسرعة) */
-  .audio-player {
-    background: #241a12;
-    border-color: #4a3826;
-  }
-  .audio-progress {
-    background: #4a3826;
-  }
-  .now-playing {
-    color: #f0e4d0;
-  }
-}
 </style>
 
 <script>
@@ -4487,20 +4408,6 @@ window.applyOudHorizontalMirror = function(container){
 const oudStatic = el('g', { id:'oudStatic' });
 const oudNotesLayer = el('g', { id:'oudNotesLayer' });
 const oudControlBtnsLayer = el('g', { id:'oudControlBtnsLayer' }); // طبقة الأزرار (يمين/يسار/عدد الأوتار) — فوق الكل دايماً، تضمن استقبال الضغطات
-
-// أزرار التحكم فوق/تحت الزند (المساعدة، اللغة، عدد الأوتار، Do/C، اليد) مرسومة برمجياً
-// بـSVG بألوان ثابتة بالكود، فما تتجاوب تلقائياً مع تفضيل الوضع الليلي بالنظام (بعكس عناصر
-// HTML العادية اللي تتحكم فيها قواعد CSS). هذي الدالة تتحقق حياً وقت كل رسم/إعادة رسم،
-// وثابت الألوان تحتها يوفر نفس مجموعة الألوان (خلفية/حد/نص) بنسخة تناسب كل وضع
-function isDarkModePreferred(){
-  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-}
-const CTRL_BTN_COLORS = {
-  light: { bg: '#eaf6fc', stroke: '#3ab4e8', text: '#1a5fa8' },
-  dark:  { bg: '#1c2e3a', stroke: '#3ab4e8', text: '#a8dcf5' }
-};
-function ctrlBtnPalette(){ return isDarkModePreferred() ? CTRL_BTN_COLORS.dark : CTRL_BTN_COLORS.light; }
-
 oudSvg.appendChild(oudStatic);
 oudSvg.appendChild(oudNotesLayer);
 oudSvg.appendChild(chordHighlightLayer);
@@ -4692,11 +4599,10 @@ function buildOudStatic(){
   const micBx = window.isLeftHanded ? naturalAboveNeckX : mirrorXForHelpRow(naturalAboveNeckX);
   const micBy = OUD.neckTopY(naturalAboveNeckX) - 103; // نفس ارتفاع صف زر يمين/يسار وعدد الأوتار (فوق الزند)
   const helpG = el('g', { id: 'helpBtn', style: 'cursor:pointer' });
-  const helpPalette = ctrlBtnPalette();
   helpG.appendChild(el('rect', {
     x: helpBx - helpBtnW/2, y: helpY - helpBtnH/2,
     width: helpBtnW, height: helpBtnH, rx: instBtnR,
-    fill: helpPalette.bg, stroke: helpPalette.stroke, 'stroke-width': '2'
+    fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
   }));
   const helpTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   helpTxt.setAttribute('x', helpBx);
@@ -4705,7 +4611,7 @@ function buildOudStatic(){
   helpTxt.setAttribute('font-family', "Arial, sans-serif");
   helpTxt.setAttribute('font-size', '68');
   helpTxt.setAttribute('font-weight', '800');
-  helpTxt.setAttribute('fill', helpPalette.text);
+  helpTxt.setAttribute('fill', '#1a5fa8');
   helpTxt.textContent = '?';
   if (window.oudLanguage !== 'en') {
     // نستثني هالعنصر من التصحيح التلقائي، ونطبّق منطقنا الخاص يراعي حالة انعكاس اليد الحالية
@@ -4759,11 +4665,10 @@ function buildOudStatic(){
 
     function makeHandBtn(x, y, label, isLeft, btnId){
       const active = (window.isLeftHanded === isLeft);
-      const handDark = isDarkModePreferred();
       const hg = el('g', { id: btnId, style: 'cursor:pointer' });
       hg.appendChild(el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: active ? '#e8a83a' : (handDark ? '#2e2015' : '#f3e2c7'),
+        fill: active ? '#e8a83a' : '#f3e2c7',
         stroke: '#9c5a18', 'stroke-width': active ? '4' : '2'
       }));
       drawPalmShape(hg, x, y - 10*handScale, isLeft, active);
@@ -4773,7 +4678,7 @@ function buildOudStatic(){
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       t.setAttribute('font-size', String(15 * handScale));
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', active ? '#fff' : (handDark ? '#f0e4d0' : '#5c3414'));
+      t.setAttribute('fill', active ? '#fff' : '#5c3414');
       t.textContent = (isLeft ? 'يسار' : 'يمين');
       hg.appendChild(t);
       hg.addEventListener('click', () => {
@@ -4866,10 +4771,9 @@ function buildOudStatic(){
     // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
     function makeStringCountBtn(x, y){
       const sg = el('g', { id: 'stringCountBtn', style: 'cursor:pointer;pointer-events:all;' });
-      const scPalette = ctrlBtnPalette();
       sg.appendChild(el('rect', {
         x: x - handW/2, y: y - handH/2, width: handW, height: handH, rx: handR,
-        fill: scPalette.bg, stroke: scPalette.stroke, 'stroke-width': '2'
+        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
       }));
       const numStr = (OUD.STRING_COUNT === 6) ? '6' : '5';
       const wordStr = (window.oudLanguage === 'en') ? 'Strings' : 'أوتار';
@@ -4880,7 +4784,7 @@ function buildOudStatic(){
       wordEl.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       wordEl.setAttribute('font-size', String(22 * handScale));
       wordEl.setAttribute('font-weight', '800');
-      wordEl.setAttribute('fill', scPalette.text);
+      wordEl.setAttribute('fill', '#1a5fa8');
       wordEl.textContent = wordStr;
       sg.appendChild(wordEl);
       const numEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -4889,7 +4793,7 @@ function buildOudStatic(){
       numEl.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       numEl.setAttribute('font-size', String(30 * handScale));
       numEl.setAttribute('font-weight', '800');
-      numEl.setAttribute('fill', isDarkModePreferred() ? '#e8756a' : '#c0392b');
+      numEl.setAttribute('fill', '#c0392b');
       numEl.textContent = numStr;
       sg.appendChild(numEl);
       sg.addEventListener('click', () => {
@@ -4912,10 +4816,9 @@ function buildOudStatic(){
     function makeLanguageBtn(x, y){
       const lg = el('g', { id: 'langToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
       lg.classList.toggle('lang-btn-pulse', !window._langPulseDismissed); // نطبّق الوميض بس لو المستخدم ما تفاعل مع الموقع لسا (علم عالمي ثابت، مو مرتبط بلحظة الإنشاء)
-      const langPalette = ctrlBtnPalette();
       lg.appendChild(el('rect', {
         x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
-        fill: langPalette.bg, stroke: langPalette.stroke, 'stroke-width': '2', class: 'lang-btn-rect'
+        fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2', class: 'lang-btn-rect'
       }));
       const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       t.setAttribute('x', x);
@@ -4923,7 +4826,7 @@ function buildOudStatic(){
       t.setAttribute('dominant-baseline', 'middle');
       t.setAttribute('font-family', "'Cairo', Arial, sans-serif");
       t.setAttribute('font-weight', '800');
-      t.setAttribute('fill', langPalette.text);
+      t.setAttribute('fill', '#1a5fa8');
       t.setAttribute('y', y + 2);
       lg.appendChild(t);
 
@@ -4998,10 +4901,9 @@ function buildOudStatic(){
     if (window.oudLanguage === 'en') {
       function makeNoteSystemBtn(x, y){
         const ng = el('g', { id: 'noteSystemToggleBtn', style: 'cursor:pointer;pointer-events:all;' });
-        const nsPalette = ctrlBtnPalette();
         ng.appendChild(el('rect', {
           x: x - helpBtnW/2, y: y - helpBtnH/2, width: helpBtnW, height: helpBtnH, rx: instBtnR,
-          fill: nsPalette.bg, stroke: nsPalette.stroke, 'stroke-width': '2'
+          fill: '#eaf6fc', stroke: '#3ab4e8', 'stroke-width': '2'
         }));
         const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         t.setAttribute('x', x); t.setAttribute('y', y + 14);
@@ -5009,7 +4911,7 @@ function buildOudStatic(){
         t.setAttribute('font-family', "Arial, sans-serif");
         t.setAttribute('font-size', '46');
         t.setAttribute('font-weight', '800');
-        t.setAttribute('fill', nsPalette.text);
+        t.setAttribute('fill', '#1a5fa8');
         t.textContent = (window.oudNoteSystem === 'letter') ? 'C' : 'Do';
         ng.appendChild(t);
         ng.addEventListener('click', () => {
@@ -5079,11 +4981,7 @@ function buildOudStatic(){
     g2.appendChild(t);
   }
 
-  // شعار رؤية 2030 — الصورة نفسها فيها خلفية بيضاء مرسومة داخلها (مو شفافة) بهامش كبير
-  // حوالين الشعار الفعلي (~15-20% من كل جهة، قِسناها بدقة من بكسلات الصورة الحقيقية)،
-  // فبدل ما نعرض الصورة كاملة بهامشها الزائد، نقصّها لتُظهر جزء الشعار الملوّن فقط
-  // باستخدام SVG متداخلة (نافذة قص)، ونحط خلفها بطاقة بيضاء بحجم مطابق تماماً — بدل
-  // مستطيل كبير فيه مساحة فاضية واضحة حوالين شعار صغير
+  // شعار رؤية 2030
   const oudFooterGroup = el('g', { id: 'oudFooterGroup' });
   const visionSize = 280;
   const gap = 60;
@@ -5097,48 +4995,10 @@ function buildOudStatic(){
   const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
   const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
   const btnX2 = ratingBtnX2 - gap - btnW;
-
-  // --- قص الصورة على حدود الشعار الفعلي (قِسناها بالبكسل: يسار 236، أعلى 107، يمين 981، أسفل 605 من أصل 1191×734) ---
-  const IMG_NATIVE_W = 1191, IMG_NATIVE_H = 734;
-  const CROP_LEFT = 236, CROP_TOP = 107, CROP_RIGHT = 981, CROP_BOTTOM = 605;
-  const cropW = CROP_RIGHT - CROP_LEFT, cropH = CROP_BOTTOM - CROP_TOP;
-  const cardPad = 12;
-  // نطابق عرض البطاقة تقريباً مع عرض زر التقييم/التواصل (btnW) نفسه — بما إن نسبة أبعاد
-  // الشعار (طولي عريض) تختلف عن نسبة الزر (مستطيل)، نحافظ على النسبة الصحيحة للشعار
-  // (بدون أي تمطيط) وناخذ العرض كمرجع أساسي للمطابقة، فيطلع الارتفاع مقارب لارتفاع
-  // الزر تلقائياً بحكم النسبة، بدون فرض تطابق حرفي يشوّه الشعار
-  const cropDisplayW = btnW - cardPad * 2;
-  const cropDisplayH = Math.round(cropDisplayW * (cropH / cropW));
-  const cropScale = cropDisplayW / cropW;
-  const fullImgDisplayW = Math.round(IMG_NATIVE_W * cropScale);
-  const fullImgDisplayH = Math.round(IMG_NATIVE_H * cropScale);
-  const imgOffsetX = Math.round(CROP_LEFT * cropScale);
-  const imgOffsetY = Math.round(CROP_TOP * cropScale);
-  const cardW = cropDisplayW + cardPad * 2, cardH = cropDisplayH + cardPad * 2;
-  // نمركز البطاقة الجديدة (الأصغر) داخل نفس مربع 280×280 القديم، عشان باقي حسابات التخطيط
-  // (مواضع أزرار تواصل/تقييم اللي تعتمد على visionX) تفضل صحيحة بدون أي تعديل إضافي
-  const cardX = visionX + (visionSize - cardW) / 2;
-  const cardY = visionY + (visionSize - cardH) / 2;
-
-  const visionCard = el('rect', {
-    x: cardX, y: cardY, width: cardW, height: cardH,
-    rx: 14, fill: '#ffffff'
-  });
-  oudFooterGroup.appendChild(visionCard);
-
-  const visionClipId = 'visionLogoClip';
-  const visionClipPath = el('clipPath', { id: visionClipId });
-  const visionClipRect = el('rect', {
-    x: cardX + cardPad, y: cardY + cardPad, width: cropDisplayW, height: cropDisplayH, rx: 4
-  });
-  visionClipPath.appendChild(visionClipRect);
-  oudFooterGroup.appendChild(visionClipPath);
-
   const visionImg = el('image', {
-    x: cardX + cardPad - imgOffsetX, y: cardY + cardPad - imgOffsetY,
-    width: fullImgDisplayW, height: fullImgDisplayH,
-    preserveAspectRatio: 'xMidYMid meet',
-    'clip-path': `url(#${visionClipId})`
+    x: visionX, y: visionY,
+    width: visionSize, height: visionSize,
+    preserveAspectRatio: 'xMidYMid meet'
   });
   visionImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', 'images/2030_vision.png');
   visionImg.setAttribute('href', 'images/2030_vision.png');
