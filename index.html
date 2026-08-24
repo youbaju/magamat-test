@@ -7886,32 +7886,26 @@ window.wxResume = wxResume;
       const mySessionId = ++arPlaySessionId; // نلغي أي سلسلة تشغيل سابقة معلّقة (تحسباً لضغطات متكررة أو تأخر استئناف الصوت بالجوال)
       arPlayerState = 'playing'; // نحدّثها فوراً (متزامن) قبل أي انتظار، عشان ضغطات متكررة ما تعيد فتح نفس المسار مرتين
       playBtn.textContent = '⏸';
-      if (!samplesLoaded && !samplesLoading && !samplesLoadGaveUp) {
-        loadOudSamples().then(() => {
-          if (arPlaySessionId !== mySessionId) return; // فيه ضغطة أحدث ألغت هالمحاولة، نتجاهلها
-          buildArSequence(currentDegrees);
-          arStepIdx = 0;
-          playBtn.textContent = '⏸';
-          playBtn.disabled = false;
-          stopBtn.disabled = false;
-          rewindBtn.disabled = false;
-          arScheduleNextStep(200);
-        });
-        return;
+      const beginArSequence = () => {
+        if (arPlaySessionId !== mySessionId) return; // فيه ضغطة أحدث ألغت هالمحاولة، نتجاهلها
+        buildArSequence(currentDegrees);
+        arStepIdx = 0;
+        playBtn.textContent = '⏸';
+        playBtn.disabled = false;
+        stopBtn.disabled = false;
+        rewindBtn.disabled = false;
+        arScheduleNextStep(200);
+      };
+      // ننتظر اكتمال تحميل العينات واستئناف الـ AudioContext فعلياً معاً قبل جدولة أول نغمة —
+      // نفس سبب ونفس حل مشكلة فرق التوقيت السريع بين أول نغمتين بمشغّل السلالم الغربية
+      const arWaitPromises = [];
+      if (typeof window.ensureOudSamplesLoaded === 'function') arWaitPromises.push(window.ensureOudSamplesLoaded());
+      if (typeof window.ensureOudAudioReady === 'function') arWaitPromises.push(window.ensureOudAudioReady());
+      if (arWaitPromises.length) {
+        Promise.all(arWaitPromises).then(beginArSequence);
+      } else {
+        beginArSequence();
       }
-      if (samplesLoading) {
-        // لا تزال تُحمَّل — انتظر (فترة قصيرة بس، مو للأبد)
-        setTimeout(() => { if (arPlaySessionId === mySessionId) arStartPlay(); }, 200);
-        return;
-      }
-      // إما تحمّلت بنجاح، أو فشلت واستسلمنا (بنعزف بالصوت الاحتياطي بدالها) - إما الحالتين نكمل ونشغّل عادي
-      buildArSequence(currentDegrees);
-      arStepIdx = 0;
-      playBtn.textContent = '⏸';
-      playBtn.disabled = false;
-      stopBtn.disabled = false;
-      rewindBtn.disabled = false;
-      arScheduleNextStep(200);
     }
     function arPause() {
       arPlayerState = 'paused';
