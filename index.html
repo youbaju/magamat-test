@@ -6103,7 +6103,20 @@ function startPlaying(){
   rewindBtn.disabled = false;
   updateProgressBar();
   drawOudScale(state.root, state.scaleType, 'asc', null, undefined);
-  scheduleNextStep(200);
+  const mySession = playSessionId;
+  const beginSequence = () => {
+    if (mySession !== playSessionId) return; // جلسة قديمة اتلغت أثناء انتظار تحميل العينات، نتجاهلها
+    scheduleNextStep(200);
+  };
+  // ننتظر اكتمال تحميل عينات العود قبل جدولة أول نغمة — لو ما انتظرنا، أول تشغيل بالجلسة
+  // يشغّل النغمة الأولى بالصوت الاصطناعي الاحتياطي (لأن التحميل الحقيقي لسا ما خلص) بينما
+  // مؤقّت النغمة الثانية يبدأ العد فوراً بغض النظر، فيطلع الفرق بينهما أسرع بكثير من السرعة
+  // المضبوطة أول مرة فقط (نفس السبب اللي كان يخلي أول تشغيل للكوردات غير متجانس)
+  if (typeof window.ensureOudSamplesLoaded === 'function') {
+    window.ensureOudSamplesLoaded().then(beginSequence);
+  } else {
+    beginSequence();
+  }
 }
 
 function pausePlaying(){
