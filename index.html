@@ -4400,11 +4400,15 @@ function startChordPlaying(){
     }, 2000);
   };
 
-  // ننتظر اكتمال تحميل عينات العود قبل ما نشغّل أي نغمة من الكورد — لو ما انتظرنا،
-  // أول ضغطة بالجلسة تشغّل نغمة أو نغمتين بالصوت الاصطناعي الاحتياطي (لأن التحميل
-  // لسا ما خلص) بينما البقية تنتظر العينة الحقيقية، فيطلع الكورد مو متجانس أول مرة
-  if (typeof window.ensureOudSamplesLoaded === 'function') {
-    window.ensureOudSamplesLoaded().then(playNow);
+  // ننتظر اكتمال تحميل عينات العود واستئناف الـ AudioContext فعلياً قبل ما نشغّل أي نغمة
+  // من الكورد — لو ما انتظرنا، أول ضغطة بالجلسة تشغّل نغمة أو نغمتين بالصوت الاصطناعي
+  // الاحتياطي (لأن التحميل لسا ما خلص) بينما البقية تنتظر العينة الحقيقية، فيطلع الكورد
+  // مو متجانس أول مرة
+  const chordWaitPromises = [];
+  if (typeof window.ensureOudSamplesLoaded === 'function') chordWaitPromises.push(window.ensureOudSamplesLoaded());
+  if (typeof window.ensureOudAudioReady === 'function') chordWaitPromises.push(window.ensureOudAudioReady());
+  if (chordWaitPromises.length) {
+    Promise.all(chordWaitPromises).then(playNow);
   } else {
     playNow();
   }
@@ -6112,8 +6116,11 @@ function startPlaying(){
   // يشغّل النغمة الأولى بالصوت الاصطناعي الاحتياطي (لأن التحميل الحقيقي لسا ما خلص) بينما
   // مؤقّت النغمة الثانية يبدأ العد فوراً بغض النظر، فيطلع الفرق بينهما أسرع بكثير من السرعة
   // المضبوطة أول مرة فقط (نفس السبب اللي كان يخلي أول تشغيل للكوردات غير متجانس)
-  if (typeof window.ensureOudSamplesLoaded === 'function') {
-    window.ensureOudSamplesLoaded().then(beginSequence);
+  const waitPromises = [];
+  if (typeof window.ensureOudSamplesLoaded === 'function') waitPromises.push(window.ensureOudSamplesLoaded());
+  if (typeof window.ensureOudAudioReady === 'function') waitPromises.push(window.ensureOudAudioReady());
+  if (waitPromises.length) {
+    Promise.all(waitPromises).then(beginSequence);
   } else {
     beginSequence();
   }
@@ -6974,6 +6981,17 @@ window.wxResume = wxResume;
       if (arAudioCtx.state === 'suspended') arAudioCtx.resume();
       return arAudioCtx;
     }
+    // نكشفها عالمياً عشان زر التشغيل الرئيسي يقدر ينتظر استئناف الـ AudioContext فعلياً
+    // (لا نكتفي بمجرد استدعاء resume() بدون انتظار) قبل جدولة أول نغمة — resume() عملية
+    // غير متزامنة تاخذ وقتاً حقيقياً خصوصاً بالجوال أول مرة بالجلسة، ولو ما انتظرناها
+    // ممكن تنطلق أول نغمة فعلياً متأخرة عن توقيتها المجدول رغم إن العينات جاهزة
+    window.ensureOudAudioReady = function() {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') {
+        return ctx.resume().catch(() => {});
+      }
+      return Promise.resolve();
+    };
     function formatTime(s) {
       const m = Math.floor(s/60), sec = Math.floor(s%60);
       return m + ':' + String(sec).padStart(2,'0');
