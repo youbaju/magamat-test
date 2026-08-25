@@ -580,7 +580,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
      أكبر لخانة الدوزان المجاورة، والمستخدم يقدر يكتب أي رقم مباشرة بدل السحب */
   .speed-range { display: none !important; }
   .speed-slider-inline { flex: 0 0 auto !important; gap: 3px !important; }
-  .speed-bpm-value { width: 22px !important; min-width: 22px !important; font-size: .62rem !important; padding: 2px 1px !important; }
+  .speed-bpm-value { width: 26px !important; min-width: 26px !important; font-size: .62rem !important; padding: 3px 1px !important; }
   .speed-step-btn { width: 20px !important; height: 20px !important; flex: 0 0 20px !important; }
 }
 
@@ -843,6 +843,7 @@ flex-shrink: 0;
   text-align: center;
   flex: 0 0 auto;
   outline: none;
+  -webkit-touch-callout: none; /* يمنع قائمة اللمس الطويل (نسخ/مشاركة) بـ iOS Safari */
 }
 .speed-bpm-value:focus { border-color: #2a6a8a; background: #fff; }
 
@@ -7599,6 +7600,17 @@ window.wxResume = wxResume;
       bpmValue.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); applyTypedBpm(); bpmValue.blur(); }
       });
+      // نفرّغ الحقل بالكامل بمجرد الضغط عليه — بدل ما نحدد النص (select())، عشان
+      // ما تظهر قائمة النظام الافتراضية (قص/لصق/تحديد الكل) اللي يفعّلها أي تحديد
+      // نص بالجوال. تفريغ الحقل يخلي المستخدم يكتب رقمه الجديد مباشرة.
+      bpmValue.addEventListener('focus', () => {
+        bpmValue.value = '';
+      });
+      // نضمن الرجوع للقيمة الصحيحة عند الخروج من الحقل (blur) دايماً، سواء كتب المستخدم
+      // رقماً جديداً أو ترك الحقل فاضياً — لا نعتمد على حدث 'change' وحده هنا، لأن بعض
+      // المتصفحات ما تُطلقه أصلاً في هذي الحالة (لأن حدث focus فرّغ الحقل، فالمتصفح ما
+      // يلاحظ "فرق" بين قيمة التركيز وقيمة الخروج لو الحقل ضل فاضياً بدون كتابة)
+      bpmValue.addEventListener('blur', applyTypedBpm);
 
       // نستعيد آخر سرعة محفوظة لهذي الجلسة، أو الافتراضي لو أول مرة
       const savedBpm = parseInt(localStorage.getItem('oudSpeedPref'));
