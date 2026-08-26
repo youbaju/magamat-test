@@ -3231,16 +3231,32 @@ window.isArabicMode = false;
     if (exerciseSeq) return exerciseSeq;
     const layer = document.getElementById(getActiveNotesLayerId());
     if (!layer) return [];
-    const rects = Array.from(layer.querySelectorAll('rect[data-scale-idx][data-freq]'));
-    rects.sort((a,b) => Number(a.getAttribute('data-scale-idx')) - Number(b.getAttribute('data-scale-idx')));
-    const seen = new Set();
+    // الكورد: نفس المنطق الأصلي بدون أي تغيير — نغمة وحدة لكل درجة، بدون مفهوم صعود/نزول
+    if (window.chordModeActive) {
+      const rects = Array.from(layer.querySelectorAll('rect[data-scale-idx][data-freq]'));
+      rects.sort((a,b) => Number(a.getAttribute('data-scale-idx')) - Number(b.getAttribute('data-scale-idx')));
+      const seen = new Set();
+      const seq = [];
+      rects.forEach(r => {
+        const idx = r.getAttribute('data-scale-idx');
+        if (seen.has(idx)) return;
+        seen.add(idx);
+        const f = parseFloat(r.getAttribute('data-freq'));
+        if (!isNaN(f) && f > 0) seq.push({ freq: f, rect: r, scaleIdx: parseInt(idx), direction: null });
+      });
+      return seq;
+    }
+    // مقام عربي أو سلم غربي: نبني التسلسل الكامل صعوداً ونزولاً — بنفس الترددات الحقيقية
+    // اللي يشغّلها زر ▶ بالضبط (شامل حالات الفرق الفعلي بين الصعود والنزول مثل الراست
+    // وMinor الميلودي)، بدل الاكتفاء بقراءة الدرجات المعروضة حالياً على الشاشة (صعود فقط)
+    const built = window.isArabicMode
+      ? (typeof window.getArabicMicExpectedSequence === 'function' ? window.getArabicMicExpectedSequence() : [])
+      : (typeof window.getScaleMicExpectedSequence === 'function' ? window.getScaleMicExpectedSequence() : []);
+    if (!built || built.length === 0) return [];
     const seq = [];
-    rects.forEach(r => {
-      const idx = r.getAttribute('data-scale-idx');
-      if (seen.has(idx)) return;
-      seen.add(idx);
-      const f = parseFloat(r.getAttribute('data-freq'));
-      if (!isNaN(f) && f > 0) seq.push({ freq: f, rect: r });
+    built.forEach(item => {
+      const rect = layer.querySelector(`rect[data-scale-idx="${item.scaleIdx}"]`);
+      if (rect) seq.push({ freq: item.freq, rect, scaleIdx: item.scaleIdx, direction: item.direction, quarters: item.quarters });
     });
     return seq;
   }
@@ -3331,6 +3347,7 @@ window.isArabicMode = false;
   function resetAllNotesVisual(){
     expectedSequence.forEach(item => {
       item.rect = getLiveRect(item.rect);
+      if (!item.rect) return;
       item.rect.setAttribute('fill', '#2b6fc9');
       item.rect.setAttribute('stroke', '#1a5fa8');
       item.rect.classList.remove('mic-current-target');
@@ -3368,19 +3385,34 @@ window.isArabicMode = false;
     // نشيل أي تظليل سابق لـ"الهدف الحالي" من كل النغمات (النغمات المكتسبة صح تبقى خضراء براحتها)
     expectedSequence.forEach(item => {
       item.rect = getLiveRect(item.rect);
-      item.rect.classList.remove('mic-current-target');
-      setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
+      if (item.rect) {
+        item.rect.classList.remove('mic-current-target');
+        setCurrentTargetTextClass(item.rect.getAttribute('data-scale-idx'), false);
+      }
     });
     const cur = expectedSequence[currentNoteIndex];
     if (cur) {
-      cur.rect = getLiveRect(cur.rect);
-      cur.rect.classList.add('mic-current-target');
-      // نضبط الأصفر بالكود مباشرة كمان (مو بس بالاعتماد على كلاس CSS) — احتياط إضافي
-      // ضد أي حالة نادرة (إعادة رسم متزامنة، تأخر إعادة رسم بالمتصفح) يفضل فيها اللون
-      // الأخضر القديم ظاهر لحظياً بدل ما يتحدّث فوراً لأصفر الهدف الجديد
-      cur.rect.setAttribute('fill', '#ffe100');
-      cur.rect.setAttribute('stroke', '#c9a100');
-      setCurrentTargetTextClass(cur.rect.getAttribute('data-scale-idx'), true);
+      // لو هذي الدرجة جزء من تسلسل صعود/نزول (مقام عربي أو سلم غربي، مو كورد)، نعيد رسم
+      // الزند بالاتجاه الصحيح أول — نفس ما يسويه زر ▶ الحقيقي بالضبط لكل خطوة. هذا يضمن
+      // إن الصندوق المضيء يعكس فعلياً نفس النغمة اللي نقارن ترددها (مهم خصوصاً بحالات
+      // الفرق الحقيقي بين الصعود والنزول مثل مقام الراست وMinor الميلودي)
+      if (cur.direction) {
+        if (window.isArabicMode && typeof window.drawArabicMaqamDirectionForMic === 'function') {
+          window.drawArabicMaqamDirectionForMic(cur.scaleIdx, cur.direction, cur.quarters);
+        } else if (!window.isArabicMode && cur.direction === 'desc' && typeof window.drawScaleDirectionForMic === 'function') {
+          window.drawScaleDirectionForMic(cur.direction);
+        }
+      }
+      cur.rect = getLiveRect(cur.rect); // نعيد الجلب بعد إعادة الرسم المحتملة فوق، عشان نمسك العنصر الجديد الصحيح
+      if (cur.rect) {
+        cur.rect.classList.add('mic-current-target');
+        // نضبط الأصفر بالكود مباشرة كمان (مو بس بالاعتماد على كلاس CSS) — احتياط إضافي
+        // ضد أي حالة نادرة (إعادة رسم متزامنة، تأخر إعادة رسم بالمتصفح) يفضل فيها اللون
+        // الأخضر القديم ظاهر لحظياً بدل ما يتحدّث فوراً لأصفر الهدف الجديد
+        cur.rect.setAttribute('fill', '#ffe100');
+        cur.rect.setAttribute('stroke', '#c9a100');
+        setCurrentTargetTextClass(cur.rect.getAttribute('data-scale-idx'), true);
+      }
     }
   }
 
@@ -3581,6 +3613,7 @@ window.isArabicMode = false;
       const item = expectedSequence[i];
       if (!item) continue;
       item.rect = getLiveRect(item.rect);
+      if (!item.rect) continue;
       if (item.rect.getAttribute('fill') !== '#1B7A3D') {
         item.rect.setAttribute('fill', '#1B7A3D');
         item.rect.setAttribute('stroke', '#0d5225');
@@ -3597,7 +3630,7 @@ window.isArabicMode = false;
     const curTarget = expectedSequence[currentNoteIndex];
     if (curTarget) {
       curTarget.rect = getLiveRect(curTarget.rect);
-      if (!curTarget.rect.classList.contains('mic-current-target')) {
+      if (curTarget.rect && !curTarget.rect.classList.contains('mic-current-target')) {
         curTarget.rect.classList.add('mic-current-target');
         curTarget.rect.setAttribute('fill', '#ffe100');
         curTarget.rect.setAttribute('stroke', '#c9a100');
@@ -3654,6 +3687,12 @@ window.isArabicMode = false;
     if (freq !== -1 && expectedSequence[currentNoteIndex]) {
       const expected = expectedSequence[currentNoteIndex];
       expected.rect = getLiveRect(expected.rect); // نضمن إننا نلوّن العنصر المعروض فعلياً على الشاشة، حتى لو انعاد رسم الزند بالخلفية
+      if (!expected.rect) {
+        // العنصر مو موجود لحظياً (مثلاً أثناء إعادة رسم فورية للاتجاه الصحيح) — نتخطى
+        // هذا الإطار بس بدون مقارنة، ونحاول تاني بالإطار اللي بعده مباشرة
+        rafId = requestAnimationFrame(listenLoop);
+        return;
+      }
       const cents = foldedCentsDiff(freq, expected.freq);
 
       if (cents < getCentsMatchThreshold()) {
@@ -3691,6 +3730,7 @@ window.isArabicMode = false;
               if (lastSequenceSignature !== signatureAtCompletion) return;
               doneSeq.forEach(item => {
                 item.rect = getLiveRect(item.rect);
+                if (!item.rect) return;
                 item.rect.setAttribute('fill', '#2b6fc9');
                 item.rect.setAttribute('stroke', '#1a5fa8');
                 item.rect.classList.remove('mic-current-target');
@@ -6022,6 +6062,31 @@ function buildSequenceAndPaths(){
   posByIdxDesc = {}; positionPathDesc.forEach(p => { posByIdxDesc[p.scaleIdx] = p; });
 }
 
+// نعرّضها على window عشان سكربت "تحقق من عزفي" (IIFE منفصلة بسكربت آخر تماماً، ما توصل
+// لمتغيّرات هذا السكربت بالاسم المباشر) يقدر يبني تسلسل الترددات المتوقع صعوداً ونزولاً
+// بنفس الدقة اللي يشغّلها زر ▶ الحقيقي بالضبط — شامل حالة Minor الميلودي اللي نزوله
+// يختلف فعلياً عن صعوده (نغمات مختلفة، مو بس نفس النغمات بترتيب معكوس)
+window.getScaleMicExpectedSequence = function(){
+  buildSequenceAndPaths();
+  const result = [];
+  for (let i = 0; i <= 7; i++) {
+    const pos = posByIdxAsc[i];
+    if (pos) result.push({ scaleIdx: i, direction: 'asc', freq: OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset) });
+  }
+  for (let i = 6; i >= 0; i--) {
+    const pos = posByIdxDesc[i];
+    if (pos) result.push({ scaleIdx: i, direction: 'desc', freq: OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset) });
+  }
+  return result;
+};
+// إعادة رسم الزند بالاتجاه الصحيح — يفيد فقط بحالة Minor الميلودي (الوحيدة اللي نزولها
+// يختلف فعلياً عن صعودها بموضع/اسم النغمة)، بنفس ما يسويه nextStep بالضبط أثناء التشغيل
+window.drawScaleDirectionForMic = function(direction){
+  if (state.scaleType === 'melodicMinor') {
+    drawOudScale(state.root, state.scaleType, direction, null, undefined);
+  }
+};
+
 function formatTime(seconds){
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
@@ -7631,6 +7696,28 @@ window.wxResume = wxResume;
         arSequence.push({ degIdx: i, quarters: q });
       }
     }
+
+    // نعرّضها على window عشان سكربت "تحقق من عزفي" (IIFE منفصلة بسكربت آخر تماماً) يقدر
+    // يبني تسلسل الترددات المتوقع صعوداً ونزولاً بنفس الدقة اللي يشغّلها زر ▶ الحقيقي —
+    // شامل تعديل مقام الراست التلقائي (تخفيض الدرجة السابعة ربع تون بالنزول)
+    window.getArabicMicExpectedSequence = function(){
+      if (!currentDegrees || currentDegrees.length === 0) return [];
+      buildArSequence(currentDegrees);
+      const n = currentDegrees.length;
+      return arSequence.map((item, i) => ({
+        scaleIdx: item.degIdx,
+        direction: i < n ? 'asc' : 'desc',
+        freq: posToFreq(item.quarters),
+        quarters: item.quarters
+      }));
+    };
+    // إعادة رسم الزند بنفس الطريقة اللي يسويها arNextStep بالضبط لكل خطوة أثناء التشغيل
+    // الحقيقي — نعيدها دايماً بغض النظر عن المقام (زي التشغيل تماماً)، عشان أي مقام فيه
+    // فرق حقيقي بين الصعود والنزول (زي الراست حالياً) ينعكس صح بصرياً أثناء التحقق كمان
+    window.drawArabicMaqamDirectionForMic = function(degIdx, direction, quarters){
+      const maqName = maqamSelect.value;
+      drawArabicMaqam(HARF_LIST[currentDegrees[0]], MAQAM_INTERVALS[maqName] || [], degIdx, maqName, direction === 'desc', quarters);
+    };
 
     // ===== نظام صوت العود الحقيقي =====
     // الـ samples المسجلة مع مواضعها بالأرباع من صول
