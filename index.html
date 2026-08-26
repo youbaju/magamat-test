@@ -2435,10 +2435,14 @@ window.isArabicMode = false;
     if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback(); // نوقف أي صوت شغال (سلّم عادي أو تمرين) فور فتح القائمة
     tabsMenu.classList.add('open');
     tabsOverlay.classList.add('active');
+    // لو قائمة الدائرة/الكوردات (فيها أزرار نوع السلم Major/Minor...) مفتوحة، نسكّرها كمان — يجب هذا
+    // قبل إخفاء زر التبويبات مباشرة، لأن closeCircleDrawer نفسها ترجّع زر التبويبات ظاهر كأثر
+    // جانبي غير مشروط (حتى لو الدائرة أصلاً مقفولة أساساً)؛ لو نفّذناها بعد سطر الإخفاء، بترجّعه
+    // ظاهر فوراً وتلغي تسوية الإخفاء اللي قبلها مباشرة — وهذا بالضبط سبب بقاء الزر الأزرق ظاهراً
+    // فوق القائمة سابقاً
+    if (typeof window.closeCircleDrawer === 'function') window.closeCircleDrawer();
     tabsToggle.style.visibility = 'hidden';
     if (typeof window.hideTopNavButtons === 'function') window.hideTopNavButtons();
-    // لو قائمة الدائرة/الكوردات (فيها أزرار نوع السلم Major/Minor...) مفتوحة، نسكّرها كمان
-    if (typeof window.closeCircleDrawer === 'function') window.closeCircleDrawer();
     // صف أزرار نوع السلم الغربي الظاهر دايماً فوق الزند (Major/Minor...) بتبويب السلالم الغربية — نخفيه مؤقتاً
     if (selectionSummary) selectionSummary.style.display = 'none';
   }
@@ -3379,6 +3383,11 @@ window.isArabicMode = false;
 </script>
 
 <script>
+
+/* =====================================================================
+   منطق صفحة دائرة الخامسات (مُحاط بـ IIFE لمنع تعارض الأسماء العامة)
+===================================================================== */
+(function(){
 // ===== نقل مبكر (أعلى الملف) لمتغيرات المشغل الأساسية =====
 // هذي المتغيرات (playBtn/stopBtn/rewindBtn/playSessionId وغيرها) كانت معرّفة متأخرة
 // بمنتصف هذا السكربت، بينما دوال زي resetPlayer/resetChordPlayer/selectRootAndType
@@ -3412,10 +3421,6 @@ const progressFill = document.getElementById('shared-progressFill');
 const progressBar = document.getElementById('shared-progressBar');
 const audioTime = document.getElementById('shared-audioTime');
 
-/* =====================================================================
-   منطق صفحة دائرة الخامسات (مُحاط بـ IIFE لمنع تعارض الأسماء العامة)
-===================================================================== */
-(function(){
 
 /* =====================================================================
    STAGE 1: نظام النوتات + دائرة الرابعات/الخامسات التفاعلية
@@ -5340,11 +5345,14 @@ document.addEventListener('click', function(e) {
     document.getElementById('page-help').classList.add('active');
   }
 });
-document.getElementById('helpCloseBtn').addEventListener('click', function() {
-  document.getElementById('page-help').classList.remove('active');
-  const lastPage = window._lastPage || 'page-circle';
-  const target = document.getElementById(lastPage);
-  if (target) target.classList.add('active');
+document.addEventListener('click', function(e) {
+  const closeEl = e.target.closest ? e.target.closest('#helpCloseBtn') : null;
+  if (closeEl) {
+    document.getElementById('page-help').classList.remove('active');
+    const lastPage = window._lastPage || 'page-circle';
+    const target = document.getElementById(lastPage);
+    if (target) target.classList.add('active');
+  }
 });
 
 /* =====================================================================
