@@ -3497,7 +3497,7 @@ window.state = state;
     if (typeof buildChordsForScale !== 'function' || typeof selectChord !== 'function') return;
     const chords = buildChordsForScale(state.root, state.scaleType);
     const savedChord = chords.find(c => c.degree === savedDegree);
-    if (savedChord) selectChord(savedChord, null);
+    if (savedChord) selectChord(savedChord, null, true); // true = بدون تشغيل صوت تلقائي، هذا استعادة صامتة بس
   }, 0);
 })();
 
@@ -4053,7 +4053,7 @@ function renderChordHighlight(positions, active){
   if (typeof window.applyOudHorizontalMirror === 'function') window.applyOudHorizontalMirror(chordHighlightLayer);
 }
 
-function selectChord(ch, btnEl){
+function selectChord(ch, btnEl, skipAutoPlay){
   resetChordPlayer(); // نوقف أي كورد كان شغال قبل
   document.querySelectorAll('.c-chord-btn').forEach(b => b.classList.remove('selected'));
   if (btnEl) btnEl.classList.add('selected');
@@ -4077,7 +4077,11 @@ function selectChord(ch, btnEl){
   renderChordHighlight(positions, false);
   if (typeof resetPlayer === 'function') resetPlayer(); // نوقف أي سلم تسلسلي شغال، ونرجع الزر لحالة "▶"
   localStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
-  if (typeof startChordPlaying === 'function') startChordPlaying(); // نشغّل صوت الكورد فوراً بمجرد اختياره، بدون ما ننتظر ضغطة ▶ بالمشغل — تسهيلاً لسماعه بسرعة
+  // skipAutoPlay=true تُستخدم فقط عند الاستعادة الصامتة لآخر كورد عند فتح التطبيق من جديد —
+  // نعرض الكورد بصرياً (النغمات الزرقاء على الزند) بدون تشغيل صوته تلقائياً أو الإضاءة الحمراء
+  // المؤقتة، لأن المستخدم ما طلب تشغيل صوت بهذي اللحظة، بس فتح التطبيق بس. الضغط اليدوي على
+  // كورد (من المستخدم فعلياً) يبقى يشغّل الصوت فوراً زي ما هو، بدون أي تغيير بذاك السلوك
+  if (!skipAutoPlay && typeof startChordPlaying === 'function') startChordPlaying(); // نشغّل صوت الكورد فوراً بمجرد اختياره، بدون ما ننتظر ضغطة ▶ بالمشغل — تسهيلاً لسماعه بسرعة
   // نفس فكرة الخطاف بدالتي showMaqam وrenderAll — يغطي اختيار أي كورد جديد
   if (typeof window.scheduleImmediateMicResync === 'function') window.scheduleImmediateMicResync();
 }
