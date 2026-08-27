@@ -2501,8 +2501,8 @@ window.isArabicMode = false;
         if(westernBtnsRow) westernBtnsRow.style.display = '';
         // زر التمرين وخانة التفعيل يشتغلون بالغربي كمان الحين — نظهرهم، وتصفّر
         // الخانة دايماً عند فتح التبويب (نفس سلوك العربي)
-        if(exerciseBtnEl) { exerciseBtnEl.style.display = ''; exerciseBtnEl.disabled = true; }
-        if(exerciseToggleWrapEl) exerciseToggleWrapEl.style.display = '';
+        if(exerciseBtnEl) { exerciseBtnEl.disabled = true; }
+        if(typeof window.syncExerciseControlsVisibility === 'function') window.syncExerciseControlsVisibility();
         if(exerciseToggleEl) exerciseToggleEl.checked = false;
         if(typeof window.exSetSharedPlayerButtonsEnabled === 'function') window.exSetSharedPlayerButtonsEnabled(true);
         if (typeof window.wxStopPlayback === 'function') window.wxStopPlayback(); // نوقف التمرين فعلياً (مو بس نصفّر المتغير)
@@ -3605,13 +3605,39 @@ for (let i = 0; i < 12; i++) {
     const posTop = polarToXY(CX, CY, rTop, midAngle);
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
+    // مناطق ضغط شفافة (بلا تعبئة مرئية) توسّع مساحة النقر الفعلية لكل اسم — النص المرئي
+    // صغير وقريب من الاسم التاني، فلو المستخدم ضغط بالفراغ بينهم (لا فوق ولا تحت بالضبط)
+    // كانت الضغطة توصل للقطاع العام بدل الاسم المحدد. نقسم القطاع لنص علوي ونص سفلي،
+    // كل وحدة تاخذ نفس بيانات اسمها (نفس data-letter-idx) فتنضم تلقائياً لنفس معالج
+    // الضغط الموجود أصلاً (دون الحاجة لأي تعديل على منطق المعالج نفسه)
+    const rMidDual = (R_OUTER_IN + R_OUTER) / 2;
+    const hitTop = el('path', {
+      d: describeArc(CX, CY, R_OUTER, rMidDual, startAngle, endAngle),
+      class: 'circle-label-hitarea', 'data-root':noteIndex, 'data-scale-type':'major',
+      'data-letter-idx':topName.letterIndex, 'data-i': i,
+      fill:'transparent', stroke:'none'
+    });
+    segGroup.appendChild(hitTop);
+    dualLabelElements.push(hitTop);
+
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
+    labelTop.style.pointerEvents = 'none'; // النقر يوصل من تحته للـhitTop، عشان ما يحجب جزء من منطقة النقر
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
+    const hitBottom = el('path', {
+      d: describeArc(CX, CY, rMidDual, R_OUTER_IN, startAngle, endAngle),
+      class: 'circle-label-hitarea', 'data-root':noteIndex, 'data-scale-type':'major',
+      'data-letter-idx':bottomName.letterIndex, 'data-i': i,
+      fill:'transparent', stroke:'none'
+    });
+    segGroup.appendChild(hitBottom);
+    dualLabelElements.push(hitBottom);
+
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
+    labelBottom.style.pointerEvents = 'none';
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
@@ -3629,13 +3655,34 @@ for (let i = 0; i < 12; i++) {
     const posTop = polarToXY(CX, CY, rTop, midAngle);
     const posBottom = polarToXY(CX, CY, rBottom, midAngle);
 
+    const rMidDualMinor = (R_INNER_IN + R_INNER) / 2;
+    const hitTopMinor = el('path', {
+      d: describeArc(CX, CY, R_INNER, rMidDualMinor, startAngle, endAngle),
+      class: 'circle-label-hitarea', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor',
+      'data-letter-idx':topName.letterIndex, 'data-i': i,
+      fill:'transparent', stroke:'none'
+    });
+    segGroup.appendChild(hitTopMinor);
+    dualLabelElements.push(hitTopMinor);
+
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
+    labelTop.style.pointerEvents = 'none';
     segGroup.appendChild(labelTop);
     dualLabelElements.push(labelTop);
 
+    const hitBottomMinor = el('path', {
+      d: describeArc(CX, CY, rMidDualMinor, R_INNER_IN, startAngle, endAngle),
+      class: 'circle-label-hitarea', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor',
+      'data-letter-idx':bottomName.letterIndex, 'data-i': i,
+      fill:'transparent', stroke:'none'
+    });
+    segGroup.appendChild(hitBottomMinor);
+    dualLabelElements.push(hitBottomMinor);
+
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
+    labelBottom.style.pointerEvents = 'none';
     segGroup.appendChild(labelBottom);
     dualLabelElements.push(labelBottom);
   } else {
@@ -3669,6 +3716,18 @@ window.refreshCircleLabels = function(){
   });
 };
 
+// دالة موحّدة تُظهر/تُخفي زر وخانة "تمرين جديد" حسب حالة وضع الكورد الفعلية (window.chordModeActive)
+// وقت الاستدعاء — نستدعيها من كل نقطة ممكن تغيّر فيها هذي الحالة (اختيار كورد، الرجوع لتبويب
+// الدائرة، اختيار سلم/جذر جديد)، بدل تكرار نفس منطق الإظهار/الإخفاء بكل مكان لحاله وننسى مكان
+function syncExerciseControlsVisibility(){
+  const hide = !!window.chordModeActive;
+  const wrap = document.getElementById('exerciseModeToggleWrap');
+  const btn = document.getElementById('exerciseNewBtn');
+  if (wrap) wrap.style.display = hide ? 'none' : '';
+  if (btn) btn.style.display = hide ? 'none' : '';
+}
+window.syncExerciseControlsVisibility = syncExerciseControlsVisibility;
+
 function updateCircleHighlight(){
   majorSegments.forEach(seg => {
     const isActive = (state.scaleType === 'major') && (+seg.dataset.root === state.root);
@@ -3681,6 +3740,7 @@ function updateCircleHighlight(){
   });
   // إبراز النص المزدوج المحدد تحديدًا (أي من الاسمين تم اختياره) بلون مختلف
   dualLabelElements.forEach(labelEl => {
+    if (labelEl.classList.contains('circle-label-hitarea')) return; // مناطق الضغط الشفافة تبقى شفافة دايماً، ما تُلوَّن
     const sameRoot = (+labelEl.dataset.root === state.root) && (labelEl.dataset.scaleType === state.scaleType);
     const sameLetter = (+labelEl.dataset.letterIdx === state.letterOverride);
     labelEl.classList.toggle('dual-active', sameRoot && sameLetter);
@@ -3694,6 +3754,8 @@ function selectRootAndType(root, scaleType, letterOverride){
   if (typeof window.wxStopPlayback === 'function') window.wxStopPlayback(); // نوقف تمرين المقامات الغربية لو كان شغال (بدون الخروج من وضع التمرين نفسه)
   window.chordModeActive = false;
   window.selectedChord = null;
+  // نرجّع إظهار زر/خانة تفعيل التمرين (كانا مخفيين طول ما الكورد ظاهر — راجع selectChord)
+  syncExerciseControlsVisibility();
   localStorage.removeItem('oudSelectedChordDegree'); // نمسح الكورد المحفوظ لأن المستخدم اختار سلم/جذر جديد صراحة
   if (typeof clearChordHighlight === 'function') clearChordHighlight();
   state.root = root;
@@ -3784,6 +3846,7 @@ document.getElementById('cTabCircle').addEventListener('click', () => {
     window.selectedChord = null;
     localStorage.removeItem('oudSelectedChordDegree');
     if (typeof clearChordHighlight === 'function') clearChordHighlight();
+    syncExerciseControlsVisibility();
     if (typeof window.renderAll === 'function') window.renderAll();
   }
   showDrawerMode('circle');
@@ -3822,10 +3885,15 @@ function buildChordsForScale(root, scaleType){
     else if (quality === 'Augmented') roman += '+';
     let displayName;
     const RLM = (window.oudLanguage === 'en') ? '' : '\u200F'; // علامة اتجاه خفية (يمين لليسار) تلصق الرمز (# أو x أو ♭) بالحرف العربي الصحيح — تُعطَّل بالإنجليزي لأنها تقلب ترتيب الكلمات اللاتينية
-    if (quality === 'Major') displayName = rootLetterName + RLM + ' Major';
-    else if (quality === 'Minor') displayName = rootLetterName + RLM + ' Minor';
-    else if (quality === 'Diminished') displayName = rootLetterName + RLM + ' Diminished';
-    else displayName = rootLetterName + RLM + ' Augmented';
+    // اسم جودة الكورد المعروض للمستخدم — معرَّب بالوضع العربي (ماجور/مينور/ديمينيشد/أوجمنتد)،
+    // يبقى إنجليزي بالوضع الإنجليزي كما هو. الاسم الداخلي (quality) والرقم الروماني (roman)
+    // ما يتأثرون بهذا إطلاقاً — يبقون بنفس القيم الإنجليزية المستخدمة بالمنطق الداخلي فقط
+    const QUALITY_AR = { Major:'ماجور', Minor:'مينور', Diminished:'ديمينيشد', Augmented:'أوجمنتد' };
+    const qualityDisplay = (window.oudLanguage === 'en') ? quality : QUALITY_AR[quality];
+    if (quality === 'Major') displayName = rootLetterName + RLM + ' ' + qualityDisplay;
+    else if (quality === 'Minor') displayName = rootLetterName + RLM + ' ' + qualityDisplay;
+    else if (quality === 'Diminished') displayName = rootLetterName + RLM + ' ' + qualityDisplay;
+    else displayName = rootLetterName + RLM + ' ' + qualityDisplay;
     chords.push({ degree:i+1, roman, rootPC, thirdPC, fifthPC, rootLetterIdx, thirdLetterIdx, fifthLetterIdx, quality, name:displayName });
   }
   return chords;
@@ -3974,6 +4042,13 @@ function selectChord(ch, btnEl){
   const positions = rawPositions.map((pos, idx) => ({ ...pos, letterIdx: letterIndices[idx] }));
   window.selectedChord = { ...ch, positions };
   window.chordModeActive = true;
+  // التمرين مفهومه خاص بالسلم/المقام (تسلسل درجات)، مو الكوردات (٣ نغمات ثابتة معاً) —
+  // فنوقف أي تمرين سلم غربي شغال بالخلفية، ونخفي زر/خانة تفعيله طول ما الكورد ظاهر، عشان
+  // ما يصير تعارض (تمرين يشتغل صوتياً بينما الزند يعرض الكورد بصرياً بدون تحديث)
+  if (typeof window.wxStopPlayback === 'function') window.wxStopPlayback();
+  const exToggleEl = document.getElementById('exerciseModeToggle');
+  if (exToggleEl) exToggleEl.checked = false;
+  syncExerciseControlsVisibility();
   renderChordHighlight(positions, false);
   if (typeof resetPlayer === 'function') resetPlayer(); // نوقف أي سلم تسلسلي شغال، ونرجع الزر لحالة "▶"
   localStorage.setItem('oudSelectedChordDegree', String(ch.degree)); // نحفظ رقم درجة الكورد عشان يرجع بعد إعادة التحميل
@@ -8141,6 +8216,9 @@ window.wxResume = wxResume;
      try {
       const toggle = document.getElementById('exerciseModeToggle');
       if (!toggle || !toggle.checked) return; // ما نشتغل إلا لو خانة التفعيل مفعّلة
+      // حماية إضافية (الزر والخانة أصلاً مخفيان وقت عرض الكورد — راجع selectChord)، تحسباً
+      // لأي طريقة ثانية يوصل فيها الضغط لهذا المعالج أثناء وضع الكورد
+      if (window.chordModeActive) return;
 
       let usableMaxDegree;
 
