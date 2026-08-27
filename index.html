@@ -3486,8 +3486,13 @@ window.state = state;
 // نستعيد الكورد المحفوظ (لو فيه) بعد ما تُبنى دوال الكوردات لاحقاً بنفس السكربت — نأجّلها بـ setTimeout(0) لضمان اكتمال البناء الأولي للزند والدوال أولاً
 (function restoreSavedChord(){
   const savedDegree = parseInt(localStorage.getItem('oudSelectedChordDegree'));
-  if (isNaN(savedDegree)) return;
   setTimeout(() => {
+    // نزامن إظهار/إخفاء عناصر التمرين هنا أول شي (بغض النظر عن وجود كورد محفوظ أو لا) —
+    // لأن الزر والخانة مخفيان افتراضياً بالـHTML (display:none)، وما فيه أي كود ثاني يُظهرهم
+    // عند استعادة اختيار سلم/جذر عادي (بدون كورد) بعد فتح التطبيق من جديد. لو فيه كورد محفوظ
+    // فعلاً، بيتحدد أدناه فيخفيهم selectChord نفسها مرة ثانية — هذا طبيعي ومقصود
+    if (typeof window.syncExerciseControlsVisibility === 'function') window.syncExerciseControlsVisibility();
+    if (isNaN(savedDegree)) return;
     if (window.isArabicMode) return; // الكورد خاص بالغربي بس
     if (typeof buildChordsForScale !== 'function' || typeof selectChord !== 'function') return;
     const chords = buildChordsForScale(state.root, state.scaleType);
