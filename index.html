@@ -4047,6 +4047,11 @@ function selectChord(ch, btnEl){
   const positions = rawPositions.map((pos, idx) => ({ ...pos, letterIdx: letterIndices[idx] }));
   window.selectedChord = { ...ch, positions };
   window.chordModeActive = true;
+  // نحدّث وضع اللوحة (currentDrawerMode) هنا كمان — عشان لو انفتحت اللوحة بعدين (حتى بجلسة
+  // جديدة بعد إعادة فتح التطبيق، وقت ما يُستعاد هذا الكورد المحفوظ تلقائياً)، تفتح مباشرة
+  // على تبويب "الكوردات" بدل "الدائرة" الافتراضية — يطابق الزند اللي أصلاً يعرض الكورد
+  currentDrawerMode = 'chords';
+  if (typeof updateMenuToggleLabel === 'function') updateMenuToggleLabel();
   // التمرين مفهومه خاص بالسلم/المقام (تسلسل درجات)، مو الكوردات (٣ نغمات ثابتة معاً) —
   // فنوقف أي تمرين سلم غربي شغال بالخلفية، ونخفي زر/خانة تفعيله طول ما الكورد ظاهر، عشان
   // ما يصير تعارض (تمرين يشتغل صوتياً بينما الزند يعرض الكورد بصرياً بدون تحديث)
