@@ -905,6 +905,11 @@ flex-shrink: 0;
   /* ===== دائرة الرابعات والخامسات ===== */
   #c-circleWrap{ display:flex; flex-direction:column; align-items:center; gap:4px; }
   svg#c-circleSvg{ touch-action: manipulation; width:280px; height:280px; }
+  /* نكرر touch-action:manipulation صراحة على العناصر الفرعية القابلة للنقر (مو بس <svg> الأب) —
+     ببعض محركات WebView (خصوصاً TWA) الخاصية ما تنتقل دايماً صح لعناصر <path>/<text> جوه <svg>،
+     فيبقى سلوك "تكبير بالنقر المزدوج" الافتراضي شغّال عند نقرتين سريعتين بنفس النقطة، ويفسّر
+     نقرة اختيار ثانية شرعية كإيماءة تكبير/تصغير بدل نقرة عادية (يغيّر هدف اللمسة أو يلغي التحديد) */
+  .circle-segment, .circle-label-hitarea, .circle-label.dual-label{ touch-action: manipulation; }
   .circle-segment{ cursor:pointer; transition: filter .15s, stroke-width .15s; }
   .circle-segment:hover{ filter: brightness(1.25); }
   .circle-segment.active{
