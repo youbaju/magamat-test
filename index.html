@@ -3570,6 +3570,8 @@ segGroup.appendChild(centerText2);
 const majorSegments = [];
 const minorSegments = [];
 const dualLabelElements = []; // عناصر النصوص الفرعية بالقطاعات المزدوجة (قابلة للنقر بشكل مستقل)
+const dualHitAreas = []; // مناطق الضغط الشفافة فقط (فرعية من dualLabelElements) — نجمعها هنا
+// عشان نعيد رفعها فوق كل القطاعات بعد نهاية الحلقة (راجع الشرح بعد الحلقة)
 
 const ANGLE_OFFSET = -15; // إزاحة لتوسيط "دو" بالضبط عند الساعة 12
 
@@ -3578,6 +3580,12 @@ for (let i = 0; i < 12; i++) {
   const endAngle = (i+1) * 30 + ANGLE_OFFSET;
   const noteIndex = CIRCLE_ORDER_MAJOR[i];
   const minorNoteIndex = RELATIVE_MINOR[i];
+  // هامش أمان زاوي بسيط (٠.٧ درجة كل جهة) لمناطق الضغط الشفافة بالأسماء المزدوجة (Major
+  // وMinor معاً) — خط حدود القطاع الملوّن (stroke-width:1.5) يتمدد فعلياً لبرّا حدود
+  // القطاع الرياضية بكسر بسيط من الدرجة، فيبقى جزء ضئيل من القطاع الملوّن نفسه هو الظاهر
+  // للضغط عند الحافة بالضبط بدل منطقة الضغط الشفافة. معرَّف هنا (خارج شرطي Major/Minor)
+  // عشان يوصله الاثنين بنفس النطاق
+  const ANGLE_PAD = 0.7;
 
   // قطعة Major خارجية
   const pathMajor = el('path', {
@@ -3616,14 +3624,19 @@ for (let i = 0; i < 12; i++) {
     // كل وحدة تاخذ نفس بيانات اسمها (نفس data-letter-idx) فتنضم تلقائياً لنفس معالج
     // الضغط الموجود أصلاً (دون الحاجة لأي تعديل على منطق المعالج نفسه)
     const rMidDual = (R_OUTER_IN + R_OUTER) / 2;
+    // نضيف هامش أمان بسيط بالزاوية (٠.٧ درجة كل جهة) — خط حدود القطاع الملوّن (stroke-width:1.5)
+    // يتمدد فعلياً لبرّا حدود القطاع الرياضية بكسر بسيط من الدرجة، فيبقى جزء ضئيل من القطاع
+    // الملوّن نفسه هو الظاهر للضغط بدل منطقتنا الشفافة عند الحافة بالضبط. الهامش هنا شفاف
+    // ولا يغيّر أي شي مرئياً// بس يضمن تغطية كاملة حتى بأدق نقطة عند الحافة (ANGLE_PAD معرَّفة بأول الحلقة، مشتركة مع Minor)
     const hitTop = el('path', {
-      d: describeArc(CX, CY, R_OUTER, rMidDual, startAngle, endAngle),
+      d: describeArc(CX, CY, R_OUTER, rMidDual, startAngle - ANGLE_PAD, endAngle + ANGLE_PAD),
       class: 'circle-label-hitarea', 'data-root':noteIndex, 'data-scale-type':'major',
       'data-letter-idx':topName.letterIndex, 'data-i': i,
       fill:'transparent', stroke:'none'
     });
     segGroup.appendChild(hitTop);
     dualLabelElements.push(hitTop);
+    dualHitAreas.push(hitTop);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
@@ -3632,13 +3645,14 @@ for (let i = 0; i < 12; i++) {
     dualLabelElements.push(labelTop);
 
     const hitBottom = el('path', {
-      d: describeArc(CX, CY, rMidDual, R_OUTER_IN, startAngle, endAngle),
+      d: describeArc(CX, CY, rMidDual, R_OUTER_IN, startAngle - ANGLE_PAD, endAngle + ANGLE_PAD),
       class: 'circle-label-hitarea', 'data-root':noteIndex, 'data-scale-type':'major',
       'data-letter-idx':bottomName.letterIndex, 'data-i': i,
       fill:'transparent', stroke:'none'
     });
     segGroup.appendChild(hitBottom);
     dualLabelElements.push(hitBottom);
+    dualHitAreas.push(hitBottom);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label dual-label', 'data-root':noteIndex, 'data-scale-type':'major', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
@@ -3662,13 +3676,14 @@ for (let i = 0; i < 12; i++) {
 
     const rMidDualMinor = (R_INNER_IN + R_INNER) / 2;
     const hitTopMinor = el('path', {
-      d: describeArc(CX, CY, R_INNER, rMidDualMinor, startAngle, endAngle),
+      d: describeArc(CX, CY, R_INNER, rMidDualMinor, startAngle - ANGLE_PAD, endAngle + ANGLE_PAD),
       class: 'circle-label-hitarea', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor',
       'data-letter-idx':topName.letterIndex, 'data-i': i,
       fill:'transparent', stroke:'none'
     });
     segGroup.appendChild(hitTopMinor);
     dualLabelElements.push(hitTopMinor);
+    dualHitAreas.push(hitTopMinor);
 
     const labelTop = el('text', { x:posTop.x, y:posTop.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':topName.letterIndex, 'data-i': i });
     labelTop.textContent = { arabic: topName.labelArabic, solfege: topName.labelSolfege, latin: topName.label }[getCircleNoteMode()];
@@ -3677,13 +3692,14 @@ for (let i = 0; i < 12; i++) {
     dualLabelElements.push(labelTop);
 
     const hitBottomMinor = el('path', {
-      d: describeArc(CX, CY, rMidDualMinor, R_INNER_IN, startAngle, endAngle),
+      d: describeArc(CX, CY, rMidDualMinor, R_INNER_IN, startAngle - ANGLE_PAD, endAngle + ANGLE_PAD),
       class: 'circle-label-hitarea', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor',
       'data-letter-idx':bottomName.letterIndex, 'data-i': i,
       fill:'transparent', stroke:'none'
     });
     segGroup.appendChild(hitBottomMinor);
     dualLabelElements.push(hitBottomMinor);
+    dualHitAreas.push(hitBottomMinor);
 
     const labelBottom = el('text', { x:posBottom.x, y:posBottom.y, class:'circle-label minor dual-label', 'data-root':minorNoteIndex, 'data-scale-type':'naturalMinor', 'data-letter-idx':bottomName.letterIndex, 'data-i': i });
     labelBottom.textContent = { arabic: bottomName.labelArabic, solfege: bottomName.labelSolfege, latin: bottomName.label }[getCircleNoteMode()];
@@ -3697,6 +3713,14 @@ for (let i = 0; i < 12; i++) {
     segGroup.appendChild(labelMinor);
   }
 }
+
+// نعيد رفع كل مناطق الضغط الشفافة (dualHitAreas) فوق كل القطاعات الملوّنة، بعد ما خلصت
+// الحلقة كاملة — لو تركناها بمكانها الأصلي وقت إنشائها، القطاع اللي يترسم بعدها بالحلقة
+// (مثلاً قطاع i=8 يترسم بعد قطاع i=7) يطلع فوقها بترتيب الطبقات، ويخطف الضغط بالجزء
+// المتراكب مع هامش الأمان (راجع ANGLE_PAD) تحديداً بجهة "النهاية" من القطاع. إعادة الإلحاق
+// (appendChild) على عنصر موجود أصلاً بالـDOM ينقله لآخر القائمة تلقائياً (سلوك قياسي)، فيضمن
+// إنها فوق الجميع بغض النظر عن ترتيب رسم القطاعات المجاورة
+dualHitAreas.forEach(hitEl => segGroup.appendChild(hitEl));
 
 // تحديث كل تسميات دائرة الرابعات/الخامسات حياً (بدون إعادة رسم الدائرة كاملة) — تُستخدم عند تبديل نظام تسمية النغمات (Do/C)
 window.refreshCircleLabels = function(){
