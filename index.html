@@ -3524,6 +3524,32 @@ const DUAL_NAME_SEGMENTS = {
 
 /* ---------- بناء دائرة الرابعات والخامسات ---------- */
 const circleSvg = document.getElementById('c-circleSvg');
+
+// حارس صريح ضد إيماءة "تكبير بالنقر المزدوج" (double-tap-zoom) الافتراضية بالمتصفح فوق دائرة
+// الخامسات. الاعتماد بس على CSS (touch-action:manipulation) ما كفى — أثبت فحص فيديو فعلي (يوسف،
+// أغسطس ٢٠٢٦) إن Samsung Internet Browser ما يحترمها بالكامل على عناصر <path>/<text> الفرعية جوه
+// <svg>: نقرتين سريعتين متتاليتين بنفس النقطة (بعد تكبير الدائرة بإصبعين) كانت تُطلِق تكبير إضافي
+// حقيقي بالمتصفح لحظة الضغطة الثانية (تأكّد بصرياً: حجم الدائرة تغيّر فعلياً بين الإطارين)، فتنزاح
+// إحداثيات اللمسة الثانية عن هدفها الأصلي وتُلغي الاختيار المحدد. الحل: نراقب أحداث touchend على
+// الدائرة، ولو لمسة جديدة وصلت خلال أقل من 350ms من آخر لمسة وبنفس الموقع تقريباً (فرق أقل من 30px
+// بكل اتجاه)، نستدعي preventDefault() لنمنع سلوك التكبير الافتراضي صراحة — هذي طريقة متوافقة مع كل
+// المتصفحات تقريباً، بغض النظر عن مدى دعمها لـtouch-action
+(function(){
+  let lastTouchEndTime = 0, lastTouchX = 0, lastTouchY = 0;
+  circleSvg.addEventListener('touchend', function(e){
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    const now = Date.now();
+    const dx = Math.abs(touch.clientX - lastTouchX);
+    const dy = Math.abs(touch.clientY - lastTouchY);
+    if (now - lastTouchEndTime < 350 && dx < 30 && dy < 30) {
+      e.preventDefault(); // نمنع تكبير المتصفح الافتراضي بالنقر المزدوج، ونخلي الحدث ينفّذ كنقرة عادية
+    }
+    lastTouchEndTime = now;
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+  }, { passive: false });
+})();
 const ns = "http://www.w3.org/2000/svg";
 function el(tag, attrs){ const e=document.createElementNS(ns,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
 
