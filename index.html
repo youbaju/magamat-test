@@ -4188,11 +4188,29 @@ minorSegments.forEach(seg => {
 
 // النقر على أحد النصوص المزدوجة (B/Cb، F#/Gb، C#/Db وما يقابلها بالداخلية) يختار نفس النغمة الفيزيائية
 // لكن بحرف بداية محدد يدويًا (letterOverride) بدل الحساب التلقائي، فيتغير اسم درجات السلم بالكامل تبعًا له
+//
+// حارس ضد "ضغطة شبح" مزدوجة (dualClickGuard): على الجوال، خصوصاً وقت التكبير (pinch-zoom)،
+// لمسة واحدة قرب حد hitTop/hitBottom (نفس القطاع المزدوج) ممكن تُطلِق حدثين متتاليين بفارق
+// ميلي ثوانٍ بسيط (سلوك معروف ببعض متصفحات الجوال عند حواف عناصر SVG متلاصقة). النتيجة: أول
+// نقرة تختار letterIdx الصحيح وتلوّنه، ثم نقرة "شبح" فورية تصيب المنطقة الشفافة المجاورة
+// (letterIdx مختلف لنفس الجذر/النوع) فتسحب التلوين لاسم غلط أو للقطاع العام — رغم إن الجذر
+// ونوع السلم ما يتغيروا (فالصوت والزند يضلوا صحيحين، بس التمييز البصري للاسم يضيع). نتجاهل
+// أي نقرة ثانية على نفس القطاع (نفس data-i + scaleType) توصل خلال أقل من DUAL_CLICK_GUARD_MS
+// من أول نقرة، لأنها شبه مؤكد صدى/شبح لنفس اللمسة مو نقرة مستخدم حقيقية جديدة
+const DUAL_CLICK_GUARD_MS = 250;
+const lastDualClickAt = {}; // key: `${scaleType}-${i}` → timestamp آخر نقرة مقبولة
 dualLabelElements.forEach(labelEl => {
   labelEl.addEventListener('click', (e) => {
     e.stopPropagation();
-    const root = +labelEl.dataset.root;
     const scaleType = labelEl.dataset.scaleType;
+    const i = labelEl.dataset.i;
+    const guardKey = `${scaleType}-${i}`;
+    const now = Date.now();
+    if (lastDualClickAt[guardKey] && (now - lastDualClickAt[guardKey]) < DUAL_CLICK_GUARD_MS) {
+      return; // نقرة شبح محتملة على نفس القطاع المزدوج — نتجاهلها ونبقي أول اختيار كما هو
+    }
+    lastDualClickAt[guardKey] = now;
+    const root = +labelEl.dataset.root;
     const letterIdx = +labelEl.dataset.letterIdx;
     const targetBtnScale = (scaleType === 'major') ? 'major' : 'naturalMinor';
     document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
