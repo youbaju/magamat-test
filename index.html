@@ -4171,46 +4171,60 @@ function resetChordPlayer(){
 }
 window.resetChordPlayer = resetChordPlayer;
 
-majorSegments.forEach(seg => {
+// حارس مشترك ضد "ضغطة شبح" (ghost click) عند حدود القطاعات ذات الأسماء المزدوجة (راجع
+// DUAL_NAME_SEGMENTS): منطقة الضغط الشفافة للاسم المزدوج (hitTop/hitBottom) والقطاع الملوّن
+// العام (pathMajor/pathMinor) عنصران أخوة منفصلان بالـDOM (مو أب/ابن)، فلمسة واحدة قرب الحد
+// بينهم — خصوصاً وقت التكبير (pinch-zoom) بالجوال — ممكن تُطلِق حدثي "click" منفصلين (واحد
+// لكل عنصر) بترتيب تنفيذ غير مضمون أيهما أولاً. لو نقرة القطاع العام (letterOverride=null)
+// نُفّذت بعد نقرة الاسم المزدوج الصحيحة (أو حتى قبلها بلحظة)، تُلغي تلوين الاسم المحدد رغم
+// إن الجذر ونوع السلم يبقيان صحيحين (الصوت والزند ما يتأثرون، بس التمييز البصري للاسم يضيع
+// أو يظهر "يلغي نفسه" بالضغطة التالية). الحل: نؤجل تنفيذ نقرة القطاع العام قليلاً (بس
+// للقطاعات المزدوجة تحديداً)، فنعطي فرصة لنقرة الاسم المزدوج (لو صارت بنفس اللمسة) تسجّل
+// نفسها بالحارس المشترك أول، ونتحقق منه وقت التنفيذ المؤجَّل بغض النظر عن ترتيب وصول الحدثين
+const DUAL_CLICK_GUARD_MS = 400; // مدة تجاهل نقرة القطاع العام بعد نقرة اسم مزدوج لنفس النغمة
+const DUAL_CLICK_DEFER_MS = 60;  // تأخير بسيط لإعطاء نقرة الاسم المزدوج فرصة تسجّل نفسها أول
+const lastDualClickAt = {}; // key: `${scaleType}-${root}` → timestamp آخر نقرة اسم مزدوج مقبولة
+
+majorSegments.forEach((seg, i) => {
   seg.addEventListener('click', () => {
-    document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelector('[data-scale="major"]').classList.add('active');
-    selectRootAndType(+seg.dataset.root, 'major', null);
+    const root = +seg.dataset.root;
+    const runSelect = () => {
+      const guardKey = `major-${root}`;
+      if (lastDualClickAt[guardKey] && (Date.now() - lastDualClickAt[guardKey]) < DUAL_CLICK_GUARD_MS) return;
+      document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelector('[data-scale="major"]').classList.add('active');
+      selectRootAndType(root, 'major', null);
+    };
+    if (DUAL_NAME_SEGMENTS.major[i]) setTimeout(runSelect, DUAL_CLICK_DEFER_MS); else runSelect();
   });
 });
-minorSegments.forEach(seg => {
+minorSegments.forEach((seg, i) => {
   seg.addEventListener('click', () => {
-    document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelector('[data-scale="naturalMinor"]').classList.add('active');
-    selectRootAndType(+seg.dataset.root, 'naturalMinor', null);
+    const root = +seg.dataset.root;
+    const runSelect = () => {
+      const guardKey = `naturalMinor-${root}`;
+      if (lastDualClickAt[guardKey] && (Date.now() - lastDualClickAt[guardKey]) < DUAL_CLICK_GUARD_MS) return;
+      document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelector('[data-scale="naturalMinor"]').classList.add('active');
+      selectRootAndType(root, 'naturalMinor', null);
+    };
+    if (DUAL_NAME_SEGMENTS.minor[i]) setTimeout(runSelect, DUAL_CLICK_DEFER_MS); else runSelect();
   });
 });
 
 // النقر على أحد النصوص المزدوجة (B/Cb، F#/Gb، C#/Db وما يقابلها بالداخلية) يختار نفس النغمة الفيزيائية
 // لكن بحرف بداية محدد يدويًا (letterOverride) بدل الحساب التلقائي، فيتغير اسم درجات السلم بالكامل تبعًا له
-//
-// حارس ضد "ضغطة شبح" مزدوجة (dualClickGuard): على الجوال، خصوصاً وقت التكبير (pinch-zoom)،
-// لمسة واحدة قرب حد hitTop/hitBottom (نفس القطاع المزدوج) ممكن تُطلِق حدثين متتاليين بفارق
-// ميلي ثوانٍ بسيط (سلوك معروف ببعض متصفحات الجوال عند حواف عناصر SVG متلاصقة). النتيجة: أول
-// نقرة تختار letterIdx الصحيح وتلوّنه، ثم نقرة "شبح" فورية تصيب المنطقة الشفافة المجاورة
-// (letterIdx مختلف لنفس الجذر/النوع) فتسحب التلوين لاسم غلط أو للقطاع العام — رغم إن الجذر
-// ونوع السلم ما يتغيروا (فالصوت والزند يضلوا صحيحين، بس التمييز البصري للاسم يضيع). نتجاهل
-// أي نقرة ثانية على نفس القطاع (نفس data-i + scaleType) توصل خلال أقل من DUAL_CLICK_GUARD_MS
-// من أول نقرة، لأنها شبه مؤكد صدى/شبح لنفس اللمسة مو نقرة مستخدم حقيقية جديدة
-const DUAL_CLICK_GUARD_MS = 250;
-const lastDualClickAt = {}; // key: `${scaleType}-${i}` → timestamp آخر نقرة مقبولة
 dualLabelElements.forEach(labelEl => {
   labelEl.addEventListener('click', (e) => {
     e.stopPropagation();
     const scaleType = labelEl.dataset.scaleType;
-    const i = labelEl.dataset.i;
-    const guardKey = `${scaleType}-${i}`;
+    const root = +labelEl.dataset.root;
+    const guardKey = `${scaleType}-${root}`;
     const now = Date.now();
-    if (lastDualClickAt[guardKey] && (now - lastDualClickAt[guardKey]) < DUAL_CLICK_GUARD_MS) {
-      return; // نقرة شبح محتملة على نفس القطاع المزدوج — نتجاهلها ونبقي أول اختيار كما هو
+    if (lastDualClickAt[guardKey] && (now - lastDualClickAt[guardKey]) < 250) {
+      return; // نقرة شبح ثانية محتملة على نفس الاسم المزدوج (hitTop/hitBottom متلاصقين) — نتجاهلها
     }
     lastDualClickAt[guardKey] = now;
-    const root = +labelEl.dataset.root;
     const letterIdx = +labelEl.dataset.letterIdx;
     const targetBtnScale = (scaleType === 'major') ? 'major' : 'naturalMinor';
     document.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('active'));
