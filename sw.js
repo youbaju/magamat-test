@@ -199,8 +199,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // باقي الملفات (الصور، عينات العود الأساسية، المانيفست، الأيقونات): كاش أولاً
-  // — هذي ملفات ثابتة وما تتغير كثير، فسرعة التحميل من الكاش أهم من التحديث الفوري
+  // الصور (أيقونات، صور دليل المقامات، صور السلالم الغربية، إلخ): "الشبكة أولاً" بدل الكاش أولاً
+  // — بنفس مبدأ index.html فوق بالضبط. سبب التغيير: أي صورة نعدّلها بالمستقبل (مثلاً تصحيح خطأ
+  // بصورة دليل مقام) كانت تضل معلّقة على النسخة القديمة المخزَّنة أبداً عند أي مستخدم زار الموقع
+  // قبل، حتى لو رفعنا نسخة جديدة بنفس الاسم/المسار على GitHub — لأن كاش-أولاً يمنع أي طلب شبكة
+  // أصلاً طول ما فيه نسخة مخزّنة، بغض النظر عن قِدمها. الحل: نحاول نجيب أحدث نسخة من الإنترنت
+  // أول بكل زيارة (ونحدّث الكاش تلقائياً بنفس الوقت)، ولو ما فيه نت نرجع فوراً للنسخة المخزّنة
+  // آخر مرة — نتيجة النهاية: تحديثات أي صورة تنعكس تلقائياً بدون أي حاجة نتذكر نرفع رقم
+  // CACHE_VERSION يدوياً كل مرة نغيّر فيها صورة
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(url.pathname)) {
+    event.respondWith(networkFirstImages(req));
+    return;
+  }
+
+  // باقي الملفات (عينات العود الأساسية wav، المانيفست): كاش أولاً — هذي ملفات ثابتة فعلاً
+  // وما تتغيّر أبداً بعد الإطلاق، فسرعة التحميل من الكاش أهم من التحديث الفوري
   event.respondWith(cacheFirstPrecache(req));
 });
 
@@ -216,6 +229,27 @@ async function networkFirstShell(request) {
     return response;
   } catch (err) {
     const cached = await caches.match(request) || await caches.match('./index.html');
+    if (cached) return cached;
+    return new Response('غير متاح بدون اتصال بالإنترنت', {
+      status: 503,
+      statusText: 'Offline'
+    });
+  }
+}
+
+// شبكة-أولاً للصور: يضمن أي تعديل مستقبلي على أي صورة (دليل مقام، أيقونة، إلخ) ينعكس فوراً
+// لأي زائر متصل بالنت، مع رجوع تلقائي للنسخة المخزّنة لو قطع النت — نفس منطق networkFirstShell
+// فوق بالضبط، بس للصور
+async function networkFirstImages(request) {
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      const cache = await caches.open(PRECACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cached = await caches.match(request);
     if (cached) return cached;
     return new Response('غير متاح بدون اتصال بالإنترنت', {
       status: 503,
