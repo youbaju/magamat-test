@@ -5920,6 +5920,7 @@ function startPlaying(){
   const mySession = playSessionId;
   const beginSequence = () => {
     if (mySession !== playSessionId) return; // جلسة قديمة اتلغت أثناء انتظار تحميل العينات، نتجاهلها
+    if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس تمهيدية الصوت المستخدمة بمشغّل المقامات العربية — نفس مسار الصوت الحقيقي (playArNote)، فنفس مشكلة "البدء الباردة" لأول نغمتين تنطبق هنا كمان
     scheduleNextStep(200);
   };
   // ننتظر اكتمال تحميل عينات العود قبل جدولة أول نغمة — لو ما انتظرنا، أول تشغيل بالجلسة
@@ -7732,12 +7733,38 @@ window.wxResume = wxResume;
       arScheduleNextStep(window.AR_STEP_MS);
     }
 
+    // نغمة تمهيدية صامتة (Priming) — بصوت شبه صفري ما يسمعه المستخدم إطلاقاً — تُشغَّل مرة
+    // وحدة فقط عبر نفس مسار إنشاء عقد الصوت الحقيقي (BufferSource + Gain + connect + start)
+    // قبل أول نغمة حقيقية بأي جلسة. الهدف: أي تكلفة "بدء تشغيل باردة" لمرة وحدة (أول إنشاء
+    // فعلي لعقدة BufferSourceNode بالمتصفح، أول ربط لسلسلة عقد الصوت) تنصرف على هالنغمة
+    // الوهمية بدل ما تتحمّلها أول نغمتين حقيقيتين وتخليهم يطلعون أسرع من السرعة المضبوطة —
+    // مشكلة كانت تصير بس أول تشغيل بعد فتح التطبيق (تأكد من يوسف)، وتختفي بعدها لأن التكلفة
+    // صارت "دافئة" فعلاً
+    let arAudioPrimed = false;
+    function primeArAudioOnce() {
+      if (arAudioPrimed) return;
+      arAudioPrimed = true;
+      try {
+        const ctx2 = getAudioContext();
+        const buf = ctx2.createBuffer(1, 1, ctx2.sampleRate);
+        const source = ctx2.createBufferSource();
+        source.buffer = buf;
+        const gain = ctx2.createGain();
+        gain.gain.value = 0.0001;
+        source.connect(gain);
+        gain.connect(ctx2.destination);
+        source.start(ctx2.currentTime);
+      } catch (e) { /* لو فشلت التمهيدية لأي سبب، نكمل عادي بدونها بدون ما نعطّل التشغيل */ }
+    }
+    window.primeArAudioOnce = primeArAudioOnce; // نعرّضها عالمياً عشان مشغّل السلالم الغربية (سكربت منفصل) يستخدم نفس التمهيدية، لأنه يمرّ بنفس مسار الصوت الحقيقي (playArNote/getAudioContext) وبالتالي يعاني من نفس تكلفة "البدء الباردة" لأول تشغيل
+
     function arStartPlay() {
       const mySessionId = ++arPlaySessionId; // نلغي أي سلسلة تشغيل سابقة معلّقة (تحسباً لضغطات متكررة أو تأخر استئناف الصوت بالجوال)
       arPlayerState = 'playing'; // نحدّثها فوراً (متزامن) قبل أي انتظار، عشان ضغطات متكررة ما تعيد فتح نفس المسار مرتين
       playBtn.textContent = '⏸';
       const beginArSequence = () => {
         if (arPlaySessionId !== mySessionId) return; // فيه ضغطة أحدث ألغت هالمحاولة، نتجاهلها
+        primeArAudioOnce();
         buildArSequence(currentDegrees);
         arStepIdx = 0;
         playBtn.textContent = '⏸';
@@ -8220,12 +8247,28 @@ window.wxResume = wxResume;
 
     // يبدأ تشغيل التمرين الحالي من أوله (يستخدم بعد التوليد، وبزر الإعادة)
     function exStartPlay() {
-      exPlaySessionId++;
+      const mySessionId = ++exPlaySessionId;
       exStepIdx = 0;
-      exPlayerState = 'playing';
+      exPlayerState = 'playing'; // نحدّثها فوراً (متزامن) قبل أي انتظار، عشان ضغطات متكررة ما تعيد فتح نفس المسار مرتين
       playBtn.textContent = '⏸'; playBtn.disabled = false;
       stopBtn.disabled = false; rewindBtn.disabled = false;
-      exNextStep();
+      const beginExSequence = () => {
+        if (exPlaySessionId !== mySessionId) return; // فيه ضغطة أحدث ألغت هالمحاولة، نتجاهلها
+        if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس تمهيدية الصوت — التمارين تستخدم نفس مسار الصوت الحقيقي (playArNoteByFreq/playArNote) فتعاني من نفس مشكلة "البدء الباردة" لأول نغمتين
+        exNextStep();
+      };
+      // ننتظر اكتمال تحميل العينات واستئناف الـ AudioContext فعلياً قبل جدولة أول نغمة —
+      // كانت هذي الخطوة ناقصة كلياً هنا (بعكس باقي المشغلات)، فأول تمرين بأي جلسة كان يشغّل
+      // أول نغمة أو نغمتين بالصوت الاصطناعي الاحتياطي (لأن التحميل الحقيقي لسا ما خلص) بفاصل
+      // زمني أقصر من السرعة المضبوطة
+      const exWaitPromises = [];
+      if (typeof window.ensureOudSamplesLoaded === 'function') exWaitPromises.push(window.ensureOudSamplesLoaded());
+      if (typeof window.ensureOudAudioReady === 'function') exWaitPromises.push(window.ensureOudAudioReady());
+      if (exWaitPromises.length) {
+        Promise.all(exWaitPromises).then(beginExSequence);
+      } else {
+        beginExSequence();
+      }
     }
     function exPause() {
       exPlayerState = 'paused';
