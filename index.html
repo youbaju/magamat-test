@@ -3405,6 +3405,15 @@ let playerState = 'stopped'; // 'stopped' | 'playing' | 'paused'
 let repeatEnabled = false;
 let pendingTimeoutId = null;
 let playSessionId = 0; // يمنع تراكم أكثر من سلسلة تشغيل متوازية لو صار ضغط متكرر بسرعة (خصوصاً بالجوال)
+// إصلاح #24 — "أول نغمتين سريعتين": نفس آلية مرساة توقيت الصوت (Look-Ahead Scheduling)
+// المستخدمة بمشغّل المقام العربي (سكربت منفصل) — التفاصيل الكاملة موثّقة هناك عند تعريف
+// arNextNoteAudioTime. هنا نحسب المرساة على نفس الـ AudioContext الحقيقي المشترك (arAudioCtx
+// بالضبط) عبر window.getSharedOudAudioContext، لأن الصوت الفعلي دايماً يتشغّل عبره
+// (playOudNote يفوّض لـplayArNoteByFreq)، مو على AudioContext هذا السكربت المحلي (audioCtx)
+let mainNextNoteAudioTime = 0;
+function getScheduleAudioContext(){
+  return (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
+}
 function scheduleNextStep(delay){
   const mySession = playSessionId;
   pendingTimeoutId = setTimeout(() => {
@@ -5587,16 +5596,16 @@ function getAudioContext(){
 }
 
 // تشغيل نغمة واحدة تحاكي قرصة وتر عود: نغمة أساسية + توافقيتين أعلى بمستوى أخفض، مع تلاشي سريع طبيعي
-function playOudNote(freq, duration){
+function playOudNote(freq, duration, scheduledTime){
   duration = duration || 0.8;
   // استخدام samples العود الحقيقية إذا كانت محملة
   if (typeof playArNoteByFreq === 'function') {
-    playArNoteByFreq(freq, duration);
+    playArNoteByFreq(freq, duration, scheduledTime);
     return;
   }
   // fallback: oscillator
   const ctx = getAudioContext();
-  const now = ctx.currentTime;
+  const now = (typeof scheduledTime === 'number') ? scheduledTime : ctx.currentTime;
   const masterGain = ctx.createGain();
   masterGain.gain.setValueAtTime(0, now);
   masterGain.connect(ctx.destination);
@@ -5896,7 +5905,11 @@ function nextStep(){
   const pos = (direction === 'desc') ? posByIdxDesc[scaleIdx] : posByIdxAsc[scaleIdx];
   if(pos){
     const freq = OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset);
-    playOudNote(freq, getStepDuration()/1000 * 0.9);
+    // إصلاح #24: حماية من تراكم تأخير JS + تشغيل بالوقت المجدوَل مسبقاً (مو بلحظة التنفيذ)
+    const mainCtxNow = getScheduleAudioContext().currentTime;
+    if (mainNextNoteAudioTime < mainCtxNow + 0.03) mainNextNoteAudioTime = mainCtxNow + 0.03;
+    playOudNote(freq, getStepDuration()/1000 * 0.9, mainNextNoteAudioTime);
+    mainNextNoteAudioTime += getStepDuration() / 1000;
     if(typeof window.vibrateString === 'function') window.vibrateString(pos.string);
   }
 
@@ -5921,6 +5934,8 @@ function startPlaying(){
   const beginSequence = () => {
     if (mySession !== playSessionId) return; // جلسة قديمة اتلغت أثناء انتظار تحميل العينات، نتجاهلها
     if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس تمهيدية الصوت المستخدمة بمشغّل المقامات العربية — نفس مسار الصوت الحقيقي (playArNote)، فنفس مشكلة "البدء الباردة" لأول نغمتين تنطبق هنا كمان
+    // إصلاح #24: نرسّي وقت أول نغمة على ساعة الصوت الحقيقية هنا
+    mainNextNoteAudioTime = getScheduleAudioContext().currentTime + 0.15;
     scheduleNextStep(200);
   };
   // ننتظر اكتمال تحميل عينات العود قبل جدولة أول نغمة — لو ما انتظرنا، أول تشغيل بالجلسة
@@ -5948,6 +5963,8 @@ function resumePlaying(){
   playerState = 'playing';
   playBtn.textContent = '⏸';
   playBtn.title = (window.oudLanguage === 'en') ? 'Pause' : 'إيقاف مؤقت';
+  // إصلاح #24: نعيد ضبط المرساة عند الاستئناف بعد إيقاف مؤقت
+  mainNextNoteAudioTime = getScheduleAudioContext().currentTime + (getStepDuration() / 1000);
   scheduleNextStep(getStepDuration());
 }
 
@@ -6026,6 +6043,7 @@ window.wxExerciseActive = false;
 let wxStepIdx = 0;
 let wxTimeoutId = null;
 let wxPlaySessionId = 0;
+let wxNextNoteAudioTime = 0; // إصلاح #24 — نفس آلية مرساة توقيت الصوت
 
 function wxResetBoardColors() {
   oudNotesLayer.querySelectorAll('rect').forEach(rect => {
@@ -6074,9 +6092,15 @@ function wxNextStep() {
       const freshFreq = (typeof OUD !== 'undefined' && OUD.frequencyAt && pos.string !== undefined && pos.fret !== undefined)
         ? OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset)
         : pos.freq;
-      playOudNote(freshFreq, (durMs / 1000) * 0.9);
+      // إصلاح #24: حماية من تراكم تأخير JS + تشغيل بالوقت المجدوَل مسبقاً (مو بلحظة التنفيذ)
+      const wxCtxNow = getScheduleAudioContext().currentTime;
+      if (wxNextNoteAudioTime < wxCtxNow + 0.03) wxNextNoteAudioTime = wxCtxNow + 0.03;
+      playOudNote(freshFreq, (durMs / 1000) * 0.9, wxNextNoteAudioTime);
       if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
     }
+    wxNextNoteAudioTime += durMs / 1000; // نتحرك للأمام بغض النظر (حتى لو ما فيه pos)، عشان التوقيت التراكمي يضل صحيح
+  } else {
+    wxNextNoteAudioTime += durMs / 1000; // خطوة سكتة (step.deg === null) — الوقت يمشي بدون صوت
   }
 
   const totalBeats = window.exTotalBeats || 0;
@@ -6098,6 +6122,9 @@ function wxStartPlay() {
   wxPlayerState = 'playing';
   playBtn.textContent = '⏸'; playBtn.disabled = false;
   stopBtn.disabled = false; rewindBtn.disabled = false;
+  // إصلاح #24: نرسّي وقت أول نغمة على ساعة الصوت الحقيقية (تشغيل فوري هنا، بدون انتظار
+  // تحميل عينات — التمرين يبدأ بعد ما السلم العادي اشتغل أصلاً بنفس الجلسة عادةً)
+  wxNextNoteAudioTime = getScheduleAudioContext().currentTime + 0.05;
   wxNextStep();
 }
 function wxPause() {
@@ -6108,6 +6135,8 @@ function wxPause() {
 function wxResume() {
   wxPlayerState = 'playing';
   playBtn.textContent = '⏸';
+  // إصلاح #24: نعيد ضبط المرساة عند الاستئناف
+  wxNextNoteAudioTime = getScheduleAudioContext().currentTime + 0.05;
   wxNextStep();
 }
 
@@ -6799,6 +6828,12 @@ window.wxResume = wxResume;
       if (arAudioCtx.state === 'suspended') arAudioCtx.resume();
       return arAudioCtx;
     }
+    // نكشف نفس الـ AudioContext الحقيقي عالمياً — عشان أي مشغّل تاني بالصفحة (السلم الغربي
+    // العادي، تمرين السلالم الغربية) يقدر يحسب "مرساة" وقت الجدولة (انظر إصلاح #24 تحت)
+    // على نفس ساعة الصوت الفعلية اللي يشتغل عليها الصوت الحقيقي (نفس arAudioCtx بالضبط)،
+    // بدل ما يحسبها على AudioContext تاني منفصل (كل سكربت بالصفحة عنده getAudioContext
+    // خاص فيه بمتغير منفصل) — لو استخدمنا ساعة غلط، وقت الجدولة المحسوب يكون بلا معنى
+    window.getSharedOudAudioContext = getAudioContext;
     // نكشفها عالمياً عشان زر التشغيل الرئيسي يقدر ينتظر استئناف الـ AudioContext فعلياً
     // (لا نكتفي بمجرد استدعاء resume() بدون انتظار) قبل جدولة أول نغمة — resume() عملية
     // غير متزامنة تاخذ وقتاً حقيقياً خصوصاً بالجوال أول مرة بالجلسة، ولو ما انتظرناها
@@ -7384,6 +7419,19 @@ window.wxResume = wxResume;
     let arRepeat = false;
     let currentDegrees = [];
 
+    // إصلاح #24 — "أول نغمتين سريعتين" (تشخيص جديد بعد فشل حل تعليق AudioContext):
+    // السبب الحقيقي إن كل نغمة كانت تُشغَّل بلحظة تنفيذ setTimeout نفسها (ctx.currentTime
+    // وقت التنفيذ الفعلي)، مو بوقت مجدوَل مسبقاً على ساعة الصوت. المتصفحات (خصوصاً بالجوال)
+    // ممكن "تكوّم" (coalesce) مؤقتات JS المعلّقة بعد فترة خمول وتُطلقها بفارق أقل من
+    // المطلوب لما الصفحة ترجع نشطة — فيصير أول ١-٢ نغمة يُطلَقوا أسرع من الفاصل الحقيقي.
+    // الحل (Look-Ahead Scheduling، تقنية معروفة بـWeb Audio): نحسب وقت بدء كل نغمة مسبقاً
+    // على ساعة الصوت (arNextNoteAudioTime)، ونمررها صراحة لـplayArNote — بهالطريقة حتى لو
+    // تأخر أو تكوّم تنفيذ الـJS، توقيت الصوت الفعلي يضل ثابت ومحسوب مسبقاً، مو تابع لحظة
+    // التنفيذ. هذا نفس النمط بالضبط بمشغّل السلم الغربي العادي وتمرين السلالم الغربية (سكربت
+    // منفصل) وتمرين المقامات العربية تحت — الأربعة كانوا يعانون من نفس المشكلة بالضبط.
+    let arNextNoteAudioTime = 0;
+    const SCHEDULE_MIN_LOOKAHEAD = 0.03; // 30ms أمان أدنى قبل أي نغمة، عشان ما تصير أبداً "بالماضي"
+
     // تحويل BPM إلى مللي ثانية بين كل نغمة والثانية (كل نغمة = ربع واحد بالمترونوم)
     function bpmToStepMs(bpm) { return Math.round(60000 / bpm); }
 
@@ -7636,7 +7684,7 @@ window.wxResume = wxResume;
       };
     }
 
-    window.playArNoteByFreq = function(freq, duration) {
+    window.playArNoteByFreq = function(freq, duration, scheduledTime) {
       // نحول التردد إلى quartersFromSol
       // صول = 196 Hz، كل ربع تون = 2^(1/24)
       const SOL_FREQ = 196;
@@ -7645,15 +7693,18 @@ window.wxResume = wxResume;
       // السلالم الغربية) — فنمرر alreadyTuned=true عشان playArNote ما يطبّق الدوزان مرة
       // ثانية من فوق (كان يصير تطبيق مزدوج للدوزان، يخلي السلالم الغربية تُعزف بدوزان خاطئ
       // تماماً، بعكس المقامات العربية اللي تستدعي playArNote مباشرة بموضع خام غير مدوزن)
-      playArNote(quartersFromSol, duration, true);
+      playArNote(quartersFromSol, duration, true, scheduledTime);
     };
 
-    function playArNote(quartersFromSol, customDuration, alreadyTuned) {
+    // scheduledTime (اختياري): وقت بدء دقيق على ساعة الصوت (AudioContext.currentTime) محسوب
+    // مسبقاً من طرف المشغّل المستدعي — إصلاح #24 (انظر شرح مفصّل عند arNextNoteAudioTime تحت).
+    // لو ما تم تمريره، نرجع للسلوك القديم (نشغّل فوراً بلحظة التنفيذ الفعلية)
+    function playArNote(quartersFromSol, customDuration, alreadyTuned, scheduledTime) {
       const ctx2 = getAudioContext();
-      const now = ctx2.currentTime;
+      const now = (typeof scheduledTime === 'number') ? scheduledTime : ctx2.currentTime;
 
       if (!samplesLoading && !samplesLoaded && !samplesLoadGaveUp) {
-        loadOudSamples().then(() => playArNote(quartersFromSol, customDuration, alreadyTuned));
+        loadOudSamples().then(() => playArNote(quartersFromSol, customDuration, alreadyTuned, scheduledTime));
         return;
       }
 
@@ -7729,7 +7780,14 @@ window.wxResume = wxResume;
       // بس مع الخوارزمية القديمة المحدودة بأوكتاف واحد، والحين findClosestSample
       // تبحث بالمدى الكامل وتحسب الأوكتاف الصحيح تلقائياً، فالتعويض اليدوي صار
       // يضيف أوكتاف زائد فوق الصحيح.
-      playArNote(quarters);
+      // إصلاح #24: نضمن إن وقت النغمة المجدوَل ما يكون بالماضي أبداً (حماية من تراكم
+      // تأخير JS شديد)، ثم نشغّلها بوقتها المحسوب مسبقاً (مو بلحظة التنفيذ)، ثم نحسب
+      // وقت النغمة التالية تراكمياً فوقه — هذا يضمن الفاصل الزمني الحقيقي بين النغمات
+      // يضل ثابت دايماً بغض النظر عن أي تذبذب بتوقيت تنفيذ الـJS نفسه
+      const arCtxNow = getAudioContext().currentTime;
+      if (arNextNoteAudioTime < arCtxNow + SCHEDULE_MIN_LOOKAHEAD) arNextNoteAudioTime = arCtxNow + SCHEDULE_MIN_LOOKAHEAD;
+      playArNote(quarters, undefined, false, arNextNoteAudioTime);
+      arNextNoteAudioTime += window.AR_STEP_MS / 1000;
       // اهتزاز الوتر المقابل للنغمة
       const { s: strIdx } = getStringFret(quarters);
       if (typeof window.vibrateString === 'function') window.vibrateString(strIdx);
@@ -7777,6 +7835,10 @@ window.wxResume = wxResume;
         primeArAudioOnce();
         buildArSequence(currentDegrees);
         arStepIdx = 0;
+        // إصلاح #24: نرسّي وقت أول نغمة على ساعة الصوت الحقيقية هنا (لحظة الجاهزية الفعلية،
+        // بعد كل الانتظارات أعلاه)، بفسحة أمان بسيطة (150ms) — منها يبدأ الحساب التراكمي
+        const ctx0 = getAudioContext();
+        arNextNoteAudioTime = ctx0.currentTime + 0.15;
         playBtn.textContent = '⏸';
         playBtn.disabled = false;
         stopBtn.disabled = false;
@@ -7802,6 +7864,10 @@ window.wxResume = wxResume;
     function arResume() {
       arPlayerState = 'playing';
       playBtn.textContent = '⏸';
+      // إصلاح #24: نعيد ضبط المرساة عند الاستئناف بعد إيقاف مؤقت (كانت واقفة بلا حساب
+      // لفترة الإيقاف)، عشان أول نغمة بعد الاستئناف تنطلق بالتوقيت الصحيح
+      const ctx0 = getAudioContext();
+      arNextNoteAudioTime = ctx0.currentTime + (window.AR_STEP_MS / 1000);
       arScheduleNextStep(window.AR_STEP_MS);
     }
     function arResetPlayer() {
@@ -8188,6 +8254,7 @@ window.wxResume = wxResume;
     let exStepIdx = 0;
     let exTimeoutId = null;
     let exPlaySessionId = 0;
+    let exNextNoteAudioTime = 0; // إصلاح #24 — نفس آلية مرساة توقيت الصوت المستخدمة بمشغّل المقام العادي
     let exPositions = [];       // مواقع الأرباع (من صول) لكل درجة ١-١٤ بالمقام/الحرف الحاليين
     let exIntervalsExt = [];
     let exMaqamName = '';
@@ -8265,6 +8332,9 @@ window.wxResume = wxResume;
       const beginExSequence = () => {
         if (exPlaySessionId !== mySessionId) return; // فيه ضغطة أحدث ألغت هالمحاولة، نتجاهلها
         if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس تمهيدية الصوت — التمارين تستخدم نفس مسار الصوت الحقيقي (playArNoteByFreq/playArNote) فتعاني من نفس مشكلة "البدء الباردة" لأول نغمتين
+        // إصلاح #24: نرسّي وقت أول نغمة على ساعة الصوت الحقيقية هنا (نفس أسلوب مشغّل المقام العادي)
+        const exCtx0 = getAudioContext();
+        exNextNoteAudioTime = exCtx0.currentTime + 0.15;
         exNextStep();
       };
       // ننتظر اكتمال تحميل العينات واستئناف الـ AudioContext فعلياً قبل جدولة أول نغمة —
@@ -8288,6 +8358,9 @@ window.wxResume = wxResume;
     function exResume() {
       exPlayerState = 'playing';
       playBtn.textContent = '⏸';
+      // إصلاح #24: نعيد ضبط المرساة عند الاستئناف (تشغيل فوري بدون تأخير هنا أصلاً)
+      const exCtx0 = getAudioContext();
+      exNextNoteAudioTime = exCtx0.currentTime + SCHEDULE_MIN_LOOKAHEAD;
       exNextStep(); // نكمل من نفس الخطوة الحالية بدون تأخير إضافي
     }
 
@@ -8323,11 +8396,16 @@ window.wxResume = wxResume;
           exHighlightDegree(degIdx);
         }
 
-        playArNote(q, durMs / 1000);
+        // إصلاح #24: حماية من تراكم تأخير JS + تشغيل بالوقت المجدوَل مسبقاً (مو بلحظة التنفيذ)
+        const exCtxNow = getAudioContext().currentTime;
+        if (exNextNoteAudioTime < exCtxNow + SCHEDULE_MIN_LOOKAHEAD) exNextNoteAudioTime = exCtxNow + SCHEDULE_MIN_LOOKAHEAD;
+        playArNote(q, durMs / 1000, false, exNextNoteAudioTime);
         const { s: strIdx } = getStringFret(q);
         if (typeof window.vibrateString === 'function') window.vibrateString(strIdx);
       }
-      // ملاحظة: السكتة (step.deg === null) بس تمشي بالوقت بدون تشغيل صوت أو تظليل
+      // ملاحظة: السكتة (step.deg === null) بس تمشي بالوقت بدون تشغيل صوت أو تظليل — بس المرساة
+      // لازم تتحرك للأمام برضه (تحت) عشان النغمة اللي بعد السكتة تنطلق بتوقيتها الصحيح
+      exNextNoteAudioTime += durMs / 1000;
 
       // تحديث شريط التقدم والوقت (بنفس أسلوب المشغل العادي)، بس لو التمرين هو المتحكم حالياً
       if (window.exerciseActive && exTotalBeats > 0) {
