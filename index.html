@@ -3410,9 +3410,8 @@ const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" ا
 window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
   let holdTimer = null;
   let firedAsHold = false;
-  let mode = null; // null | 'stopping' | 'staged'
+  let mode = null; // null | 'stopping' | 'provisional'
   let cached = null; // {liveEl, freq} — نحسبها مرة وحدة بالضغطة عشان ما نكرر أي أثر جانبي (زي إيقاف تشغيل كورد)
-  let stagedHandle = null; // عقدة الصوت "المعلَّقة" الصامتة (انظر شرح stageSustainedNoteOnRect)
 
   // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
   // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
@@ -3428,15 +3427,15 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }
 
-  // إصلاح مؤكَّد بعد نقاش وتشخيص دقيق مع يوسف (جولتين من الاختبار الفعلي): محصور بمشكلتين
-  // مرتبطتين بنفس السبب — (أ) الضغطة المطوّلة ما تستجيب أول مرة على آيفون/آيباد/سامسونج
-  // S24+ لأن تشغيل الصوت كان يصير من داخل مؤقّت مؤجَّل (يُرفض على الأجهزة الصارمة)، و(ب)
-  // "أصوات مزدوجة" لأن إيقاف النغمة المستمرة (بخفوت ١٢٠ مللي ثانية) كان يتراكب صوتياً مع
-  // بداية نغمة العزف الجديدة الفورية. الحل: تقنية "التعليق الصامت" — نبدأ عقدة الصوت فعلياً
-  // فوراً بلحظة الضغط (لمسة موثوقة)، بس صامتة تماماً (Gain=0). المؤقّت المؤجَّل بعدين إما
-  // "يرفع" صوتها للمسموع (ضغطة مطوّلة مؤكدة — تعديل بارامتر على عقدة شغّالة، مو بدء تشغيل
-  // جديد، فما يخضع لقيود اللمسة الموثوقة)، أو نوقفها بصمت (ضغطة سريعة — كانت صامتة أصلاً،
-  // صفر خطر تراكب صوتي مع نغمة العزف الجديدة)
+  // إصلاح مؤكَّد بعد ٣ جولات تشخيص واختبار فعلي مع يوسف: تبيّن إن أي عملية صوتية (حتى مجرد
+  // رفع مستوى صوت لعقدة شغّالة أصلاً) تُرفض لو صادرة من مؤقّت مؤجَّل (setTimeout) على بعض
+  // الأجهزة (آيفون/آيباد/سامسونج S24+) — القيد أشمل من "بدء تشغيل جديد" بس. الحل النهائي:
+  // كل عملية صوتية تصير **مباشرة ومتزامنة** جوا معالج حدث موثوق (pointerdown أو pointerup)،
+  // بدون أي اعتماد على setTimeout لأي فعل صوتي إطلاقاً. نبدأ النغمة المستمرة بصوتها الكامل
+  // فوراً بلحظة الضغط (بالضبط زي الضغطة السريعة، صفر فرق)، والمؤقّت المؤجَّل وظيفته الوحيدة
+  // "تحديد القرار لاحقاً" (Flag بس، بدون أي فعل صوتي بداخله). لو تأكدت إنها ضغطة سريعة،
+  // نوقف الصوت **بخفوت فوري جداً (15ms)** بدل الخفوت العادي (120ms) — عشان ما يتراكب صوتياً
+  // مع نغمة العزف الجديدة اللي تنطلق فوراً بدالها
   rectEl.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
     clearHoldTimer();
@@ -3448,34 +3447,26 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
       mode = 'stopping';
       return;
     }
-    mode = 'staged';
+    mode = 'provisional';
     firedAsHold = false;
-    stagedHandle = window.stageSustainedNoteOnRect(cached.liveEl, cached.freq, recomputeFreqFn);
-    holdTimer = setTimeout(() => {
-      firedAsHold = true;
-      window.commitStagedSustainedNote(stagedHandle, onSustainStart, onSustainStop);
-    }, HOLD_THRESHOLD_MS);
+    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn); // تبدأ بصوتها الكامل مباشرة (نفس سلوك الضغطة السريعة تماماً)
+    holdTimer = setTimeout(() => { firedAsHold = true; }, HOLD_THRESHOLD_MS); // Flag بس — صفر فعل صوتي هنا
   });
 
   function onRelease(){
     const wasHold = firedAsHold;
     clearHoldTimer();
     if (mode === 'stopping') { mode = null; return; } // اتعالجت كاملة بلحظة الضغط
-    if (mode !== 'staged') return;
+    if (mode !== 'provisional') return;
     if (wasHold) {
       // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
       // الإصبع، ما نسوي شي إضافي هنا
       mode = null;
-      stagedHandle = null;
       return;
     }
-    // ضغطة سريعة: العقدة "المعلَّقة" كانت صامتة تماماً طول الوقت — نوقفها بصمت (صفر خطر
-    // تراكب صوتي)، ونشغّل عزفة طبيعية قصيرة بدالها. لو فيه نغمة مستمرة رسمية تانية شغالة
-    // (على مستطيل غير هذا)، نوقفها هي كمان (نفس السلوك المتفق عليه: أي تفاعل جديد يوقف
-    // المرجع المستمر القديم تلقائياً)
-    window.discardStagedSustainedNote(stagedHandle);
-    stagedHandle = null;
-    if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+    // طلعت ضغطة سريعة بالنهاية: نوقف النغمة اللي كانت شغالة فعلياً (بخفوت فوري ١٥ مللي
+    // ثانية عشان ما تتراكب مع نغمة العزف الجديدة)، ونشغّل عزفة طبيعية قصيرة بدالها
+    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn, true); // fastFade=true
     if (cached && typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(cached.freq, TAP_PLUCK_DURATION);
     if (cached && onSustainStart) onSustainStart(cached.liveEl);
     if (cached && onSustainStop) setTimeout(() => onSustainStop(cached.liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
@@ -3484,7 +3475,7 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
 
   function onCancel(){
     clearHoldTimer();
-    if (mode === 'staged' && !firedAsHold) { window.discardStagedSustainedNote(stagedHandle); stagedHandle = null; } // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة المعلَّقة بصمت
+    if (mode === 'provisional' && !firedAsHold) window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn, true); // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة بخفوت سريع
     mode = null;
   }
 
@@ -5762,7 +5753,7 @@ function partialFreq(baseFreq, p){
   return baseFreq * p.mult;
 }
 
-function startSustainedNote(freq, silent){
+function startSustainedNote(freq){
   // نستخدم نفس الـAudioContext المشترك مع محرك العينات الحقيقي (arAudioCtx) بدل Context
   // منفصل خاص فيها — تأكّد بالنقاش مع يوسف إن الضغطة السريعة (تستخدم arAudioCtx) ما فيها
   // أي مشكلة حتى بأول تفاعل على آيفون/آيباد/سامسونج S24+، بينما النغمة المستمرة (كانت
@@ -5774,14 +5765,7 @@ function startSustainedNote(freq, silent){
   const masterGain = ctx.createGain();
   masterGain.connect(ctx.destination);
   masterGain.gain.setValueAtTime(0, now);
-  // silent=true: نبدأ العقدة فعلياً (osc.start حقيقي، لمسة موثوقة) بس نخليها صامتة تماماً
-  // (Gain=0 بدون أي رفع) — يُستخدم لتقنية "التعليق الصامت" (Staging) اللي تحل مشكلة تشغيل
-  // الصوت من مؤقّت مؤجَّل: نبدأها صامتة فوراً بلحظة الضغط، ونرفع صوتها لاحقاً (rampSustainedNoteToAudible)
-  // بس لو تأكدت كضغطة مطوّلة فعلية — رفع مستوى صوت لعقدة شغّالة أصلاً مو "بدء تشغيل" من
-  // منظور المتصفح، فما يخضع لقيود اللمسة الموثوقة
-  if (!silent) {
-    masterGain.gain.linearRampToValueAtTime(0.35, now + 0.015); // صعود سريع بس، وبعدها تستمر ثابتة (Sustain) بدون أي جدولة توقف
-  }
+  masterGain.gain.linearRampToValueAtTime(0.35, now + 0.015); // صعود سريع بس، وبعدها تستمر ثابتة (Sustain) بدون أي جدولة توقف
   const oscillators = SUSTAINED_PARTIALS.map(p => {
     const osc = ctx.createOscillator();
     osc.type = p.type;
@@ -5795,9 +5779,7 @@ function startSustainedNote(freq, silent){
   });
   // "نقرة" مطرقة قصيرة جداً عند بداية النغمة — دفعة ضجيج قصيرة مفلترة (Highpass) تخفت
   // خلال أجزاء من الثانية، تحاكي إحساس "ضربة المطرقة" الأولى بالبيانو الحقيقي، بدل بداية
-  // ناعمة صافية بالكامل زي الموجات الصناعية المجردة. لو صامتة (silent)، نأجّل نقرة المطرقة
-  // لحظة رفع الصوت الفعلي (rampSustainedNoteToAudible) بدل ما نضيعها بالصمت
-  if (!silent) {
+  // ناعمة صافية بالكامل زي الموجات الصناعية المجردة
   try {
     const hammerDur = 0.05;
     const bufferSize = Math.floor(ctx.sampleRate * hammerDur);
@@ -5818,41 +5800,7 @@ function startSustainedNote(freq, silent){
     noiseSrc.start(now);
     noiseSrc.stop(now + hammerDur);
   } catch(e){}
-  }
-  return { oscillators, masterGain, freq };
-}
-
-// يرفع صوت نغمة مستمرة "معلَّقة" (بدأت صامتة عبر startSustainedNote(freq, true)) للمستوى
-// الطبيعي المسموع — تعديل بارامتر (gain) على عقدة صوت شغّالة أصلاً، مو "بدء تشغيل" جديد،
-// فما يخضع لقيود "اللمسة الموثوقة" حتى لو استُدعي من مؤقّت مؤجَّل. تشمل "نقرة" المطرقة
-// (كانت مؤجَّلة من startSustainedNote بسبب وضع الصمت) عشان الإحساس يطابق البداية الطبيعية
-function rampSustainedNoteToAudible(handle){
-  if (!handle || !handle.masterGain) return;
-  const ctx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
-  const now = ctx.currentTime;
-  try {
-    handle.masterGain.gain.cancelScheduledValues(now);
-    handle.masterGain.gain.setValueAtTime(0, now);
-    handle.masterGain.gain.linearRampToValueAtTime(0.35, now + 0.015);
-    const hammerDur = 0.05;
-    const bufferSize = Math.floor(ctx.sampleRate * hammerDur);
-    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
-    const noiseSrc = ctx.createBufferSource();
-    noiseSrc.buffer = noiseBuffer;
-    const hammerFilter = ctx.createBiquadFilter();
-    hammerFilter.type = 'highpass';
-    hammerFilter.frequency.setValueAtTime(Math.max(800, (handle.freq || 200) * 2), now);
-    const hammerGain = ctx.createGain();
-    hammerGain.gain.setValueAtTime(0.06, now);
-    hammerGain.gain.exponentialRampToValueAtTime(0.001, now + hammerDur);
-    noiseSrc.connect(hammerFilter);
-    hammerFilter.connect(hammerGain);
-    hammerGain.connect(handle.masterGain);
-    noiseSrc.start(now);
-    noiseSrc.stop(now + hammerDur);
-  } catch(e){}
+  return { oscillators, masterGain };
 }
 
 // يحدّث تردد نغمة مستمرة شغالة فعلياً (بدون ما يوقفها ويبدأها من جديد) - يُستخدم لما يتغيّر الدوزان أثناء التشغيل
@@ -5866,15 +5814,20 @@ function retuneSustainedNoteHandle(handle, newFreq){
   });
 }
 
-function stopSustainedNote(handle){
+function stopSustainedNote(handle, fastFade){
   if (!handle) return;
   const ctx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
   const now = ctx.currentTime;
+  // fastFade=true: خفوت سريع جداً (١٥ مللي ثانية بدل ١٢٠) — يُستخدم تحديداً لما نوقف نغمة
+  // مستمرة بدأت لتوّها (طلعت ضغطة سريعة بالنهاية) وبتُستبدَل فوراً بنغمة عزف جديدة، عشان
+  // نتجنب أي تراكب صوتي مسموع بين خفوت النغمة القديمة وبداية النغمة الجديدة
+  const fadeSec = fastFade ? 0.015 : 0.12;
+  const stopSec = fastFade ? 0.02 : 0.15;
   try {
     handle.masterGain.gain.cancelScheduledValues(now);
     handle.masterGain.gain.setValueAtTime(handle.masterGain.gain.value, now);
-    handle.masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12); // خفوت سريع وناعم عند التوقف
-    handle.oscillators.forEach(osc => osc.stop(now + 0.15));
+    handle.masterGain.gain.exponentialRampToValueAtTime(0.001, now + fadeSec); // خفوت سريع وناعم عند التوقف
+    handle.oscillators.forEach(osc => osc.stop(now + stopSec));
   } catch(e){}
 }
 
@@ -5888,73 +5841,20 @@ window.getCurrentSustainedNoteRect = function(){
 };
 
 // دالة موحدة: نضغط مستطيل نغمة → لو مافيه صوت شغال، يبدأ مستمر. لو نفس المستطيل شغال، يوقف. لو مستطيل ثاني شغال، يوقفه ويبدأ الجديد.
-// ===== تقنية "التعليق الصامت" (Staging) — تحل مشكلة تشغيل صوت النغمة المستمرة من مؤقّت
-// مؤجَّل (يُرفض على بعض الأجهزة الصارمة زي آيفون/آيباد/سامسونج S24+)، وتحل مشكلة تراكب
-// صوتي (الأصوات المزدوجة) بين خفوت النغمة الموقوفة وبداية نغمة العزف الجديدة =====
-//
-// stageSustainedNoteOnRect: تبدأ عقدة صوت حقيقية فعلياً (لمسة موثوقة) بس صامتة تماماً —
-// تُستدعى مباشرة بلحظة الضغط (pointerdown)، قبل ما نعرف هل هي ضغطة مطوّلة أو سريعة
-window.stageSustainedNoteOnRect = function(rectEl, freq, recomputeFreqFn){
-  const scaleIdxAttr = rectEl.getAttribute('data-scale-idx');
-  let liveRectEl = rectEl;
-  let sequenceWasPlaying = false;
-  if (window.isArabicMode) {
-    if (window.exerciseActive && typeof window.exStopPlayback === 'function') {
-      window.exStopPlayback();
-      sequenceWasPlaying = true;
-    } else if (typeof window.arGetPlayerState === 'function' && window.arGetPlayerState() !== 'stopped' && typeof window.arResetPlayer === 'function') {
-      window.arResetPlayer();
-      sequenceWasPlaying = true;
-    }
-  } else {
-    if (window.wxExerciseActive && typeof window.wxStopPlayback === 'function') {
-      window.wxStopPlayback();
-      sequenceWasPlaying = true;
-    } else if (playerState !== 'stopped') { resetPlayer(); sequenceWasPlaying = true; }
-  }
-  if (sequenceWasPlaying && scaleIdxAttr !== null) {
-    const fresh = document.querySelector(`#oudNotesLayer rect[data-scale-idx="${scaleIdxAttr}"]`);
-    if (fresh) liveRectEl = fresh;
-  }
-  const handle = startSustainedNote(freq, true); // true = صامتة
-  handle.rectEl = liveRectEl;
-  handle.recomputeFreqFn = recomputeFreqFn || null;
-  return handle;
-};
-
-// commitStagedSustainedNote: تتأكد الضغطة مطوّلة فعلاً — نوقف أي نغمة مستمرة رسمية تانية
-// شغالة (على مستطيل غير هذا)، نسجّل هذي كالنغمة الرسمية الحالية، ونرفع صوتها للمسموع
-window.commitStagedSustainedNote = function(handle, onStart, onStop){
-  if (!handle) return;
-  if (currentSustainedNote && currentSustainedNote !== handle) {
-    const prevLive = currentSustainedNote.rectEl;
-    stopSustainedNote(currentSustainedNote);
-    if (currentSustainedNote.onStopCb) currentSustainedNote.onStopCb(prevLive);
-  }
-  handle.onStopCb = onStop;
-  currentSustainedNote = handle;
-  rampSustainedNoteToAudible(handle);
-  if (onStart) onStart(handle.rectEl);
-};
-
-// discardStagedSustainedNote: طلعت ضغطة سريعة — نوقف العقدة المعلَّقة بصمت (كانت صامتة
-// تماماً طول الوقت، فما فيه أي خطر تراكب صوتي مع نغمة العزف اللي بتشتغل بدالها)
-window.discardStagedSustainedNote = function(handle){
-  if (!handle) return;
-  stopSustainedNote(handle);
-};
-
-window.toggleSustainedNoteOnRect = function(rectEl, freq, onStart, onStop, recomputeFreqFn){
+// المعامل الأخير (fastFade): لو true، يوقف بخفوت فوري جداً (15ms) بدل الخفوت العادي (120ms)
+// — يُستخدم من bindNoteRectPress لما نكتشف إن "ضغطة مطوّلة" مؤقّتة طلعت بالنهاية سريعة،
+// عشان ما تتراكب صوتياً مع نغمة العزف الجديدة اللي تنطلق فوراً بدالها
+window.toggleSustainedNoteOnRect = function(rectEl, freq, onStart, onStop, recomputeFreqFn, fastFade){
   if (currentSustainedNote && currentSustainedNote.rectEl === rectEl) {
     const liveOff = currentSustainedNote.rectEl;
-    stopSustainedNote(currentSustainedNote);
+    stopSustainedNote(currentSustainedNote, fastFade);
     if (onStop) onStop(liveOff);
     currentSustainedNote = null;
     return;
   }
   if (currentSustainedNote) {
     const prevLive = currentSustainedNote.rectEl; // العنصر الحقيقي المضاء أخضر حالياً (مو بالضرورة نفس مرجع الإغلاق الأصلي)
-    stopSustainedNote(currentSustainedNote);
+    stopSustainedNote(currentSustainedNote, fastFade);
     if (currentSustainedNote.onStopCb) currentSustainedNote.onStopCb(prevLive);
     currentSustainedNote = null;
   }
