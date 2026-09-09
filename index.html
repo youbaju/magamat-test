@@ -3410,6 +3410,8 @@ const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" ا
 window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
   let holdTimer = null;
   let firedAsHold = false;
+  let mode = null; // null | 'stopping' | 'provisional-sustain'
+  let cached = null; // {liveEl, freq} — نحسبها مرة وحدة بالضغطة عشان ما نكرر أي أثر جانبي (زي إيقاف تشغيل كورد)
 
   // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
   // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
@@ -3425,41 +3427,65 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }
 
+  // إصلاح مؤكَّد بعد نقاش وتشخيص دقيق مع يوسف: الضغطة السريعة (تشغّل الصوت مباشرة جوا
+  // معالج الرفع نفسه) ما فيها أي مشكلة حتى بأول تفاعل على آيفون/آيباد/سامسونج S24+. المشكلة
+  // محصورة بالضغطة المطوّلة تحديداً، لأن تشغيل الصوت الفعلي لها كان يصير من داخل مؤقّت
+  // مؤجَّل (setTimeout بعد 350ms) — وهالتأخير بالذات (بغض النظر عن أي AudioContext نستخدم)
+  // هو اللي يُرفَض على الأجهزة الصارمة. الحل: نبدأ النغمة المستمرة الفعلية فوراً بلحظة
+  // الضغط نفسها (بلمسة موثوقة ١٠٠٪، بالضبط زي الضغطة السريعة)، والمؤقّت المؤجَّل صار وظيفته
+  // بس "تحديد القرار لاحقاً" (نخليها تستمر أو نوقفها ونشغّل عزفة بدالها) — بدون أي تشغيل
+  // صوت فعلي من داخله
   rectEl.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
-    firedAsHold = false;
     clearHoldTimer();
-    holdTimer = setTimeout(() => {
-      firedAsHold = true;
-      const { liveEl, freq } = prepare();
-      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
-    }, HOLD_THRESHOLD_MS);
+    cached = prepare();
+    const wasActiveSame = (typeof window.getCurrentSustainedNoteRect === 'function') && window.getCurrentSustainedNoteRect() === cached.liveEl;
+    if (wasActiveSame) {
+      // اللمسة هذي على مستطيل شغال أصلاً كنغمة مستمرة — قصدها إيقافها، بس هذا وخلاص
+      window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      mode = 'stopping';
+      return;
+    }
+    mode = 'provisional-sustain';
+    firedAsHold = false;
+    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
+    holdTimer = setTimeout(() => { firedAsHold = true; }, HOLD_THRESHOLD_MS); // بس تحديد القرار — الصوت أصلاً شغّال من فوق
   });
+
+  function stopProvisionalSustain(){
+    if (mode === 'provisional-sustain' && cached) {
+      window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
+    }
+  }
 
   function onRelease(){
     const wasHold = firedAsHold;
     clearHoldTimer();
-    // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
-    // الإصبع، ما نسوي شي إضافي هنا
-    if (wasHold) return;
-    const { liveEl, freq } = prepare();
-    // لو فيه نغمة مستمرة شغالة حالياً (على أي مستطيل، نفسه أو غيره)، الضغطة السريعة
-    // توقفها فوراً — نستخدم window.stopAnySustainedNote عشان يوقفها بنداء الإيقاف
-    // الأصلي المخزَّن لها (يرجّع لون المستطيل الصح لها هي بالذات، مو المستطيل الجديد)
-    const activeRect = (typeof window.getCurrentSustainedNoteRect === 'function') ? window.getCurrentSustainedNoteRect() : null;
-    if (activeRect) {
-      if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
-      if (activeRect === liveEl) return; // كانت ضغطة على نفس المستطيل الشغال — التوقيف كافي، ما نشغّل نغمة عزف فوقها
+    if (mode === 'stopping') { mode = null; return; } // اتعالجت كاملة بلحظة الضغط
+    if (mode !== 'provisional-sustain') return;
+    if (wasHold) {
+      // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
+      // الإصبع، ما نسوي شي إضافي هنا
+      mode = null;
+      return;
     }
-    // نغمة عزف طبيعية قصيرة من عينات البيانو الحقيقية — بدون أي حالة تحتاج توقيف يدوي
-    if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq, TAP_PLUCK_DURATION);
-    if (onSustainStart) onSustainStart(liveEl);
-    if (onSustainStop) setTimeout(() => onSustainStop(liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
+    // ضغطة سريعة: نوقف النغمة المستمرة اللي بدأناها احتياطياً لتونا، ونشغّل عزفة طبيعية قصيرة بدالها
+    stopProvisionalSustain();
+    if (cached && typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(cached.freq, TAP_PLUCK_DURATION);
+    if (cached && onSustainStart) onSustainStart(cached.liveEl);
+    if (cached && onSustainStop) setTimeout(() => onSustainStop(cached.liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
+    mode = null;
+  }
+
+  function onCancel(){
+    clearHoldTimer();
+    if (mode === 'provisional-sustain' && !firedAsHold) stopProvisionalSustain(); // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة الاحتياطية بصمت
+    mode = null;
   }
 
   rectEl.addEventListener('pointerup', onRelease);
-  rectEl.addEventListener('pointercancel', clearHoldTimer);
-  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) clearHoldTimer(); });
+  rectEl.addEventListener('pointercancel', onCancel);
+  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) onCancel(); });
 };
 
 </script>
