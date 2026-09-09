@@ -3405,6 +3405,27 @@ window.isArabicMode = false;
 // (renderAll() تُستدعى فوراً بشكل متزامن بنفس السكربت اللي بعد هذا) — وضعها بمكانها الأصلي
 // (قرب toggleSustainedNoteOnRect المتأخرة بالملف) كان يسبب خطأ "bindNoteRectPress is not a
 // function" يوقف الرسم بالكامل من أول تحميل (كل المستطيلات تختفي)
+// ===== لوحة تشخيص مؤقتة (تُحذف بعد حل مشكلة "الضغطة الأولى ما تستجيب") =====
+// نص صغير أعلى الشاشة يسجّل كل خطوة فعلية بتسلسل معالج الضغطة، عشان نشوف بالضبط وين
+// يتوقف التنفيذ بأول ضغطة بدل التخمين
+(function(){
+  const panel = document.createElement('div');
+  panel.id = '__debugPanel';
+  panel.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:6px;max-height:140px;overflow-y:auto;direction:ltr;text-align:left;pointer-events:none;';
+  function mount(){ if (document.body) document.body.appendChild(panel); }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount);
+  } else {
+    mount();
+  }
+  window.__dbgLines = [];
+  window.debugLog = function(msg){
+    window.__dbgLines.push(new Date().toISOString().slice(11,23) + ' ' + msg);
+    if (window.__dbgLines.length > 12) window.__dbgLines.shift();
+    panel.innerHTML = window.__dbgLines.join('<br>');
+  };
+})();
+
 const TAP_PLUCK_DURATION = 3.0; // مدة نغمة "العزف السريع" بالثواني — أطول من خطوة سلم عادية عشان تخفت بشكل طبيعي (محمية أصلاً من التمديد الزائد داخل playArNote)
 const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" الشائعة بمعظم الواجهات
 window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
@@ -3443,10 +3464,11 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
       if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
     } catch(e){}
   }
-  rectEl.addEventListener('touchstart', unlockAudioContexts, { passive: true });
-  rectEl.addEventListener('mousedown', unlockAudioContexts);
+  rectEl.addEventListener('touchstart', (e) => { window.debugLog('touchstart fired'); unlockAudioContexts(); }, { passive: true });
+  rectEl.addEventListener('mousedown', (e) => { window.debugLog('mousedown fired'); unlockAudioContexts(); });
 
   rectEl.addEventListener('pointerdown', (e) => {
+    window.debugLog('pointerdown fired, type=' + e.pointerType);
     // إصلاح "الضغطة المطوّلة الأولى ما تستجيب إطلاقاً": نحيط أي كود ثانوي (منع السلوك
     // الافتراضي، فتح الصوت) بحماية، ونضمن وصول إعداد المؤقّت الأساسي دايماً بغض النظر —
     // إصلاح "الضغطة المطوّلة الأولى صامتة": نستأنف Audio Context محرك النغمة المستمرة
@@ -3454,26 +3476,35 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     // المستخدم نفسها — لأن المتصفحات (خصوصاً آيفون) تشترط إن استئناف الصوت لازم يصير
     // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط
     try { e.preventDefault(); } catch(err){} // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ)
+    window.debugLog('preventDefault done');
     unlockAudioContexts();
+    window.debugLog('unlockAudioContexts done');
     firedAsHold = false;
     clearHoldTimer();
+    window.debugLog('setting holdTimer, threshold=' + HOLD_THRESHOLD_MS);
     holdTimer = setTimeout(() => {
+      window.debugLog('holdTimer FIRED');
       firedAsHold = true;
       const { liveEl, freq } = prepare();
+      window.debugLog('prepare() done, freq=' + freq);
       // تأكيد إضافي: لو الـAudioContext لسا ما وصل فعلياً لحالة "شغّال" (مثلاً لو استئناف
       // pointerdown ما خلص بعد)، ننتظره يخلص فعلياً قبل ما نبدأ النغمة، بدل الافتراض إنه جاهز
       const sustainCtx = (typeof window.getSustainToneAudioContext === 'function') ? window.getSustainToneAudioContext() : null;
+      window.debugLog('sustainCtx state=' + (sustainCtx ? sustainCtx.state : 'NULL'));
       if (sustainCtx && sustainCtx.state !== 'running' && typeof sustainCtx.resume === 'function') {
         sustainCtx.resume().finally(() => {
+          window.debugLog('resume().finally -> toggleSustainedNoteOnRect, state now=' + sustainCtx.state);
           window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
         });
       } else {
+        window.debugLog('directly calling toggleSustainedNoteOnRect');
         window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
       }
     }, HOLD_THRESHOLD_MS);
   });
 
   function onRelease(){
+    window.debugLog('pointerup/release fired, wasHold=' + firedAsHold);
     const wasHold = firedAsHold;
     clearHoldTimer();
     // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
@@ -5849,6 +5880,7 @@ window.getCurrentSustainedNoteRect = function(){
 
 // دالة موحدة: نضغط مستطيل نغمة → لو مافيه صوت شغال، يبدأ مستمر. لو نفس المستطيل شغال، يوقف. لو مستطيل ثاني شغال، يوقفه ويبدأ الجديد.
 window.toggleSustainedNoteOnRect = function(rectEl, freq, onStart, onStop, recomputeFreqFn){
+  if (typeof window.debugLog === 'function') window.debugLog('toggleSustainedNoteOnRect CALLED, freq=' + freq);
   if (currentSustainedNote && currentSustainedNote.rectEl === rectEl) {
     const liveOff = currentSustainedNote.rectEl;
     stopSustainedNote(currentSustainedNote);
