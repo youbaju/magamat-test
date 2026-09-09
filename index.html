@@ -3405,32 +3405,13 @@ window.isArabicMode = false;
 // (renderAll() تُستدعى فوراً بشكل متزامن بنفس السكربت اللي بعد هذا) — وضعها بمكانها الأصلي
 // (قرب toggleSustainedNoteOnRect المتأخرة بالملف) كان يسبب خطأ "bindNoteRectPress is not a
 // function" يوقف الرسم بالكامل من أول تحميل (كل المستطيلات تختفي)
-// ===== لوحة تشخيص مؤقتة (تُحذف بعد حل مشكلة "الضغطة الأولى ما تستجيب") =====
-// نص صغير أعلى الشاشة يسجّل كل خطوة فعلية بتسلسل معالج الضغطة، عشان نشوف بالضبط وين
-// يتوقف التنفيذ بأول ضغطة بدل التخمين
-(function(){
-  const panel = document.createElement('div');
-  panel.id = '__debugPanel';
-  panel.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:6px;max-height:140px;overflow-y:auto;direction:ltr;text-align:left;pointer-events:none;';
-  function mount(){ if (document.body) document.body.appendChild(panel); }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount);
-  } else {
-    mount();
-  }
-  window.__dbgLines = [];
-  window.debugLog = function(msg){
-    window.__dbgLines.push(new Date().toISOString().slice(11,23) + ' ' + msg);
-    if (window.__dbgLines.length > 12) window.__dbgLines.shift();
-    panel.innerHTML = window.__dbgLines.join('<br>');
-  };
-})();
-
 const TAP_PLUCK_DURATION = 3.0; // مدة نغمة "العزف السريع" بالثواني — أطول من خطوة سلم عادية عشان تخفت بشكل طبيعي (محمية أصلاً من التمديد الزائد داخل playArNote)
 const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" الشائعة بمعظم الواجهات
 window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
   let holdTimer = null;
   let firedAsHold = false;
+  let mode = null; // null | 'stopping' | 'provisional-sustain'
+  let cached = null; // {liveEl, freq} — نحسبها مرة وحدة بالضغطة عشان ما نكرر أي أثر جانبي (زي إيقاف تشغيل كورد)
 
   // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
   // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
@@ -3446,95 +3427,71 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }
 
-  // إصلاح "الضغطة المطوّلة الأولى صامتة" (تتمة): بعض المتصفحات (خصوصاً Samsung Internet)
-  // ما تعتبر حدث pointerdown "لمسة مستخدم موثوقة" كافية لفتح الصوت — بس الأحداث القديمة
-  // (touchstart, mousedown) هي اللي يتعرف عليها نظام أذونات الصوت بالمتصفح. نستدعي نفس
-  // دالة الاستئناف من الاثنين كطبقة حماية إضافية (استدعاء resume() على سياق شغّال أصلاً
-  // عملية آمنة تماماً، ما تسبب أي تكرار أو مشكلة)
-  // إصلاح "الضغطة المطوّلة الأولى ما تستجيب إطلاقاً": لو استدعاء فتح/استئناف الـAudioContext
-  // رمى خطأ (يصير ببعض المتصفحات بالمحاولة الأولى تحديداً، قبل أي إذن صوت بالصفحة)، وما كان
-  // محاط بحماية، الخطأ يوقف باقي كود معالج الضغطة بالكامل بصمت — يشمل حتى إعداد مؤقّت الضغط
-  // المطوّل نفسه، فما يصير أي تفاعل بصري ولا صوتي إطلاقاً. الحماية هنا تضمن إن أي فشل بمحاولة
-  // فتح الصوت ما يوقف باقي المنطق (المؤقّت يظل يتأسس ويشتغل بشكل طبيعي بغض النظر)
   function unlockAudioContexts(){
     try {
-      if (typeof window.getSustainToneAudioContext === 'function') {
-        const c = window.getSustainToneAudioContext();
-        if (c && c.state !== 'running' && typeof c.resume === 'function') {
-          c.resume().then(() => window.debugLog('FIRST resume() RESOLVED, state=' + c.state))
-                     .catch((err) => window.debugLog('FIRST resume() REJECTED: ' + err));
-        }
-      }
-      // تمهيدية صامتة إضافية — أوثق من resume() لحاله على بعض المتصفحات (انظر الشرح
-      // عند primeSustainToneAudioOnce)
+      if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
       if (typeof window.primeSustainToneAudioOnce === 'function') window.primeSustainToneAudioOnce();
     } catch(e){}
     try {
       if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
-      if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس التمهيدية الصامتة المُثبَتة بمحرك العينات الحقيقي — نفتحه بأمان هنا كمان بما إن النغمة المستمرة صارت تستخدمه
+      if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce();
     } catch(e){}
   }
-  rectEl.addEventListener('touchstart', (e) => { window.debugLog('touchstart fired'); unlockAudioContexts(); }, { passive: true });
-  rectEl.addEventListener('mousedown', (e) => { window.debugLog('mousedown fired'); unlockAudioContexts(); });
+  rectEl.addEventListener('touchstart', unlockAudioContexts, { passive: true });
+  rectEl.addEventListener('mousedown', unlockAudioContexts);
 
+  // إعادة تصميم جذرية (بعد تشخيص مؤكد): تبيّن إن AudioContext.state ممكن يقول "running" رغم
+  // إن المتصفح لسا يمنع الصوت فعلياً داخلياً ("must be resumed after a user gesture") — يعني
+  // مافي فايدة من انتظار أي شي بمؤقّت مؤجَّل (setTimeout)، لأن أي جدولة صوت خارج اللمسة
+  // المباشرة نفسها معرّضة تفشل صامتة على بعض المتصفحات (Samsung Internet تحديداً). الحل:
+  // نبدأ النغمة المستمرة الفعلية فوراً بلحظة pointerdown نفسها (لمسة موثوقة ١٠٠٪، صفر تأخير)،
+  // وبعدين نقرر لاحقاً حسب مدة الضغط: لو طلعت ضغطة سريعة، نوقفها ونشغّل عزفة قصيرة بدالها
   rectEl.addEventListener('pointerdown', (e) => {
-    window.debugLog('pointerdown fired, type=' + e.pointerType);
-    // إصلاح "الضغطة المطوّلة الأولى ما تستجيب إطلاقاً": نحيط أي كود ثانوي (منع السلوك
-    // الافتراضي، فتح الصوت) بحماية، ونضمن وصول إعداد المؤقّت الأساسي دايماً بغض النظر —
-    // إصلاح "الضغطة المطوّلة الأولى صامتة": نستأنف Audio Context محرك النغمة المستمرة
-    // (وأيضاً محرك العينات الحقيقية للاحتياط) هنا مباشرة، بشكل متزامن جوا معالج لمسة
-    // المستخدم نفسها — لأن المتصفحات (خصوصاً آيفون) تشترط إن استئناف الصوت لازم يصير
-    // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط
     try { e.preventDefault(); } catch(err){} // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ)
-    window.debugLog('preventDefault done');
     unlockAudioContexts();
-    window.debugLog('unlockAudioContexts done');
-    firedAsHold = false;
     clearHoldTimer();
-    window.debugLog('setting holdTimer, threshold=' + HOLD_THRESHOLD_MS);
-    holdTimer = setTimeout(() => {
-      window.debugLog('holdTimer FIRED');
-      firedAsHold = true;
-      const { liveEl, freq } = prepare();
-      window.debugLog('prepare() done, freq=' + freq);
-      const dbgCtx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : null;
-      window.debugLog('shared ctx state at hold-fire=' + (dbgCtx ? dbgCtx.state : 'NULL'));
-      // نستخدم نفس الدالة المُثبَتة والمستخدمة بكل مشغّل تاني بالتطبيق (حلّ إصلاح #23/#24
-      // لمشكلة "أول نغمة" على الجوال) — تنتظر فعلياً اكتمال resume() + مهلة أمان ١٢٠ مللي
-      // ثانية، بدل ما نفترض الجاهزية فوراً بدون انتظار حقيقي (وهذا بالضبط سبب فشل أول ضغطة)
-      const readyPromise = (typeof window.ensureOudAudioReady === 'function') ? window.ensureOudAudioReady() : Promise.resolve();
-      readyPromise.then(() => {
-        window.debugLog('ensureOudAudioReady resolved -> toggleSustainedNoteOnRect');
-        window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
-      });
-    }, HOLD_THRESHOLD_MS);
+    cached = prepare();
+    const wasActiveSame = (typeof window.getCurrentSustainedNoteRect === 'function') && window.getCurrentSustainedNoteRect() === cached.liveEl;
+    if (wasActiveSame) {
+      // اللمسة هذي على مستطيل شغال أصلاً كنغمة مستمرة — قصدها إيقافها، بس هذا وخلاص
+      // (بدون أي منطق ضغط مطوّل/عزف بعدها)
+      window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      mode = 'stopping';
+      return;
+    }
+    mode = 'provisional-sustain';
+    firedAsHold = false;
+    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
+    holdTimer = setTimeout(() => { firedAsHold = true; }, HOLD_THRESHOLD_MS);
   });
 
-  function onRelease(){
-    window.debugLog('pointerup/release fired, wasHold=' + firedAsHold);
-    const wasHold = firedAsHold;
-    clearHoldTimer();
-    // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
-    // الإصبع، ما نسوي شي إضافي هنا
-    if (wasHold) return;
-    const { liveEl, freq } = prepare();
-    // لو فيه نغمة مستمرة شغالة حالياً (على أي مستطيل، نفسه أو غيره)، الضغطة السريعة
-    // توقفها فوراً — نستخدم window.stopAnySustainedNote عشان يوقفها بنداء الإيقاف
-    // الأصلي المخزَّن لها (يرجّع لون المستطيل الصح لها هي بالذات، مو المستطيل الجديد)
-    const activeRect = (typeof window.getCurrentSustainedNoteRect === 'function') ? window.getCurrentSustainedNoteRect() : null;
-    if (activeRect) {
-      if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
-      if (activeRect === liveEl) return; // كانت ضغطة على نفس المستطيل الشغال — التوقيف كافي، ما نشغّل نغمة عزف فوقها
+  function stopProvisionalSustain(){
+    if (mode === 'provisional-sustain' && cached) {
+      window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
     }
-    // نغمة عزف طبيعية قصيرة من عينات البيانو الحقيقية — بدون أي حالة تحتاج توقيف يدوي
-    if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq, TAP_PLUCK_DURATION);
-    if (onSustainStart) onSustainStart(liveEl);
-    if (onSustainStop) setTimeout(() => onSustainStop(liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
+  }
+
+  function onRelease(){
+    clearHoldTimer();
+    if (mode === 'stopping') { mode = null; return; } // اتعالجت كاملة بلحظة الضغط
+    if (firedAsHold) { mode = null; return; } // ضغطة مطوّلة مؤكدة — تستمر النغمة hands-free
+    // ضغطة سريعة: نوقف النغمة المستمرة اللي بدأناها احتياطياً لتونا، ونشغّل عزفة طبيعية قصيرة بدالها
+    stopProvisionalSustain();
+    if (cached && typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(cached.freq, TAP_PLUCK_DURATION);
+    if (cached && onSustainStart) onSustainStart(cached.liveEl);
+    if (cached && onSustainStop) setTimeout(() => onSustainStop(cached.liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
+    mode = null;
+  }
+
+  function onCancel(){
+    clearHoldTimer();
+    if (mode === 'provisional-sustain' && !firedAsHold) stopProvisionalSustain(); // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة الاحتياطية بصمت
+    mode = null;
   }
 
   rectEl.addEventListener('pointerup', onRelease);
-  rectEl.addEventListener('pointercancel', clearHoldTimer);
-  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) clearHoldTimer(); });
+  rectEl.addEventListener('pointercancel', onCancel);
+  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) onCancel(); });
 };
 
 </script>
@@ -5909,7 +5866,6 @@ window.getCurrentSustainedNoteRect = function(){
 
 // دالة موحدة: نضغط مستطيل نغمة → لو مافيه صوت شغال، يبدأ مستمر. لو نفس المستطيل شغال، يوقف. لو مستطيل ثاني شغال، يوقفه ويبدأ الجديد.
 window.toggleSustainedNoteOnRect = function(rectEl, freq, onStart, onStop, recomputeFreqFn){
-  if (typeof window.debugLog === 'function') window.debugLog('toggleSustainedNoteOnRect CALLED, freq=' + freq);
   if (currentSustainedNote && currentSustainedNote.rectEl === rectEl) {
     const liveOff = currentSustainedNote.rectEl;
     stopSustainedNote(currentSustainedNote);
@@ -7032,7 +6988,6 @@ window.wxResume = wxResume;
     // 'running') قبل ما نعتبره جاهز فعلاً لجدولة نغمات دقيقة التوقيت
     window.ensureOudAudioReady = function() {
       const ctx = getAudioContext();
-      if (typeof window.debugLog === 'function') window.debugLog('ensureOudAudioReady called, ctx.state=' + ctx.state);
       if (ctx.state === 'suspended') {
         return ctx.resume().catch(() => {}).then(() => new Promise(resolve => setTimeout(resolve, 120)));
       }
