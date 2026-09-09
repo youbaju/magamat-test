@@ -3408,10 +3408,9 @@ window.isArabicMode = false;
 const TAP_PLUCK_DURATION = 3.0; // مدة نغمة "العزف السريع" بالثواني — أطول من خطوة سلم عادية عشان تخفت بشكل طبيعي (محمية أصلاً من التمديد الزائد داخل playArNote)
 const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" الشائعة بمعظم الواجهات
 window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
-  let holdTimer = null;
-  let firedAsHold = false;
   let mode = null; // null | 'stopping' | 'provisional-sustain'
   let cached = null; // {liveEl, freq} — نحسبها مرة وحدة بالضغطة عشان ما نكرر أي أثر جانبي (زي إيقاف تشغيل كورد)
+  let pressStartTimestamp = 0;
 
   // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
   // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
@@ -3422,10 +3421,6 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     rectEl.style.touchAction = 'manipulation'; // يمنع تأخير النقر المزدوج/التكبير التلقائي على الجوال (نفس النمط المستخدم بدائرة الخامسات بالملف)
   } catch(e){}
   rectEl.addEventListener('contextmenu', (e) => e.preventDefault());
-
-  function clearHoldTimer(){
-    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-  }
 
   function unlockAudioContexts(){
     try {
@@ -3440,29 +3435,26 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
   rectEl.addEventListener('touchstart', unlockAudioContexts, { passive: true });
   rectEl.addEventListener('mousedown', unlockAudioContexts);
 
-  // إعادة تصميم جذرية (بعد تشخيص مؤكد): تبيّن إن AudioContext.state ممكن يقول "running" رغم
-  // إن المتصفح لسا يمنع الصوت فعلياً داخلياً ("must be resumed after a user gesture") — يعني
-  // مافي فايدة من انتظار أي شي بمؤقّت مؤجَّل (setTimeout)، لأن أي جدولة صوت خارج اللمسة
-  // المباشرة نفسها معرّضة تفشل صامتة على بعض المتصفحات (Samsung Internet تحديداً). الحل:
-  // نبدأ النغمة المستمرة الفعلية فوراً بلحظة pointerdown نفسها (لمسة موثوقة ١٠٠٪، صفر تأخير)،
-  // وبعدين نقرر لاحقاً حسب مدة الضغط: لو طلعت ضغطة سريعة، نوقفها ونشغّل عزفة قصيرة بدالها
+  // إعادة تصميم جذرية ثانية (بعد تشخيص مؤكد): تبيّن إن setTimeout للعتبة (350ms) يبدأ العدّ
+  // من لحظة تنفيذ الكود الفعلية، مو من لحظة اللمسة الحقيقية على الشاشة — لو المتصفح كان
+  // مزدحم (خصوصاً أول ثانية من فتح التطبيق) ومعالجة اللمسة تأخرت، المؤقّت يبدأ متأخر عن
+  // الواقع، فيحسب ضغطة مطوّلة حقيقية كأنها سريعة. الحل: نقيس الوقت الحقيقي بين طابعَي وقت
+  // (timeStamp) حدثَي الضغط والرفع نفسهما (مو وقت تنفيذ الكود) — دقيق دايماً بغض النظر عن
+  // أي ازدحام أو تأخير بمعالجة الأحداث، بدون أي اعتماد على setTimeout إطلاقاً
   rectEl.addEventListener('pointerdown', (e) => {
     try { e.preventDefault(); } catch(err){} // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ)
     unlockAudioContexts();
-    clearHoldTimer();
+    pressStartTimestamp = e.timeStamp;
     cached = prepare();
     const wasActiveSame = (typeof window.getCurrentSustainedNoteRect === 'function') && window.getCurrentSustainedNoteRect() === cached.liveEl;
     if (wasActiveSame) {
       // اللمسة هذي على مستطيل شغال أصلاً كنغمة مستمرة — قصدها إيقافها، بس هذا وخلاص
-      // (بدون أي منطق ضغط مطوّل/عزف بعدها)
       window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
       mode = 'stopping';
       return;
     }
     mode = 'provisional-sustain';
-    firedAsHold = false;
     window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
-    holdTimer = setTimeout(() => { firedAsHold = true; }, HOLD_THRESHOLD_MS);
   });
 
   function stopProvisionalSustain(){
@@ -3471,11 +3463,16 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     }
   }
 
-  function onRelease(){
-    clearHoldTimer();
+  function resolveRelease(e){
     if (mode === 'stopping') { mode = null; return; } // اتعالجت كاملة بلحظة الضغط
-    if (firedAsHold) { mode = null; return; } // ضغطة مطوّلة مؤكدة — تستمر النغمة hands-free
-    // ضغطة سريعة: نوقف النغمة المستمرة اللي بدأناها احتياطياً لتونا، ونشغّل عزفة طبيعية قصيرة بدالها
+    if (mode !== 'provisional-sustain') return;
+    const elapsed = (typeof e.timeStamp === 'number' && pressStartTimestamp) ? (e.timeStamp - pressStartTimestamp) : HOLD_THRESHOLD_MS; // احتياطاً لو ما توفر timeStamp لأي سبب، نفترضها ضغطة مطوّلة (الخيار الأكثر أماناً - يخلي النغمة تستمر بدل ما توقف بالغلط)
+    if (elapsed >= HOLD_THRESHOLD_MS) {
+      // ضغطة مطوّلة حقيقية (بالوقت الفعلي المقاس، بغض النظر عن أي تأخير بمعالجة الكود) — تستمر النغمة hands-free
+      mode = null;
+      return;
+    }
+    // ضغطة سريعة حقيقية: نوقف النغمة المستمرة اللي بدأناها احتياطياً لتونا، ونشغّل عزفة طبيعية قصيرة بدالها
     stopProvisionalSustain();
     if (cached && typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(cached.freq, TAP_PLUCK_DURATION);
     if (cached && onSustainStart) onSustainStart(cached.liveEl);
@@ -3483,15 +3480,9 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     mode = null;
   }
 
-  function onCancel(){
-    clearHoldTimer();
-    if (mode === 'provisional-sustain' && !firedAsHold) stopProvisionalSustain(); // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة الاحتياطية بصمت
-    mode = null;
-  }
-
-  rectEl.addEventListener('pointerup', onRelease);
-  rectEl.addEventListener('pointercancel', onCancel);
-  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) onCancel(); });
+  rectEl.addEventListener('pointerup', resolveRelease);
+  rectEl.addEventListener('pointercancel', resolveRelease);
+  rectEl.addEventListener('pointerleave', resolveRelease);
 };
 
 </script>
