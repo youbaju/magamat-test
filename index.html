@@ -3426,6 +3426,9 @@ window.isArabicMode = false;
     if (modeBtn) {
       window.updateNoteClickModeBtnLabel();
       modeBtn.addEventListener('click', () => {
+        // نوقف أي نغمة مستمرة شغالة حالياً قبل ما نبدّل الوضع — عشان ما تضل عالقة تشتغل
+        // بدون أي طريقة توقفها بعد التبديل (خصوصاً لو انتقلنا لوضع "نغمة قصيرة")
+        if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
         window.setNoteClickMode(window.noteClickMode === 'short' ? 'long' : 'short');
       });
     }
@@ -3476,7 +3479,7 @@ window.isArabicMode = false;
 // (renderAll() تُستدعى فوراً بشكل متزامن بنفس السكربت اللي بعد هذا) — وضعها بمكانها الأصلي
 // (قرب toggleSustainedNoteOnRect المتأخرة بالملف) كان يسبب خطأ "bindNoteRectPress is not a
 // function" يوقف الرسم بالكامل من أول تحميل (كل المستطيلات تختفي)
-const TAP_PLUCK_DURATION = 3.0; // مدة نغمة "العزف السريع" بالثواني — أطول من خطوة سلم عادية عشان تخفت بشكل طبيعي (محمية أصلاً من التمديد الزائد داخل playArNote)
+const TAP_PLUCK_DURATION = 1.1; // مدة نغمة "العزف السريع" بالثواني — قُصّرت (كانت 3.0) لأنها كانت تتداخل مع النغمات اللي بعدها وقت العزف السريع المتتالي
 // حالة وضع الضغط على مستطيلات النغمات: 'long' (الافتراضي، السلوك الأصلي المستقر — نغمة
 // دوزان مستمرة تبدأ/توقف بالكليك) أو 'short' (نغمة عزف قصيرة فورية بكل كليك، بدون استمرار).
 // نتذكرها بين الجلسات عبر localStorage. الزر المرافق (بجانب زر المايك) يبدّلها ويعرض
