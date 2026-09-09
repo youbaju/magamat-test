@@ -3458,7 +3458,13 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
   // فتح الصوت ما يوقف باقي المنطق (المؤقّت يظل يتأسس ويشتغل بشكل طبيعي بغض النظر)
   function unlockAudioContexts(){
     try {
-      if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
+      if (typeof window.getSustainToneAudioContext === 'function') {
+        const c = window.getSustainToneAudioContext();
+        if (c && c.state !== 'running' && typeof c.resume === 'function') {
+          c.resume().then(() => window.debugLog('FIRST resume() RESOLVED, state=' + c.state))
+                     .catch((err) => window.debugLog('FIRST resume() REJECTED: ' + err));
+        }
+      }
     } catch(e){}
     try {
       if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
@@ -3487,19 +3493,13 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
       firedAsHold = true;
       const { liveEl, freq } = prepare();
       window.debugLog('prepare() done, freq=' + freq);
-      // تأكيد إضافي: لو الـAudioContext لسا ما وصل فعلياً لحالة "شغّال" (مثلاً لو استئناف
-      // pointerdown ما خلص بعد)، ننتظره يخلص فعلياً قبل ما نبدأ النغمة، بدل الافتراض إنه جاهز
-      const sustainCtx = (typeof window.getSustainToneAudioContext === 'function') ? window.getSustainToneAudioContext() : null;
-      window.debugLog('sustainCtx state=' + (sustainCtx ? sustainCtx.state : 'NULL'));
-      if (sustainCtx && sustainCtx.state !== 'running' && typeof sustainCtx.resume === 'function') {
-        sustainCtx.resume().finally(() => {
-          window.debugLog('resume().finally -> toggleSustainedNoteOnRect, state now=' + sustainCtx.state);
-          window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
-        });
-      } else {
-        window.debugLog('directly calling toggleSustainedNoteOnRect');
-        window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
-      }
+      // ملاحظة مهمة (اكتُشفت بالتشخيص): استدعاء resume() ثاني هنا (داخل المؤقّت المؤجَّل)
+      // يعلّق للأبد على بعض المتصفحات (Samsung Internet) لأنه صادر من setTimeout مو من
+      // لمسة مباشرة — فيوقف كل شي بانتظار وعد ما يتحقق أبداً. نعتمد بس على الاستئناف
+      // الأول اللي صار مباشرة بلحظة pointerdown (لمسة حقيقية موثوقة، انظر unlockAudioContexts
+      // أعلى) ونكمّل مباشرة بدون أي انتظار إضافي
+      window.debugLog('directly calling toggleSustainedNoteOnRect');
+      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
     }, HOLD_THRESHOLD_MS);
   });
 
