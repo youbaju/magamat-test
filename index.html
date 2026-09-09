@@ -3425,6 +3425,18 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }
 
+  // إصلاح "الضغطة المطوّلة الأولى صامتة" (تتمة): بعض المتصفحات (خصوصاً Samsung Internet)
+  // ما تعتبر حدث pointerdown "لمسة مستخدم موثوقة" كافية لفتح الصوت — بس الأحداث القديمة
+  // (touchstart, mousedown) هي اللي يتعرف عليها نظام أذونات الصوت بالمتصفح. نستدعي نفس
+  // دالة الاستئناف من الاثنين كطبقة حماية إضافية (استدعاء resume() على سياق شغّال أصلاً
+  // عملية آمنة تماماً، ما تسبب أي تكرار أو مشكلة)
+  function unlockAudioContexts(){
+    if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
+    if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
+  }
+  rectEl.addEventListener('touchstart', unlockAudioContexts, { passive: true });
+  rectEl.addEventListener('mousedown', unlockAudioContexts);
+
   rectEl.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
     // إصلاح "الضغطة المطوّلة الأولى صامتة": نستأنف Audio Context محرك النغمة المستمرة
@@ -3433,14 +3445,22 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط. سابقاً كان الاستئناف
     // يصير بس بعد انتهاء مهلة الضغط المطوّل (٣٥٠ مللي ثانية)، فيفشل صامتاً أول مرة، وتنجح
     // المرة الثانية لأن المتصفح يكون "تذكّر" الإذن من المحاولة الأولى
-    if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
-    if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
+    unlockAudioContexts();
     firedAsHold = false;
     clearHoldTimer();
     holdTimer = setTimeout(() => {
       firedAsHold = true;
       const { liveEl, freq } = prepare();
-      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      // تأكيد إضافي: لو الـAudioContext لسا ما وصل فعلياً لحالة "شغّال" (مثلاً لو استئناف
+      // pointerdown ما خلص بعد)، ننتظره يخلص فعلياً قبل ما نبدأ النغمة، بدل الافتراض إنه جاهز
+      const sustainCtx = (typeof window.getSustainToneAudioContext === 'function') ? window.getSustainToneAudioContext() : null;
+      if (sustainCtx && sustainCtx.state !== 'running' && typeof sustainCtx.resume === 'function') {
+        sustainCtx.resume().finally(() => {
+          window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
+        });
+      } else {
+        window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      }
     }, HOLD_THRESHOLD_MS);
   });
 
