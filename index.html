@@ -3427,6 +3427,14 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
 
   rectEl.addEventListener('pointerdown', (e) => {
     e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
+    // إصلاح "الضغطة المطوّلة الأولى صامتة": نستأنف Audio Context محرك النغمة المستمرة
+    // (وأيضاً محرك العينات الحقيقية للاحتياط) هنا مباشرة، بشكل متزامن جوا معالج لمسة
+    // المستخدم نفسها — لأن المتصفحات (خصوصاً آيفون) تشترط إن استئناف الصوت لازم يصير
+    // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط. سابقاً كان الاستئناف
+    // يصير بس بعد انتهاء مهلة الضغط المطوّل (٣٥٠ مللي ثانية)، فيفشل صامتاً أول مرة، وتنجح
+    // المرة الثانية لأن المتصفح يكون "تذكّر" الإذن من المحاولة الأولى
+    if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
+    if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
     firedAsHold = false;
     clearHoldTimer();
     holdTimer = setTimeout(() => {
@@ -5669,6 +5677,9 @@ function getAudioContext(){
   if(audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+// نكشفها عالمياً عشان bindNoteRectPress (سكربت منفصل بأول الملف) يقدر يستأنفها مباشرة
+// وقت لمسة المستخدم الفعلية (pointerdown) — إصلاح "الضغطة المطوّلة الأولى صامتة" تحت
+window.getSustainToneAudioContext = getAudioContext;
 
 // تشغيل نغمة واحدة تحاكي قرصة وتر عود: نغمة أساسية + توافقيتين أعلى بمستوى أخفض، مع تلاشي سريع طبيعي
 function playOudNote(freq, duration, scheduledTime){
