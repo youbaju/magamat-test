@@ -3430,21 +3430,30 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
   // (touchstart, mousedown) هي اللي يتعرف عليها نظام أذونات الصوت بالمتصفح. نستدعي نفس
   // دالة الاستئناف من الاثنين كطبقة حماية إضافية (استدعاء resume() على سياق شغّال أصلاً
   // عملية آمنة تماماً، ما تسبب أي تكرار أو مشكلة)
+  // إصلاح "الضغطة المطوّلة الأولى ما تستجيب إطلاقاً": لو استدعاء فتح/استئناف الـAudioContext
+  // رمى خطأ (يصير ببعض المتصفحات بالمحاولة الأولى تحديداً، قبل أي إذن صوت بالصفحة)، وما كان
+  // محاط بحماية، الخطأ يوقف باقي كود معالج الضغطة بالكامل بصمت — يشمل حتى إعداد مؤقّت الضغط
+  // المطوّل نفسه، فما يصير أي تفاعل بصري ولا صوتي إطلاقاً. الحماية هنا تضمن إن أي فشل بمحاولة
+  // فتح الصوت ما يوقف باقي المنطق (المؤقّت يظل يتأسس ويشتغل بشكل طبيعي بغض النظر)
   function unlockAudioContexts(){
-    if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
-    if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
+    try {
+      if (typeof window.getSustainToneAudioContext === 'function') window.getSustainToneAudioContext();
+    } catch(e){}
+    try {
+      if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
+    } catch(e){}
   }
   rectEl.addEventListener('touchstart', unlockAudioContexts, { passive: true });
   rectEl.addEventListener('mousedown', unlockAudioContexts);
 
   rectEl.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
+    // إصلاح "الضغطة المطوّلة الأولى ما تستجيب إطلاقاً": نحيط أي كود ثانوي (منع السلوك
+    // الافتراضي، فتح الصوت) بحماية، ونضمن وصول إعداد المؤقّت الأساسي دايماً بغض النظر —
     // إصلاح "الضغطة المطوّلة الأولى صامتة": نستأنف Audio Context محرك النغمة المستمرة
     // (وأيضاً محرك العينات الحقيقية للاحتياط) هنا مباشرة، بشكل متزامن جوا معالج لمسة
     // المستخدم نفسها — لأن المتصفحات (خصوصاً آيفون) تشترط إن استئناف الصوت لازم يصير
-    // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط. سابقاً كان الاستئناف
-    // يصير بس بعد انتهاء مهلة الضغط المطوّل (٣٥٠ مللي ثانية)، فيفشل صامتاً أول مرة، وتنجح
-    // المرة الثانية لأن المتصفح يكون "تذكّر" الإذن من المحاولة الأولى
+    // مباشرة جوا معالج اللمسة، مو بعد أي تأخير حتى setTimeout بسيط
+    try { e.preventDefault(); } catch(err){} // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ)
     unlockAudioContexts();
     firedAsHold = false;
     clearHoldTimer();
