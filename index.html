@@ -3471,6 +3471,7 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     } catch(e){}
     try {
       if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
+      if (typeof window.primeArAudioOnce === 'function') window.primeArAudioOnce(); // نفس التمهيدية الصامتة المُثبَتة بمحرك العينات الحقيقي — نفتحه بأمان هنا كمان بما إن النغمة المستمرة صارت تستخدمه
     } catch(e){}
   }
   rectEl.addEventListener('touchstart', (e) => { window.debugLog('touchstart fired'); unlockAudioContexts(); }, { passive: true });
@@ -5824,7 +5825,11 @@ function partialFreq(baseFreq, p){
 }
 
 function startSustainedNote(freq){
-  const ctx = getAudioContext();
+  // نستخدم نفس الـAudioContext المشترك مع محرك العينات الحقيقي (arAudioCtx) بدل Context
+  // منفصل خاص فيها — اكتشفنا (بالتشخيص المباشر على جوال Samsung) إن الـContext المنفصل
+  // القديم ما كان يُستأنَف بشكل موثوق أبداً على بعض المتصفحات، بينما هذا السياق المشترك
+  // مضمون يشتغل لأنه نفسه المستخدم بكل تشغيل صوت تاني بالتطبيق (شغّال فعلياً بجوالك)
+  const ctx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
   const now = ctx.currentTime;
   const masterGain = ctx.createGain();
   masterGain.connect(ctx.destination);
@@ -5870,7 +5875,7 @@ function startSustainedNote(freq){
 // يحدّث تردد نغمة مستمرة شغالة فعلياً (بدون ما يوقفها ويبدأها من جديد) - يُستخدم لما يتغيّر الدوزان أثناء التشغيل
 function retuneSustainedNoteHandle(handle, newFreq){
   if (!handle || !handle.oscillators) return;
-  const ctx = getAudioContext();
+  const ctx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
   const now = ctx.currentTime;
   handle.oscillators.forEach((osc, i) => {
     const p = SUSTAINED_PARTIALS[i] || SUSTAINED_PARTIALS[0];
@@ -5880,7 +5885,7 @@ function retuneSustainedNoteHandle(handle, newFreq){
 
 function stopSustainedNote(handle){
   if (!handle) return;
-  const ctx = getAudioContext();
+  const ctx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : getAudioContext();
   const now = ctx.currentTime;
   try {
     handle.masterGain.gain.cancelScheduledValues(now);
