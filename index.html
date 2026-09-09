@@ -3465,6 +3465,9 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
                      .catch((err) => window.debugLog('FIRST resume() REJECTED: ' + err));
         }
       }
+      // تمهيدية صامتة إضافية — أوثق من resume() لحاله على بعض المتصفحات (انظر الشرح
+      // عند primeSustainToneAudioOnce)
+      if (typeof window.primeSustainToneAudioOnce === 'function') window.primeSustainToneAudioOnce();
     } catch(e){}
     try {
       if (typeof window.getSharedOudAudioContext === 'function') window.getSharedOudAudioContext();
@@ -5740,6 +5743,24 @@ function getAudioContext(){
 // نكشفها عالمياً عشان bindNoteRectPress (سكربت منفصل بأول الملف) يقدر يستأنفها مباشرة
 // وقت لمسة المستخدم الفعلية (pointerdown) — إصلاح "الضغطة المطوّلة الأولى صامتة" تحت
 window.getSustainToneAudioContext = getAudioContext;
+// نغمة تمهيدية صامتة (نفس تقنية primeArAudioOnce بمحرك العينات) — تُشغَّل مباشرة وقت
+// لمسة المستخدم الفعلية، عشان تفتح هالـAudioContext بشكل موثوق. اكتشفنا بالتشخيص إن
+// resume() لحاله كان يفشل يكتمل بوقت مناسب على بعض المتصفحات (Samsung Internet)، حتى
+// لو استُدعي مباشرة جوا اللمسة — تشغيل عقدة صوت فعلية (حتى لو صامتة تماماً) يفتح الصوت
+// بشكل أوثق بكثير من الاعتماد على resume() لحاله
+window.primeSustainToneAudioOnce = function(){
+  try {
+    const ctx2 = getAudioContext();
+    const buf = ctx2.createBuffer(1, 1, ctx2.sampleRate);
+    const source = ctx2.createBufferSource();
+    source.buffer = buf;
+    const gain = ctx2.createGain();
+    gain.gain.value = 0.0001;
+    source.connect(gain);
+    gain.connect(ctx2.destination);
+    source.start(ctx2.currentTime);
+  } catch (e) { /* لو فشلت التمهيدية لأي سبب، نكمل عادي بدونها بدون ما نعطّل التشغيل */ }
+};
 
 // تشغيل نغمة واحدة تحاكي قرصة وتر عود: نغمة أساسية + توافقيتين أعلى بمستوى أخفض، مع تلاشي سريع طبيعي
 function playOudNote(freq, duration, scheduledTime){
