@@ -518,6 +518,25 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   border-color: #a82f2f;
   color: #fff;
 }
+#noteModeToggleBtn{
+  position: absolute;
+  z-index: 5;
+  border-radius: 12px;
+  background: #a3d0ec;
+  border: 1px solid #3ab4e8;
+  color: #0a2f52;
+  font-family: 'Cairo', Arial, sans-serif;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  transition: background .15s, border-color .15s;
+}
+#noteModeToggleBtn:active{ background: #8cc3e8; }
 .mic-current-target{
   fill: #ffe100 !important;
   stroke: #b38600 !important;
@@ -2100,6 +2119,7 @@ window.wireCustomSelect = wireCustomSelect;
 <div class="shared-oud-area" id="sharedOudArea">
   <div class="shared-oud-wrapper">
     <button id="micVerifyHtmlBtn" type="button" title="تحقق من عزفي" aria-label="تحقق من عزفي">🎤</button>
+    <button id="noteModeToggleBtn" type="button" title="وضع الضغط على نغمات الزند">نغمة مستمرة</button>
     <div id="micCustomNoticeBackdrop" style="display:none; position:fixed; inset:0; z-index:999998; background:rgba(20,14,8,.55); align-items:center; justify-content:center; padding:20px;">
       <div id="micCustomNotice" role="alert" style="max-width:min(92vw,440px); background:linear-gradient(180deg,#fffaf0,#fbf1dd); border:2px solid #c9a14a; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.45); padding:22px 26px; text-align:center; font-family:'Cairo',Arial,sans-serif; color:#3d2f18; position:relative; opacity:0; transform:scale(.85); transition:opacity .22s ease, transform .22s ease;">
         <div id="micCustomNoticeText" style="font-size:18px; font-weight:700; line-height:1.7;"></div>
@@ -3357,8 +3377,59 @@ window.isArabicMode = false;
     btn.style.borderRadius = (12 * scaleFactor) + 'px';
     btn.style.fontSize = (h * 0.42) + 'px';
   };
-  window.addEventListener('resize', () => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); });
-  window.addEventListener('orientationchange', () => { setTimeout(() => { if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn(); }, 200); });
+  // زر تبديل وضع الضغط على النغمات ("مطوّل"/"قصير") — نفس أسلوب تموضع زر المايك بالضبط،
+  // بجانبه ومحاذي له أفقياً (نفس الإحداثي Y، بفارق X ثابت بمقدار عرض الزر + فسحة صغيرة)
+  window.updateNoteClickModeBtnLabel = function(){
+    const btn = document.getElementById('noteModeToggleBtn');
+    if (!btn) return;
+    const isShort = window.noteClickMode === 'short';
+    if (window.oudLanguage === 'en') {
+      btn.textContent = isShort ? 'Short note' : 'Sustained note';
+      btn.title = 'Note tap mode';
+    } else {
+      btn.textContent = isShort ? 'نغمة قصيرة' : 'نغمة مستمرة';
+      btn.title = 'وضع الضغط على نغمات الزند';
+    }
+  };
+  window.positionNoteModeToggleBtn = function(){
+    const btn = document.getElementById('noteModeToggleBtn');
+    const svg = document.getElementById('shared-oudSvg');
+    if (!btn || !svg || typeof window.noteModeBtnSvgX !== 'number') return;
+    const pt = svg.createSVGPoint();
+    pt.x = window.noteModeBtnSvgX;
+    pt.y = window.noteModeBtnSvgY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const screenPt = pt.matrixTransform(ctm);
+    const wrapper = document.querySelector('.shared-oud-wrapper');
+    const wrapperRect = wrapper.getBoundingClientRect();
+    btn.style.left = (screenPt.x - wrapperRect.left) + 'px';
+    btn.style.top = (screenPt.y - wrapperRect.top) + 'px';
+    const scaleFactor = Math.hypot(ctm.a, ctm.b);
+    const w = (window.noteModeBtnSvgW || 100) * scaleFactor;
+    const h = (window.noteModeBtnSvgH || 66) * scaleFactor;
+    btn.style.width = w + 'px';
+    btn.style.height = h + 'px';
+    btn.style.borderRadius = (12 * scaleFactor) + 'px';
+    btn.style.fontSize = (h * 0.25) + 'px';
+  };
+  window.addEventListener('resize', () => {
+    if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
+    if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
+  });
+  window.addEventListener('orientationchange', () => { setTimeout(() => {
+    if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
+    if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
+  }, 200); });
+  (function(){
+    const modeBtn = document.getElementById('noteModeToggleBtn');
+    if (modeBtn) {
+      window.updateNoteClickModeBtnLabel();
+      modeBtn.addEventListener('click', () => {
+        window.setNoteClickMode(window.noteClickMode === 'short' ? 'long' : 'short');
+      });
+    }
+  })();
 
   updateMicBtnVisual();
   const micHtmlBtn = document.getElementById('micVerifyHtmlBtn');
@@ -3406,82 +3477,49 @@ window.isArabicMode = false;
 // (قرب toggleSustainedNoteOnRect المتأخرة بالملف) كان يسبب خطأ "bindNoteRectPress is not a
 // function" يوقف الرسم بالكامل من أول تحميل (كل المستطيلات تختفي)
 const TAP_PLUCK_DURATION = 3.0; // مدة نغمة "العزف السريع" بالثواني — أطول من خطوة سلم عادية عشان تخفت بشكل طبيعي (محمية أصلاً من التمديد الزائد داخل playArNote)
-const HOLD_THRESHOLD_MS = 350; // نفس عتبة "الضغط المطوّل" الشائعة بمعظم الواجهات
-window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
-  let holdTimer = null;
-  let firedAsHold = false;
-  let mode = null; // null | 'stopping' | 'provisional'
-  let cached = null; // {liveEl, freq} — نحسبها مرة وحدة بالضغطة عشان ما نكرر أي أثر جانبي (زي إيقاف تشغيل كورد)
+// حالة وضع الضغط على مستطيلات النغمات: 'long' (الافتراضي، السلوك الأصلي المستقر — نغمة
+// دوزان مستمرة تبدأ/توقف بالكليك) أو 'short' (نغمة عزف قصيرة فورية بكل كليك، بدون استمرار).
+// نتذكرها بين الجلسات عبر localStorage. الزر المرافق (بجانب زر المايك) يبدّلها ويعرض
+// اسمها الحالي كنص على الزر نفسه
+window.noteClickMode = (function(){
+  try { return localStorage.getItem('oudNoteClickMode') === 'short' ? 'short' : 'long'; } catch(e){ return 'long'; }
+})();
+window.setNoteClickMode = function(mode){
+  window.noteClickMode = (mode === 'short') ? 'short' : 'long';
+  try { localStorage.setItem('oudNoteClickMode', window.noteClickMode); } catch(e){}
+  if (typeof window.updateNoteClickModeBtnLabel === 'function') window.updateNoteClickModeBtnLabel();
+};
 
-  // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
-  // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
+// دالة موحدة تُستخدم بكل مستطيلات النغمات (السلم العادي، المقامات العربية، الكوردات).
+// إصلاح مؤكَّد بعد عدة جولات تشخيص واختبار فعلي مع يوسف على أجهزة حقيقية (آيفون/آيباد/
+// سامسونج S24+): أي محاولة "تفريق تلقائي بين ضغطة سريعة ومطوّلة بالتوقيت" (سواء بمؤقّت
+// مؤجَّل أو حتى بمقارنة طوابع وقت اللمسة) اصطدمت بمشاكل عدم استقرار مختلفة على هالأجهزة
+// (تأخير أول استجابة، أو تراكب صوتي). الحل النهائي المستقر: نلغي أي منطق توقيت كلياً،
+// ونرجع لـ"كليك بسيط ومباشر" (نفس الآلية الأصلية المُثبَتة من شهور بدون مشاكل) — زر
+// منفصل (بجانب زر المايك) يحدد أي سلوك يصير عند الكليك (نغمة مستمرة أو عزفة قصيرة)
+window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainStop, recomputeFreqFn){
+  // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (احتياطاً)
   try {
     rectEl.style.userSelect = 'none';
     rectEl.style.webkitUserSelect = 'none';
     rectEl.style.webkitTouchCallout = 'none';
-    rectEl.style.touchAction = 'manipulation'; // يمنع تأخير النقر المزدوج/التكبير التلقائي على الجوال (نفس النمط المستخدم بدائرة الخامسات بالملف)
+    rectEl.style.touchAction = 'manipulation';
   } catch(e){}
   rectEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  function clearHoldTimer(){
-    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-  }
-
-  // إصلاح مؤكَّد بعد ٣ جولات تشخيص واختبار فعلي مع يوسف: تبيّن إن أي عملية صوتية (حتى مجرد
-  // رفع مستوى صوت لعقدة شغّالة أصلاً) تُرفض لو صادرة من مؤقّت مؤجَّل (setTimeout) على بعض
-  // الأجهزة (آيفون/آيباد/سامسونج S24+) — القيد أشمل من "بدء تشغيل جديد" بس. الحل النهائي:
-  // كل عملية صوتية تصير **مباشرة ومتزامنة** جوا معالج حدث موثوق (pointerdown أو pointerup)،
-  // بدون أي اعتماد على setTimeout لأي فعل صوتي إطلاقاً. نبدأ النغمة المستمرة بصوتها الكامل
-  // فوراً بلحظة الضغط (بالضبط زي الضغطة السريعة، صفر فرق)، والمؤقّت المؤجَّل وظيفته الوحيدة
-  // "تحديد القرار لاحقاً" (Flag بس، بدون أي فعل صوتي بداخله). لو تأكدت إنها ضغطة سريعة،
-  // نوقف الصوت **بخفوت فوري جداً (15ms)** بدل الخفوت العادي (120ms) — عشان ما يتراكب صوتياً
-  // مع نغمة العزف الجديدة اللي تنطلق فوراً بدالها
-  rectEl.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
-    clearHoldTimer();
-    cached = prepare();
-    const wasActiveSame = (typeof window.getCurrentSustainedNoteRect === 'function') && window.getCurrentSustainedNoteRect() === cached.liveEl;
-    if (wasActiveSame) {
-      // اللمسة هذي على مستطيل شغال أصلاً كنغمة مستمرة — قصدها إيقافها، بس هذا وخلاص
-      window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn);
-      mode = 'stopping';
-      return;
+  rectEl.addEventListener('click', () => {
+    const { liveEl, freq } = prepare();
+    if (window.noteClickMode === 'short') {
+      // وضع "قصير": نوقف أي نغمة مستمرة شغالة أول (لو فيه)، ونشغّل عزفة طبيعية قصيرة فوراً
+      if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+      if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq, TAP_PLUCK_DURATION);
+      if (onSustainStart) onSustainStart(liveEl);
+      if (onSustainStop) setTimeout(() => onSustainStop(liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
+    } else {
+      // وضع "مطوّل" (الافتراضي): نفس السلوك الأصلي المستقر — تبديل تشغيل/إيقاف نغمة مستمرة
+      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
     }
-    mode = 'provisional';
-    firedAsHold = false;
-    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn); // تبدأ بصوتها الكامل مباشرة (نفس سلوك الضغطة السريعة تماماً)
-    holdTimer = setTimeout(() => { firedAsHold = true; }, HOLD_THRESHOLD_MS); // Flag بس — صفر فعل صوتي هنا
   });
-
-  function onRelease(){
-    const wasHold = firedAsHold;
-    clearHoldTimer();
-    if (mode === 'stopping') { mode = null; return; } // اتعالجت كاملة بلحظة الضغط
-    if (mode !== 'provisional') return;
-    if (wasHold) {
-      // النغمة المستمرة اتفعّلت أصلاً بالضغط المطوّل (hands-free) — تستمر لحالها بعد رفع
-      // الإصبع، ما نسوي شي إضافي هنا
-      mode = null;
-      return;
-    }
-    // طلعت ضغطة سريعة بالنهاية: نوقف النغمة اللي كانت شغالة فعلياً (بخفوت فوري ١٥ مللي
-    // ثانية عشان ما تتراكب مع نغمة العزف الجديدة)، ونشغّل عزفة طبيعية قصيرة بدالها
-    window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn, true); // fastFade=true
-    if (cached && typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(cached.freq, TAP_PLUCK_DURATION);
-    if (cached && onSustainStart) onSustainStart(cached.liveEl);
-    if (cached && onSustainStop) setTimeout(() => onSustainStop(cached.liveEl), 220); // ومضة إضاءة قصيرة (بصرية بس، مستقلة عن مدة خفوت الصوت الفعلي)
-    mode = null;
-  }
-
-  function onCancel(){
-    clearHoldTimer();
-    if (mode === 'provisional' && !firedAsHold) window.toggleSustainedNoteOnRect(cached.liveEl, cached.freq, onSustainStart, onSustainStop, recomputeFreqFn, true); // لغيت اللمسة قبل ما تتأكد كضغطة مطوّلة — نوقف المحاولة بخفوت سريع
-    mode = null;
-  }
-
-  rectEl.addEventListener('pointerup', onRelease);
-  rectEl.addEventListener('pointercancel', onCancel);
-  rectEl.addEventListener('pointerleave', () => { if (!firedAsHold) onCancel(); });
 };
 
 </script>
@@ -4801,9 +4839,19 @@ function buildOudStatic(){
   // (مو جزء من مجموعة g2 اللي تنعكس تلقائياً)، فنحسب انعكاسه يدوياً بنفس محور انعكاس g2
   const midXForHelpRow = (OUD.NUT_X + OUD.NECK_END_X) / 2;
   const mirrorXForHelpRow = (x) => 2 * midXForHelpRow - x;
-  const naturalAboveNeckX = (OUD.VISUAL_NUT_X + OUD.fretX(1)) / 2; // بين فريت ٠ وفريت ١
+  const naturalAboveNeckX = OUD.VISUAL_NUT_X + 15; // بداية الزند (تأكّد الموضع مع يوسف عبر معاينة فعلية)
   const micBx = window.isLeftHanded ? naturalAboveNeckX : mirrorXForHelpRow(naturalAboveNeckX);
   const micBy = OUD.neckTopY(naturalAboveNeckX) - 103; // نفس ارتفاع صف زر يمين/يسار وعدد الأوتار (فوق الزند)
+  const modeBtnW = 118 * handScaleForHelp; // زر وضع النغمات ("نغمة مستمرة"/"نغمة قصيرة") — صُغّر أفقياً عشان ما يزاحم عناصر تانية
+  const modeBtnGap = 10; // فسحة بين الزرين
+  // موقع زر وضع النغمات: بجانب زر المايك مباشرة (ناحية العمق بالزند، بعيداً عن حافة الزند)،
+  // بنفس ارتفاعه بالضبط (محاذاة أفقية). ملاحظة مهمة: mirrorXForHelpRow معادلة انعكاس
+  // (2×المنتصف − x)، فزيادة الإحداثي الطبيعي قبل الانعكاس تُنقص الناتج بعد الانعكاس — لازم
+  // نعكس اتجاه الإزاحة حسب وضع اليد عشان الزر يطلع فعلياً على يمين زر المايك على الشاشة
+  const modeOffset = (helpBtnW/2) + modeBtnGap + (modeBtnW/2);
+  const naturalModeX = naturalAboveNeckX + (window.isLeftHanded ? modeOffset : -modeOffset);
+  const modeBx = window.isLeftHanded ? naturalModeX : mirrorXForHelpRow(naturalModeX);
+  const modeBy = micBy;
   const helpG = el('g', { id: 'helpBtn', style: 'cursor:pointer' });
   helpG.appendChild(el('rect', {
     x: helpBx - helpBtnW/2, y: helpY - helpBtnH/2,
@@ -4968,10 +5016,18 @@ function buildOudStatic(){
     window.micBtnSvgY = micBy;
     window.micBtnSvgW = helpBtnW;
     window.micBtnSvgH = helpBtnH;
+    window.noteModeBtnSvgX = modeBx;
+    window.noteModeBtnSvgY = modeBy;
+    window.noteModeBtnSvgW = modeBtnW;
+    window.noteModeBtnSvgH = helpBtnH;
     if (typeof window.positionMicHtmlBtn === 'function') {
       window.positionMicHtmlBtn();
       // إعادة محاولة بعد لحظة قصيرة احتياطاً، تحسباً إن الرسمة ما اكتمل تخطيطها بعد وقت أول استدعاء
       setTimeout(window.positionMicHtmlBtn, 150);
+    }
+    if (typeof window.positionNoteModeToggleBtn === 'function') {
+      window.positionNoteModeToggleBtn();
+      setTimeout(window.positionNoteModeToggleBtn, 150);
     }
 
     // ===== زر تبديل عدد الأوتار (٥/٦) — بنفس حجم أزرار اليد، بدون أيقونة، نص يعكس الوضع الحالي =====
