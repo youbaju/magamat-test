@@ -3411,11 +3411,22 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
   let holdTimer = null;
   let firedAsHold = false;
 
+  // إصلاح: منع قائمة "نسخ/تحديد النص" المنبثقة عند الضغط المطوّل على الجوال (سلوك افتراضي
+  // بالمتصفح يتفعّل عادة بعد ~500ms ضغط مستمر، يتضارب مع الضغطة المطوّلة نفسها اللي نستخدمها)
+  try {
+    rectEl.style.userSelect = 'none';
+    rectEl.style.webkitUserSelect = 'none';
+    rectEl.style.webkitTouchCallout = 'none';
+    rectEl.style.touchAction = 'manipulation'; // يمنع تأخير النقر المزدوج/التكبير التلقائي على الجوال (نفس النمط المستخدم بدائرة الخامسات بالملف)
+  } catch(e){}
+  rectEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
   function clearHoldTimer(){
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
   }
 
   rectEl.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // يمنع أي سلوك افتراضي إضافي (تحديد نص، تكبير بالنقر المزدوج، إلخ) قبل حتى ما يوصل وقت القائمة المنبثقة
     firedAsHold = false;
     clearHoldTimer();
     holdTimer = setTimeout(() => {
@@ -3432,14 +3443,13 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
     // الإصبع، ما نسوي شي إضافي هنا
     if (wasHold) return;
     const { liveEl, freq } = prepare();
-    // لو نفس المستطيل شغال حالياً كنغمة مستمرة (بدأت بضغطة مطوّلة سابقة)، الضغطة السريعة
-    // هذي تعتبر "إيقاف" (نفس سلوك الكليك القديم بالضبط) بدل تشغيل نغمة عزف فوقها. نستخدم
-    // window.getCurrentSustainedNoteRect (مكشوفة من سكربت toggleSustainedNoteOnRect) بدل
-    // الوصول المباشر لمتغير currentSustainedNote المحلي (غير موجود بهذا السكربت المنفصل)
+    // لو فيه نغمة مستمرة شغالة حالياً (على أي مستطيل، نفسه أو غيره)، الضغطة السريعة
+    // توقفها فوراً — نستخدم window.stopAnySustainedNote عشان يوقفها بنداء الإيقاف
+    // الأصلي المخزَّن لها (يرجّع لون المستطيل الصح لها هي بالذات، مو المستطيل الجديد)
     const activeRect = (typeof window.getCurrentSustainedNoteRect === 'function') ? window.getCurrentSustainedNoteRect() : null;
-    if (activeRect && activeRect === liveEl) {
-      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
-      return;
+    if (activeRect) {
+      if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+      if (activeRect === liveEl) return; // كانت ضغطة على نفس المستطيل الشغال — التوقيف كافي، ما نشغّل نغمة عزف فوقها
     }
     // نغمة عزف طبيعية قصيرة من عينات البيانو الحقيقية — بدون أي حالة تحتاج توقيف يدوي
     if (typeof window.playArNoteByFreq === 'function') window.playArNoteByFreq(freq, TAP_PLUCK_DURATION);
