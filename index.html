@@ -3497,13 +3497,16 @@ window.bindNoteRectPress = function(rectEl, prepare, onSustainStart, onSustainSt
       firedAsHold = true;
       const { liveEl, freq } = prepare();
       window.debugLog('prepare() done, freq=' + freq);
-      // ملاحظة مهمة (اكتُشفت بالتشخيص): استدعاء resume() ثاني هنا (داخل المؤقّت المؤجَّل)
-      // يعلّق للأبد على بعض المتصفحات (Samsung Internet) لأنه صادر من setTimeout مو من
-      // لمسة مباشرة — فيوقف كل شي بانتظار وعد ما يتحقق أبداً. نعتمد بس على الاستئناف
-      // الأول اللي صار مباشرة بلحظة pointerdown (لمسة حقيقية موثوقة، انظر unlockAudioContexts
-      // أعلى) ونكمّل مباشرة بدون أي انتظار إضافي
-      window.debugLog('directly calling toggleSustainedNoteOnRect');
-      window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      const dbgCtx = (typeof window.getSharedOudAudioContext === 'function') ? window.getSharedOudAudioContext() : null;
+      window.debugLog('shared ctx state at hold-fire=' + (dbgCtx ? dbgCtx.state : 'NULL'));
+      // نستخدم نفس الدالة المُثبَتة والمستخدمة بكل مشغّل تاني بالتطبيق (حلّ إصلاح #23/#24
+      // لمشكلة "أول نغمة" على الجوال) — تنتظر فعلياً اكتمال resume() + مهلة أمان ١٢٠ مللي
+      // ثانية، بدل ما نفترض الجاهزية فوراً بدون انتظار حقيقي (وهذا بالضبط سبب فشل أول ضغطة)
+      const readyPromise = (typeof window.ensureOudAudioReady === 'function') ? window.ensureOudAudioReady() : Promise.resolve();
+      readyPromise.then(() => {
+        window.debugLog('ensureOudAudioReady resolved -> toggleSustainedNoteOnRect');
+        window.toggleSustainedNoteOnRect(liveEl, freq, onSustainStart, onSustainStop, recomputeFreqFn);
+      });
     }, HOLD_THRESHOLD_MS);
   });
 
@@ -7029,6 +7032,7 @@ window.wxResume = wxResume;
     // 'running') قبل ما نعتبره جاهز فعلاً لجدولة نغمات دقيقة التوقيت
     window.ensureOudAudioReady = function() {
       const ctx = getAudioContext();
+      if (typeof window.debugLog === 'function') window.debugLog('ensureOudAudioReady called, ctx.state=' + ctx.state);
       if (ctx.state === 'suspended') {
         return ctx.resume().catch(() => {}).then(() => new Promise(resolve => setTimeout(resolve, 120)));
       }
