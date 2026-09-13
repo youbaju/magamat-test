@@ -927,7 +927,7 @@ flex-shrink: 0;
 
   /* ===== دائرة الرابعات والخامسات ===== */
   #c-circleWrap{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-  svg#c-circleSvg{ touch-action: manipulation; width:280px; height:280px; }
+  svg#c-circleSvg{ touch-action: manipulation; width:280px; height:280px; user-select: none; -webkit-user-select: none; }
   /* نكرر touch-action:manipulation صراحة على العناصر الفرعية القابلة للنقر (مو بس <svg> الأب) —
      ببعض محركات WebView (خصوصاً TWA) الخاصية ما تنتقل دايماً صح لعناصر <path>/<text> جوه <svg>،
      فيبقى سلوك "تكبير بالنقر المزدوج" الافتراضي شغّال عند نقرتين سريعتين بنفس النقطة، ويفسّر
@@ -954,6 +954,8 @@ flex-shrink: 0;
     stroke: #0a1c30;
     stroke-width: 3px;
     stroke-linejoin: round;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .circle-label.minor{ font-size:16px; fill:#ffffff; font-weight:600; }
   .circle-label.dual-label{
@@ -1486,6 +1488,8 @@ flex-shrink: 0;
     padding: 4px 0 2px;
     line-height: 1.4;
     font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
 
