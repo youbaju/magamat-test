@@ -893,10 +893,10 @@ flex-shrink: 0;
   .seg-color-3  { fill:#225c92; }
   .seg-color-4  { fill:#2367a3; }
   .seg-color-5  { fill:#2573b4; }
-  .seg-color-6  { fill:#2b7ec2; }
-  .seg-color-7  { fill:#3a8ace; }
-  .seg-color-8  { fill:#4d96d6; }
-  .seg-color-9  { fill:#62a3de; }
+  .seg-color-6  { fill:#24689e; }
+  .seg-color-7  { fill:#2c74ab; }
+  .seg-color-8  { fill:#3680b8; }
+  .seg-color-9  { fill:#448dc4; }
   .seg-color-10 { fill:#1a2f4d; }
   .seg-color-11 { fill:#1c3458; }
   /* نسخة أغمق قليلاً (للدائرة الداخلية Minor) */
@@ -906,10 +906,10 @@ flex-shrink: 0;
   .seg-color-3-dim  { fill:#17436c; }
   .seg-color-4-dim  { fill:#184a78; }
   .seg-color-5-dim  { fill:#195485; }
-  .seg-color-6-dim  { fill:#1d5c8f; }
-  .seg-color-7-dim  { fill:#286499; }
-  .seg-color-8-dim  { fill:#356da3; }
-  .seg-color-9-dim  { fill:#4377ab; }
+  .seg-color-6-dim  { fill:#1a4f7a; }
+  .seg-color-7-dim  { fill:#205783; }
+  .seg-color-8-dim  { fill:#2a608d; }
+  .seg-color-9-dim  { fill:#366a97; }
   .seg-color-10-dim { fill:#13213a; }
   .seg-color-11-dim { fill:#142640; }
   *{box-sizing:border-box;}
@@ -936,7 +936,7 @@ flex-shrink: 0;
   .circle-segment{ cursor:pointer; transition: filter .15s, stroke-width .15s; }
   .circle-segment:hover{ filter: brightness(1.25); }
   .circle-segment.active{
-    filter: brightness(1.6);
+    filter: brightness(1.15);
     stroke: #ffe066 !important;
     stroke-width: 4px !important;
   }
@@ -950,6 +950,10 @@ flex-shrink: 0;
     font-weight:700;
     direction: ltr;
     unicode-bidi: plaintext;
+    paint-order: stroke;
+    stroke: #0a1c30;
+    stroke-width: 3px;
+    stroke-linejoin: round;
   }
   .circle-label.minor{ font-size:16px; fill:#ffffff; font-weight:600; }
   .circle-label.dual-label{
@@ -961,8 +965,10 @@ flex-shrink: 0;
   .circle-label.dual-label.minor{ font-size: 13px; }
   .circle-label.dual-label:hover{ fill:#ffe066; }
   .circle-label.dual-label.dual-active{
-    fill:#ffe066;
+    fill:#ffcc00;
     font-weight:800;
+    stroke: #0a1c30;
+    stroke-width: 3.5px;
   }
 
   /* ===== زر فتح قائمة اختيار المقام (دائم الظهور بكل الأحجام) ===== */
