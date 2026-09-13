@@ -2360,7 +2360,7 @@ window.wireCustomSelect = wireCustomSelect;
       <button class="mit-close" id="westernGuideClose">✕</button>
     </div>
     <h3 id="westernGuideTitle" style="text-align:center;font-family:'Cairo',sans-serif;color:#3a2a12;margin:0 0 8px;font-size:1.15rem;font-weight:800;"></h3>
-    <img id="westernGuideImg" src="" alt="دليل السلم" style="display:block;width:100%;height:auto;border-radius:8px;background:#fff;padding:10px;box-sizing:border-box;">
+    <img id="westernGuideImg" src="" alt="دليل السلم" style="display:block;width:100%;height:70px;object-fit:contain;border-radius:8px;background:#fff;padding:10px;box-sizing:border-box;">
   </div>
 </div>
 
@@ -3677,6 +3677,42 @@ const DUAL_NAME_SEGMENTS = {
   }
 };
 
+// ===== إصلاح: الحفاظ على "موضع" الاسم المحدد (دييز أو بيمول) عند تبديل النوع (ماجور/مينور)
+// من الأزرار، بدل ما يُصفَّر دايماً للاسم الافتراضي — اكتُشفت المشكلة بنقاش مع يوسف: لو
+// اخترت مثلاً "رى# مينور" (نسخة الدييز) من خانة مزدوجة بالدائرة، وبدّلت لماجور من الأزرار،
+// المفروض يوديك تلقائياً لـ"فا# ماجور" (نفس نسخة الدييز بنفس الخانة)، مو يمسح التحديد بالكامل
+//
+// findDualSegmentIndex: يرجّع رقم الخانة (٥، ٦، أو ٧) اللي فيها هالجذر بهالنوع (لو مزدوجة الاسم أصلاً)، وإلا null
+function findDualSegmentIndex(scaleType, root){
+  for (const i of [5, 6, 7]) {
+    if (scaleType === 'major') { if (CIRCLE_ORDER_MAJOR[i] === root) return i; }
+    else { if (RELATIVE_MINOR[i] === root) return i; }
+  }
+  return null;
+}
+// getDualLetterPosition: يرجّع 0 (نسخة الدييز) أو 1 (نسخة البيمول) لو letterOverride الحالي
+// يطابق أحد اسمي الخانة المزدوجة، وإلا null (يشمل حالة "ما فيه اسم محدد أصلاً")
+function getDualLetterPosition(scaleType, root, letterOverride){
+  if (letterOverride === null || letterOverride === undefined) return null;
+  const i = findDualSegmentIndex(scaleType, root);
+  if (i === null) return null;
+  const entries = (scaleType === 'major') ? DUAL_NAME_SEGMENTS.major[i] : DUAL_NAME_SEGMENTS.minor[i];
+  if (!entries) return null;
+  if (entries[0].letterIndex === letterOverride) return 0;
+  if (entries[1].letterIndex === letterOverride) return 1;
+  return null;
+}
+// getLetterOverrideForPosition: عكس الدالة اللي فوق — تاخذ موضع (0/1) وتترجمه لـletterIndex
+// المطابق بالخانة المزدوجة للنوع/الجذر الجديد (لو الخانة الجديدة مزدوجة الاسم أصلاً، وإلا null)
+function getLetterOverrideForPosition(scaleType, root, position){
+  if (position === null || position === undefined) return null;
+  const i = findDualSegmentIndex(scaleType, root);
+  if (i === null) return null;
+  const entries = (scaleType === 'major') ? DUAL_NAME_SEGMENTS.major[i] : DUAL_NAME_SEGMENTS.minor[i];
+  if (!entries || !entries[position]) return null;
+  return entries[position].letterIndex;
+}
+
 /* ---------- بناء دائرة الرابعات والخامسات ---------- */
 const circleSvg = document.getElementById('c-circleSvg');
 
@@ -3961,11 +3997,16 @@ function updateCircleHighlight(){
     const isActive = isMinorType && (+seg.dataset.root === state.root);
     seg.classList.toggle('active', isActive);
   });
-  // إبراز النص المزدوج المحدد تحديدًا (أي من الاسمين تم اختياره) بلون مختلف
+  // إبراز النص المزدوج المحدد تحديدًا (أي من الاسمين تم اختياره) بلون مختلف — إصلاح: نحسب
+  // "الحرف الفعلي" (effectiveLetterIdx) بنفس دالة getRootLetterIndex اللي يعتمد عليها كل مكان
+  // تاني بالتطبيق (النص، دليل المقام، إلخ)، بدل المقارنة المباشرة مع state.letterOverride
+  // فقط — لأن letterOverride يكون null لو المستخدم ضغط الخانة بشكل عام (بدون اسم محدد)، فما
+  // كان يتفعّل أي تظليل أبداً رغم إن باقي التطبيق أصلاً يعرض اسم افتراضي محدد بوضوح
+  const effectiveLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
   dualLabelElements.forEach(labelEl => {
     if (labelEl.classList.contains('circle-label-hitarea')) return; // مناطق الضغط الشفافة تبقى شفافة دايماً، ما تُلوَّن
     const sameRoot = (+labelEl.dataset.root === state.root) && (labelEl.dataset.scaleType === state.scaleType);
-    const sameLetter = (+labelEl.dataset.letterIdx === state.letterOverride);
+    const sameLetter = (+labelEl.dataset.letterIdx === effectiveLetterIdx);
     labelEl.classList.toggle('dual-active', sameRoot && sameLetter);
   });
 }
@@ -4444,7 +4485,17 @@ document.querySelectorAll('.scale-btn').forEach(btn => {
     // نحفظ رقم درجة الكورد المختار حالياً (لو المستخدم كان بوضع كورد) قبل ما selectRootAndType
     // يصفّره تلقائياً، عشان نعيد اختيار نفس الدرجة بالنوع الجديد بعدين ونبقى بوضع الكورد
     const prevChordDegree = (window.chordModeActive && window.selectedChord) ? window.selectedChord.degree : null;
-    selectRootAndType(newRoot, btn.dataset.scale, wasMajor === willBeMajor ? state.letterOverride : null);
+    // إصلاح: نحافظ على "موضع" الاسم المحدد (دييز/بيمول) عند التبديل بين ماجور ومينور، بدل
+    // ما نصفّره دايماً لـnull — لو الخانة القديمة والجديدة الاثنتين مزدوجتا الاسم، نطبّق نفس
+    // الموضع (دييز يقابله دييز، بيمول يقابله بيمول) على الجذر الجديد تلقائياً
+    let newLetterOverride;
+    if (wasMajor === willBeMajor) {
+      newLetterOverride = state.letterOverride; // نفس الفئة (بين أنواع المينور) — الجذر ما تغيّر، نبقي الاسم زي ما هو
+    } else {
+      const oldPosition = getDualLetterPosition(state.scaleType, state.root, state.letterOverride);
+      newLetterOverride = (oldPosition !== null) ? getLetterOverrideForPosition(btn.dataset.scale, newRoot, oldPosition) : null;
+    }
+    selectRootAndType(newRoot, btn.dataset.scale, newLetterOverride);
     if (prevChordDegree !== null && typeof buildChordsForScale === 'function' && typeof selectChord === 'function') {
       const newChords = buildChordsForScale(state.root, state.scaleType);
       const matchingChord = newChords.find(c => c.degree === prevChordDegree);
@@ -4468,7 +4519,15 @@ document.querySelectorAll('.c-chords-type-btn').forEach(btn => {
     const prevChordDegree = (window.chordModeActive && window.selectedChord) ? window.selectedChord.degree : null;
     // نزامن حالة أزرار النوع الرئيسية (فوق العود) كمان، عشان تبقى متطابقة
     document.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('active', b.dataset.scale === btn.dataset.scale));
-    selectRootAndType(newRoot, btn.dataset.scale, wasMajor === willBeMajor ? state.letterOverride : null);
+    // إصلاح: نفس منطق الحفاظ على موضع الاسم المحدد (دييز/بيمول) المستخدم بزر النوع الرئيسي
+    let newLetterOverride;
+    if (wasMajor === willBeMajor) {
+      newLetterOverride = state.letterOverride;
+    } else {
+      const oldPosition = getDualLetterPosition(state.scaleType, state.root, state.letterOverride);
+      newLetterOverride = (oldPosition !== null) ? getLetterOverrideForPosition(btn.dataset.scale, newRoot, oldPosition) : null;
+    }
+    selectRootAndType(newRoot, btn.dataset.scale, newLetterOverride);
     // نبقي القائمة مفتوحة على تبويب الكوردات، ونعيد رسمها فوراً بالنوع الجديد
     showDrawerMode('chords');
     // نعيد اختيار نفس درجة الكورد تلقائياً بالنوع الجديد (بصفتها الصحيحة الجديدة: ميجور/ماينور/دمينشد...)
@@ -6354,60 +6413,78 @@ tuningSelect.addEventListener('change', () => {
 
 /* ===== دليل السلم الغربي ===== */
 const WESTERN_GUIDE_FILES = {
-      "major_0": "images/western-guide/major_0.png",
-      "major_7": "images/western-guide/major_7.png",
-      "major_2": "images/western-guide/major_2.png",
-      "major_9": "images/western-guide/major_9.png",
-      "major_4": "images/western-guide/major_4.png",
-      "major_11": "images/western-guide/major_11.png",
-      "major_6": "images/western-guide/major_6.png",
-      "major_1": "images/western-guide/major_1.png",
-      "major_8": "images/western-guide/major_8.png",
-      "major_3": "images/western-guide/major_3.png",
-      "major_10": "images/western-guide/major_10.png",
-      "major_5": "images/western-guide/major_5.png",
-      "naturalMinor_9": "images/western-guide/naturalMinor_9.png",
-      "harmonicMinor_9": "images/western-guide/harmonicMinor_9.png",
-      "melodicMinor_9": "images/western-guide/melodicMinor_9.png",
-      "naturalMinor_4": "images/western-guide/naturalMinor_4.png",
-      "harmonicMinor_4": "images/western-guide/harmonicMinor_4.png",
-      "melodicMinor_4": "images/western-guide/melodicMinor_4.png",
-      "naturalMinor_11": "images/western-guide/naturalMinor_11.png",
-      "harmonicMinor_11": "images/western-guide/harmonicMinor_11.png",
-      "melodicMinor_11": "images/western-guide/melodicMinor_11.png",
-      "naturalMinor_6": "images/western-guide/naturalMinor_6.png",
-      "harmonicMinor_6": "images/western-guide/harmonicMinor_6.png",
-      "melodicMinor_6": "images/western-guide/melodicMinor_6.png",
-      "naturalMinor_1": "images/western-guide/naturalMinor_1.png",
-      "harmonicMinor_1": "images/western-guide/harmonicMinor_1.png",
-      "melodicMinor_1": "images/western-guide/melodicMinor_1.png",
-      "naturalMinor_8": "images/western-guide/naturalMinor_8.png",
-      "harmonicMinor_8": "images/western-guide/harmonicMinor_8.png",
-      "melodicMinor_8": "images/western-guide/melodicMinor_8.png",
-      "naturalMinor_3": "images/western-guide/naturalMinor_3.png",
-      "harmonicMinor_3": "images/western-guide/harmonicMinor_3.png",
-      "melodicMinor_3": "images/western-guide/melodicMinor_3.png",
-      "naturalMinor_10": "images/western-guide/naturalMinor_10.png",
-      "harmonicMinor_10": "images/western-guide/harmonicMinor_10.png",
-      "melodicMinor_10": "images/western-guide/melodicMinor_10.png",
-      "naturalMinor_5": "images/western-guide/naturalMinor_5.png",
-      "harmonicMinor_5": "images/western-guide/harmonicMinor_5.png",
-      "melodicMinor_5": "images/western-guide/melodicMinor_5.png",
-      "naturalMinor_0": "images/western-guide/naturalMinor_0.png",
-      "harmonicMinor_0": "images/western-guide/harmonicMinor_0.png",
-      "melodicMinor_0": "images/western-guide/melodicMinor_0.png",
-      "naturalMinor_7": "images/western-guide/naturalMinor_7.png",
-      "harmonicMinor_7": "images/western-guide/harmonicMinor_7.png",
-      "melodicMinor_7": "images/western-guide/melodicMinor_7.png",
-      "naturalMinor_2": "images/western-guide/naturalMinor_2.png",
-      "harmonicMinor_2": "images/western-guide/harmonicMinor_2.png",
-      "melodicMinor_2": "images/western-guide/melodicMinor_2.png"
-    };
+  "major_0": "images/western-guide/C-Major.png",
+  "major_1": "images/western-guide/DFlat-Major.png",
+  "major_1_0": "images/western-guide/CSharp-Major.png",
+  "major_2": "images/western-guide/D-Major.png",
+  "major_3": "images/western-guide/EFlat-Major.png",
+  "major_4": "images/western-guide/E-Major.png",
+  "major_5": "images/western-guide/F-Major.png",
+  "major_6": "images/western-guide/FSharp-Major.png",
+  "major_6_4": "images/western-guide/GFlat-Major.png",
+  "major_7": "images/western-guide/G-Major.png",
+  "major_8": "images/western-guide/AFlat-Major.png",
+  "major_9": "images/western-guide/A-Major.png",
+  "major_10": "images/western-guide/BFlat-Major.png",
+  "major_11": "images/western-guide/B-Major.png",
+  "major_11_0": "images/western-guide/CFlat-Major.png",
+  "naturalMinor_0": "images/western-guide/C-NaturalMinor.png",
+  "naturalMinor_1": "images/western-guide/CSharp-NaturalMinor.png",
+  "naturalMinor_2": "images/western-guide/D-NaturalMinor.png",
+  "naturalMinor_3": "images/western-guide/DSharp-NaturalMinor.png",
+  "naturalMinor_3_2": "images/western-guide/EFlat-NaturalMinor.png",
+  "naturalMinor_4": "images/western-guide/E-NaturalMinor.png",
+  "naturalMinor_5": "images/western-guide/F-NaturalMinor.png",
+  "naturalMinor_6": "images/western-guide/FSharp-NaturalMinor.png",
+  "naturalMinor_7": "images/western-guide/G-NaturalMinor.png",
+  "naturalMinor_8": "images/western-guide/GSharp-NaturalMinor.png",
+  "naturalMinor_8_5": "images/western-guide/AFlat-NaturalMinor.png",
+  "naturalMinor_9": "images/western-guide/A-NaturalMinor.png",
+  "naturalMinor_10": "images/western-guide/BFlat-NaturalMinor.png",
+  "naturalMinor_10_5": "images/western-guide/ASharp-NaturalMinor.png",
+  "naturalMinor_11": "images/western-guide/B-NaturalMinor.png",
+  "harmonicMinor_0": "images/western-guide/C-HarmonicMinor.png",
+  "harmonicMinor_1": "images/western-guide/CSharp-HarmonicMinor.png",
+  "harmonicMinor_2": "images/western-guide/D-HarmonicMinor.png",
+  "harmonicMinor_3": "images/western-guide/DSharp-HarmonicMinor.png",
+  "harmonicMinor_3_2": "images/western-guide/EFlat-HarmonicMinor.png",
+  "harmonicMinor_4": "images/western-guide/E-HarmonicMinor.png",
+  "harmonicMinor_5": "images/western-guide/F-HarmonicMinor.png",
+  "harmonicMinor_6": "images/western-guide/FSharp-HarmonicMinor.png",
+  "harmonicMinor_7": "images/western-guide/G-HarmonicMinor.png",
+  "harmonicMinor_8": "images/western-guide/GSharp-HarmonicMinor.png",
+  "harmonicMinor_8_5": "images/western-guide/AFlat-HarmonicMinor.png",
+  "harmonicMinor_9": "images/western-guide/A-HarmonicMinor.png",
+  "harmonicMinor_10": "images/western-guide/BFlat-HarmonicMinor.png",
+  "harmonicMinor_10_5": "images/western-guide/ASharp-HarmonicMinor.png",
+  "harmonicMinor_11": "images/western-guide/B-HarmonicMinor.png",
+  "melodicMinor_0": "images/western-guide/C-MelodicMinor.png",
+  "melodicMinor_1": "images/western-guide/CSharp-MelodicMinor.png",
+  "melodicMinor_2": "images/western-guide/D-MelodicMinor.png",
+  "melodicMinor_3": "images/western-guide/DSharp-MelodicMinor.png",
+  "melodicMinor_3_2": "images/western-guide/EFlat-MelodicMinor.png",
+  "melodicMinor_4": "images/western-guide/E-MelodicMinor.png",
+  "melodicMinor_5": "images/western-guide/F-MelodicMinor.png",
+  "melodicMinor_6": "images/western-guide/FSharp-MelodicMinor.png",
+  "melodicMinor_7": "images/western-guide/G-MelodicMinor.png",
+  "melodicMinor_8": "images/western-guide/GSharp-MelodicMinor.png",
+  "melodicMinor_8_5": "images/western-guide/AFlat-MelodicMinor.png",
+  "melodicMinor_9": "images/western-guide/A-MelodicMinor.png",
+  "melodicMinor_10": "images/western-guide/BFlat-MelodicMinor.png",
+  "melodicMinor_10_5": "images/western-guide/ASharp-MelodicMinor.png",
+  "melodicMinor_11": "images/western-guide/B-MelodicMinor.png",
+};
 
 function updateWesternGuideImage(){
   const img = document.getElementById('westernGuideImg');
   if (!img) return;
-  const key = state.scaleType + '_' + state.root;
+  // إصلاح: نراعي الاسم المحدد (letterOverride) لو موجود — عشان لو المستخدم اختار تحديداً
+  // "دو دييز" (مو الاسم الافتراضي "رى بيمول")، تظهر صورة الدليل المطابقة لنفس الإملاء المختار
+  let key = state.scaleType + '_' + state.root;
+  if (state.letterOverride !== null && state.letterOverride !== undefined) {
+    const overrideKey = key + '_' + state.letterOverride;
+    if (WESTERN_GUIDE_FILES[overrideKey]) key = overrideKey;
+  }
   if (WESTERN_GUIDE_FILES[key]) {
     img.src = WESTERN_GUIDE_FILES[key];
   }
