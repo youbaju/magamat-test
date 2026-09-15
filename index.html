@@ -1451,7 +1451,7 @@ flex-shrink: 0;
     min-width: 36px;
   }
   .mit-cell.header{
-    background: #1b1410;
+    background: #1565C0;
     color: #fff;
     font-weight: 700;
     font-size: .68rem;
@@ -9052,6 +9052,9 @@ window.wxResume = wxResume;
       valueRow.className = 'mit-value-row';
       valueRow.style.direction = 'ltr';
 
+      // نفس نظام ألوان الأبعاد المستخدم بصور دليل المقامات (بُعد٢=بنفسجي، ٣=تركواز، ٤=أزرق، ٦=برتقالي)
+      // — نطبّقه هنا كمان على لون رقم البُعد نفسه، عشان نفس اللغة اللونية تتكرر بكل مكان بالتطبيق
+      const intervalColors = { 2: '#8E44AD', 3: '#00897B', 4: '#1565C0', 6: '#E67E22' };
       intervals.forEach((val, i) => {
         const hCell = document.createElement('div');
         hCell.className = 'mit-cell header';
@@ -9063,6 +9066,7 @@ window.wxResume = wxResume;
         const vCell = document.createElement('div');
         vCell.className = 'mit-cell value';
         vCell.textContent = val;
+        if (intervalColors[val]) vCell.style.color = intervalColors[val];
         valueRow.appendChild(vCell);
       });
 
