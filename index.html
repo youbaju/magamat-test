@@ -1317,8 +1317,7 @@ flex-shrink: 0;
     max-width: 700px;
     max-height: 96vh;
     max-height: 96dvh; /* وحدة أحدث تتعامل صح مع شريط عنوان Safari المتغير الارتفاع، خصوصاً بالوضع الأفقي */
-    overflow-y: auto;
-    box-shadow: 0 4px 24px rgba(0,0,0,.2);
+    overflow-y: auto;    box-shadow: 0 4px 24px rgba(0,0,0,.2);
     font-family: 'Cairo', sans-serif;
     direction: rtl;
   }
@@ -1329,6 +1328,17 @@ flex-shrink: 0;
     margin-bottom: 8px;
     border-bottom: 1px solid #ddd;
     padding-bottom: 6px;
+  }
+  /* إصلاح: صور دليل المقام (خصوصاً الملوّنة الجديدة عالية الدقة) تبين باهتة/مموّهة على
+     شاشات الكمبيوتر العادية تحديداً (كثافة بكسل عادية ١x)، بعكس الجوال/الآيباد (كثافة عالية
+     Retina تلقائياً تعرضها بدقة أعلى حتى بنفس "المساحة" المرئية). السبب الحقيقي مو حجم
+     الشاشة، هو كثافة البكسل — فنستهدفها مباشرة (max-resolution) بدل عرض الشاشة، عشان
+     التوسيع ينطبق بس على الشاشات العادية الكثافة (الكمبيوتر غالباً)، ولا يأثر على أي جهاز
+     عالي الكثافة (جوال/آيباد) حتى لو كان عرض شاشته كبير */
+  @media (max-resolution: 1.5dppx) {
+    .maqam-guide-container{
+      max-width: 1100px;
+    }
   }
   .maqam-intervals-btn{
     font-family: 'Cairo', sans-serif;
@@ -8875,47 +8885,47 @@ window.wxResume = wxResume;
       'الراست':                    'images/daleel/DaleelRast.png',
       'الحسيني':                   'images/daleel/DaleelAlHussaini.png',
       'البياتي':                   'images/daleel/DaleelAlBiati.png',
-      'الحجاز كار كرد':            'images/daleel/DaleelAlHijazKarKord.jpg',
-      'حجاز الأويج':               'images/daleel/DaleelAlHijazAlAoaij.jpg',
-      'الحجازين':                  'images/daleel/DaleelAlHijazain.jpg',
-      'الحجاز':                    'images/daleel/DaleelAlHijaz.jpg',
+      'الحجاز كار كرد':            'images/daleel/DaleelAlHijazKarKord.png',
+      'حجاز الأويج':               'images/daleel/DaleelAlHijazAlAoaij.png',
+      'الحجازين':                  'images/daleel/DaleelAlHijazain.png',
+      'الحجاز':                    'images/daleel/DaleelAlHijaz.png',
       
-      'الفرح فزا':                 'images/daleel/DaleelAlFarahFaza.jpg',
-      'البسته نكار':               'images/daleel/DaleelAlBastanKar.jpg',
-      'البسنديده':                 'images/daleel/DaleelAlBasandidah.jpg',
+      'الفرح فزا':                 'images/daleel/DaleelAlFarahFaza.png',
+      'البسته نكار':               'images/daleel/DaleelAlBastanKar.png',
+      'البسنديده':                 'images/daleel/DaleelAlBasandidah.png',
       'البياتين':                  'images/daleel/DaleelAlBaiatain.png',
-      'العجم المرصع':              'images/daleel/DaleelAlAjamAlMurassaa.jpg',
-      'العجم عشيران':              'images/daleel/DaleelAjamUshairan.jpg',
-      'الشاهناز':                  'images/daleel/DaleelAlShahnaz.jpg',
+      'العجم المرصع':              'images/daleel/DaleelAlAjamAlMurassaa.png',
+      'العجم عشيران':              'images/daleel/DaleelAjamUshairan.png',
+      'الشاهناز':                  'images/daleel/DaleelAlShahnaz.png',
       'الشاهناز الكردي':           'images/daleel/DaleelAlShahinazAlKordi.png',
-      'النكريز':                   'images/daleel/DaleelAlNakreez.jpg',
-      'النهاوند ذو الحساس':        'images/daleel/DaleelAlNahawandZoAlHassas.jpg',
-      'النهاوند المرصع':           'images/daleel/DaleelAlNahawandAlMurassaa.jpg',
-      'النهاوند الكبير':           'images/daleel/DaleelAlNahawandAlKabeer.jpg',
-      'النهاوند الكردي':           'images/daleel/DaleelNahawandKordi.jpg',
+      'النكريز':                   'images/daleel/DaleelAlNakreez.png',
+      'النهاوند ذو الحساس':        'images/daleel/DaleelAlNahawandZoAlHassas.png',
+      'النهاوند المرصع':           'images/daleel/DaleelAlNahawandAlMurassaa.png',
+      'النهاوند الكبير':           'images/daleel/DaleelAlNahawandAlKabeer.png',
+      'النهاوند الكردي':           'images/daleel/DaleelNahawandKordi.png',
       'اللامي':                    'images/daleel/DaleelAllami.png',
       'الكرد':                     'images/daleel/DaleelAlKord.png',
-      'الجهاركاه':                 'images/daleel/DaleelAlJharkah.jpg',
-      'العراق':                    'images/daleel/DaleelAlIraq.jpg',
-      'الهزام':                    'images/daleel/DaleelAlHuzam.jpg',
-      'الدلنشين':                  'images/daleel/DaleelDalansheen.jpg',
-      'الزنجران':                  'images/daleel/DaleelAlZnjran.jpg',
-      'العشاق المصري':             'images/daleel/DaleelAlushaqAlMasri.jpg',
-      'الطرز الجديد شكل آخر':     'images/daleel/DaleelAlTarzAlJadeedAnotherShape.jpg',
-      'الطرز الجديد':              'images/daleel/DaleelAlTarzAlJadeed.jpg',
-      'الطرز نوين':                'images/daleel/DaleelAlTaraznoin.jpg',
-      'السلطاني يكاه':             'images/daleel/DaleelAlSultaniYakah.jpg',
-      'السيكاه مايا':              'images/daleel/DaleelAlSikahMaya.jpg',
-      'السيكاه':                   'images/daleel/DaleelAlSikah.jpg',
+      'الجهاركاه':                 'images/daleel/DaleelAlJharkah.png',
+      'العراق':                    'images/daleel/DaleelAlIraq.png',
+      'الهزام':                    'images/daleel/DaleelAlHuzam.png',
+      'الدلنشين':                  'images/daleel/DaleelDalansheen.png',
+      'الزنجران':                  'images/daleel/DaleelAlZnjran.png',
+      'العشاق المصري':             'images/daleel/DaleelAlushaqAlMasri.png',
+      'الطرز الجديد شكل آخر':     'images/daleel/DaleelAlTarzAlJadeedAnotherShape.png',
+      'الطرز الجديد':              'images/daleel/DaleelAlTarzAlJadeed.png',
+      'الطرز نوين':                'images/daleel/DaleelAlTaraznoin.png',
+      'السلطاني يكاه':             'images/daleel/DaleelAlSultaniYakah.png',
+      'السيكاه مايا':              'images/daleel/DaleelAlSikahMaya.png',
+      'السيكاه':                   'images/daleel/DaleelAlSikah.png',
       'الشورى':                    'images/daleel/DaleelAlShoori.png',
-      'الشوق أفزا':                'images/daleel/DaleelAlShooqAfza.jpg',
+      'الشوق أفزا':                'images/daleel/DaleelAlShooqAfza.png',
       'السوزناك':                  'images/daleel/DaleelSoznak.png',
       'السوزدلار':                 'images/daleel/DaleelSozdlar.png',
-      'صبا الزمزمه':               'images/daleel/DaleelSabaAlZamzamah.jpg',
-      'صبا البوسليك':              'images/daleel/DaleelSabaAlBoslik.jpg',
-      'الصبا':                     'images/daleel/DaleelSaba.jpg',
+      'صبا الزمزمه':               'images/daleel/DaleelSabaAlZamzamah.png',
+      'صبا البوسليك':              'images/daleel/DaleelSabaAlBoslik.png',
+      'الصبا':                     'images/daleel/DaleelSaba.png',
       'راست البشاير':              'images/daleel/DaleelRastAlBashaer.png',
-      'النوا أثر':                 'images/daleel/DaleelNawaAthar.jpg',
+      'النوا أثر':                 'images/daleel/DaleelNawaAthar.png',
       'النيرز راست':               'images/daleel/DaleelNairazRast.png',
       'الماهور':                   'images/daleel/DaleelMahoor.png',
     };
