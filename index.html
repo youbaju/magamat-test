@@ -4063,6 +4063,11 @@ function selectRootAndType(root, scaleType, letterOverride){
   localStorage.setItem('oudWesternSelection', JSON.stringify({root, scaleType, letterOverride: state.letterOverride}));
   updateCircleHighlight();
   updateNowPlaying();
+  // إصلاح: نحمّل صورة دليل السلّم بالخلفية فورًا هنا (نفس لحظة اختيار الجذر/النوع)، مو بس
+  // وقت ما يُضغط زر "الدليل" نفسه — بالضبط نفس أسلوب دليل المقامات العربية (showMaqam).
+  // بدون هذا، لو المستخدم يفتح الدليل مباشرة بعد تبديل النوع، يبين "ومضة" من صورة السلّم
+  // القديم لحظة قبل ما تكتمل الصورة الجديدة تحميلها (سلوك طبيعي لعنصر <img> بالمتصفح)
+  if (typeof window.preloadWesternGuideImage === 'function') window.preloadWesternGuideImage();
   if (typeof resetPlayer === 'function') resetPlayer();
   // STAGE 2/3 سيستدعون هنا: drawOudScale(), drawStaffScale()
   if (typeof renderAll === 'function') renderAll();
@@ -6506,16 +6511,31 @@ const WESTERN_GUIDE_FILES = {
   "melodicMinor_11": "images/western-guide/B-MelodicMinor.png",
 };
 
-function updateWesternGuideImage(){
-  const img = document.getElementById('westernGuideImg');
-  if (!img) return;
+function getWesternGuideKey(){
   // إصلاح: نراعي الاسم المحدد (letterOverride) لو موجود — عشان لو المستخدم اختار تحديداً
-  // "دو دييز" (مو الاسم الافتراضي "رى بيمول")، تظهر صورة الدليل المطابقة لنفس الإملاء المختار
+  // "دو دييز" (مو الاسم الافتراضي "رى بيمول")، تُحمَّل صورة الدليل المطابقة لنفس الإملاء المختار
   let key = state.scaleType + '_' + state.root;
   if (state.letterOverride !== null && state.letterOverride !== undefined) {
     const overrideKey = key + '_' + state.letterOverride;
     if (WESTERN_GUIDE_FILES[overrideKey]) key = overrideKey;
   }
+  return key;
+}
+
+// تحميل صورة الدليل بالخلفية فورًا (بدون فتح النافذة) — يُستدعى فور تبديل الجذر/النوع،
+// عشان لو المستخدم فتح الدليل بعدها مباشرة، الصورة تكون خلصت تحميل من زمان (نفس أسلوب
+// دليل المقامات العربية بالضبط)، بدل "ومضة" الصورة القديمة لحظة التحميل
+window.preloadWesternGuideImage = function(){
+  const img = document.getElementById('westernGuideImg');
+  if (!img) return;
+  const key = getWesternGuideKey();
+  if (WESTERN_GUIDE_FILES[key]) img.src = WESTERN_GUIDE_FILES[key];
+};
+
+function updateWesternGuideImage(){
+  const img = document.getElementById('westernGuideImg');
+  if (!img) return;
+  const key = getWesternGuideKey();
   if (WESTERN_GUIDE_FILES[key]) {
     img.src = WESTERN_GUIDE_FILES[key];
   }
