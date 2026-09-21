@@ -293,6 +293,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Music&display=swap" rel="stylesheet">
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-CSHSKLVNB5"></script>
 <script>
@@ -2376,7 +2377,7 @@ window.wireCustomSelect = wireCustomSelect;
 
 <!-- Modal دليل السلم الغربي (خارج أي تبويب عشان يبقى شغال بكل الأحوال) -->
 <div class="maqam-btns-row" id="westernBtnsRow" style="display:none">
-  <button class="maqam-guide-btn" id="westernGuideBtn">دليل <span id="westernGuideBtnName">دو Major</span></button>
+  <button class="maqam-guide-btn" id="westernGuideBtn"><span id="westernGuideBtnPrefix">دليل </span><span id="westernGuideBtnName">دو Major</span></button>
 </div>
 <div class="maqam-guide-modal" id="westernGuideModal" style="display:none">
   <div class="maqam-guide-container">
@@ -2385,6 +2386,8 @@ window.wireCustomSelect = wireCustomSelect;
     </div>
     <h3 id="westernGuideTitle" style="text-align:center;font-family:'Cairo',sans-serif;color:#3a2a12;margin:0 0 8px;font-size:1.15rem;font-weight:800;"></h3>
     <img id="westernGuideImg" src="" alt="دليل السلم" style="display:block;width:100%;height:auto;border-radius:8px;background:#fff;padding:10px;box-sizing:border-box;">
+    <!-- حاوية نوتة الكورد المولّدة بالكود (SVG حي) — تظهر بدل الصورة أعلاه وقت ما يكون فيه كورد مختار (chordModeActive)، راجع updateWesternGuideImage -->
+    <div id="westernGuideChordSvg" style="display:none;width:100%;border-radius:8px;background:#fff;padding:10px;box-sizing:border-box;"></div>
   </div>
 </div>
 
@@ -4214,7 +4217,9 @@ function buildChordsForScale(root, scaleType){
   return chords;
 }
 
-// يلقى أفضل توليفة أوتار/فريتات متقاربة لثلاث نغمات (كل وحدة على وتر مختلف)
+// يلقى أفضل توليفة أوتار/فريتات متقاربة لثلاث نغمات (كل وحدة على وتر مختلف)، مع تفضيل
+// قوي للوضع الأساسي الصحيح صوتياً (الأساس أخفض من الثالثة، والثالثة أخفض من الخامسة) —
+// زي ما يُعزف كورد ماجور طبيعي على أورغ/بيانو، بدل ما يطلع الأساس فوق الثالثة/الخامسة
 function findChordPositions(pcs){
   const optionsPerNote = pcs.map(pc => {
     const opts = [];
@@ -4236,7 +4241,11 @@ function findChordPositions(pcs){
         const frets = [p0.fret, p1.fret, p2.fret];
         const maxFret = Math.max(...frets); // نفضل فريتات قريبة من العتلة (طبيعية بالعزف)
         const fretSpan = Math.max(...frets) - Math.min(...frets);
-        const score = maxFret * 2 + pitchSpan * 1 + fretSpan * 0.1;
+        // الأساس <= الثالثة <= الخامسة صوتياً — أي وضعية بهذا الترتيب الصحيح تتفضّل
+        // دايماً على أي وضعية بترتيب غلط، بغض النظر عن قرب فريتاتها
+        const orderOK = midis[0] <= midis[1] && midis[1] <= midis[2];
+        const orderPenalty = orderOK ? 0 : 1000;
+        const score = orderPenalty + maxFret * 2 + pitchSpan * 1 + fretSpan * 0.1;
         if (score < bestScore){ bestScore = score; best = [p0, p1, p2]; }
       }
     }
@@ -4357,6 +4366,7 @@ function selectChord(ch, btnEl, skipAutoPlay){
   const positions = rawPositions.map((pos, idx) => ({ ...pos, letterIdx: letterIndices[idx] }));
   window.selectedChord = { ...ch, positions };
   window.chordModeActive = true;
+  if (typeof updateWesternGuideButtonName === 'function') updateWesternGuideButtonName(); // يزامن اسم زر "دليل" مع اسم الكورد المختار فوراً
   // نحدّث وضع اللوحة (currentDrawerMode) هنا كمان — عشان لو انفتحت اللوحة بعدين (حتى بجلسة
   // جديدة بعد إعادة فتح التطبيق، وقت ما يُستعاد هذا الكورد المحفوظ تلقائياً)، تفتح مباشرة
   // على تبويب "الكوردات" بدل "الدائرة" الافتراضية — يطابق الزند اللي أصلاً يعرض الكورد
@@ -4580,24 +4590,52 @@ document.querySelectorAll('.c-chords-type-btn').forEach(btn => {
   });
 });
 
+// تحدّث اسم زر "دليل" ليحاكي دايماً المحتوى المعروض فعلياً على الزند: اسم الكورد وقت
+// ما يكون فيه كورد مختار (chordModeActive)، أو اسم السلم/الجذر بالحالة العادية — تُستدعى
+// من updateNowPlaying() ومن selectChord() عشان تبقى متزامنة بكل السيناريوهات (اختيار كورد
+// يدوي، أو تبديل نوع السلم ماجور/هارموني/مينور وانت أصلاً بوضع كورد)
+function updateWesternGuideButtonName(){
+  const btnName = document.getElementById('westernGuideBtnName');
+  const btnPrefix = document.getElementById('westernGuideBtnPrefix');
+  if (!btnName) return;
+  let newText;
+  const isChord = !!(window.chordModeActive && window.selectedChord);
+  if (isChord) {
+    newText = window.selectedChord.name;
+  } else {
+    const rawScaleName = SCALES[state.scaleType].name;
+    const scaleName = (window.oudLanguage === 'en' && SCALE_NAME_EN[rawScaleName]) ? SCALE_NAME_EN[rawScaleName] : rawScaleName;
+    const rootLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
+    const correctRootName = getCorrectNoteName(state.root, rootLetterIdx);
+    newText = `${correctRootName} ${scaleName}`;
+  }
+  btnName.textContent = newText;
+  // البادئة تفرّق بين دليل السلم (دليل/Guide of) ونوتة الكورد (كورد/Chord) — مو دليل مقام أصلاً
+  if (btnPrefix) {
+    if (window.oudLanguage === 'en') {
+      btnPrefix.textContent = isChord ? 'Chord ' : 'Guide of ';
+    } else {
+      btnPrefix.textContent = isChord ? 'كورد ' : 'دليل ';
+    }
+  }
+  const wgBtn = document.getElementById('westernGuideBtn');
+  if (wgBtn) {
+    void wgBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
+    wgBtn.style.opacity = '0.999';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { wgBtn.style.opacity = '1'; });
+    });
+  }
+}
+window.updateWesternGuideButtonName = updateWesternGuideButtonName;
+
 function updateNowPlaying(){
   const rawScaleName = SCALES[state.scaleType].name;
   const scaleName = (window.oudLanguage === 'en' && SCALE_NAME_EN[rawScaleName]) ? SCALE_NAME_EN[rawScaleName] : rawScaleName;
   const rootLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
   const correctRootName = getCorrectNoteName(state.root, rootLetterIdx);
   document.getElementById('c-nowPlaying').textContent = `${correctRootName} ${scaleName}`;
-  const btnName = document.getElementById('westernGuideBtnName');
-  if (btnName) {
-    btnName.textContent = `${correctRootName} ${scaleName}`;
-    const wgBtn = document.getElementById('westernGuideBtn');
-    if (wgBtn) {
-      void wgBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
-      wgBtn.style.opacity = '0.999';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => { wgBtn.style.opacity = '1'; });
-      });
-    }
-  }
+  updateWesternGuideButtonName();
 }
 window.updateNowPlaying = updateNowPlaying; // نكشفها عالمياً عشان زر Do/C (بمجال/scope مختلف) يقدر يستدعيها بثقة
 
@@ -6511,6 +6549,129 @@ const WESTERN_GUIDE_FILES = {
   "melodicMinor_11": "images/western-guide/B-MelodicMinor.png",
 };
 
+/* ===== نوتة الكورد المولّدة بالكود (SVG حي، بدون أي صورة) =====
+   تُستخدم بدل صورة WESTERN_GUIDE_FILES وقت ما يكون فيه كورد مختار (chordModeActive).
+   الأوكتافة: تُحسب من موضع الكورد الفعلي على زند العود (chord.positions: وتر/فريت لكل
+   نغمة)، مو ترتيب نظري ثابت — يعني النوتة المرسومة تطابق بالضبط الأوكتافة اللي بتسمعها. */
+function buildChordNotationSVG(chord){
+  const STEP = 5;    // نصف مسافة خط المدرج بالبكسل (كل درجة سلّمية = خطوة وحدة)
+  const REF_Y = 140; // إحداثي Y لخطوة الصفر (دو٤، أول خط إضافي افتراضي تحت المدرج)
+  const RED = '#C0392B'; // نفس لون العلامات العرضية المستخدم بدليل السلالم الحالي
+  const NOTE_CX = 150;
+
+  function stepY(step){ return REF_Y - step * STEP; }
+  function accidentalDiff(pc, letterIdx){
+    const naturalPC = NATURAL_PC_FOR_LETTER[letterIdx];
+    return ((pc - naturalPC) + 12) % 12;
+  }
+  // خطوة النوتة (step) من موضعها الفعلي على الزند: نطلع رقم MIDI الحقيقي من الوتر/الفريت
+  // (بدون أي أوفست دوزان — الأوكتافة بالنوتة الموسيقية ثابتة، مو تابعة لأي تعديل دوزان مؤقت)،
+  // نحسب الأوكتافة، ونصحح حالتين تفاف نادرتين: سي# (يصوّت مثل دو الأوكتافة الجاية) ودوب
+  // (يصوّت مثل سي الأوكتافة اللي قبلها) — عشان الأوكتافة المكتوبة تطابق موضع الحرف بالمدرج
+  // (دو٤، ري٤...) مو الصوت الفعلي وقت التفاف كذا.
+  function stepFromPosition(pos, letterIdx, diff){
+    const midi = OUD.STRING_OPEN_MIDI[pos.string] + pos.fret;
+    let octave = Math.floor(midi / 12) - 1;
+    if (letterIdx === 6 && (diff === 1 || diff === 2)) octave -= 1;      // سي# / سي دبل دييز
+    else if (letterIdx === 0 && (diff === 11 || diff === 10)) octave += 1; // دوب / دو دبل بيمول
+    return letterIdx + 7 * (octave - 4);
+  }
+  function drawSharp(x, y){
+    return `<line x1="${x}" y1="${y-9}" x2="${x}" y2="${y+9}" style="stroke:${RED};stroke-width:2" stroke-linecap="round"/>` +
+           `<line x1="${x+8}" y1="${y-9}" x2="${x+8}" y2="${y+9}" style="stroke:${RED};stroke-width:2" stroke-linecap="round"/>` +
+           `<line x1="${x-2}" y1="${y-5}" x2="${x+10}" y2="${y-5}" style="stroke:${RED};stroke-width:1.5" stroke-linecap="round"/>` +
+           `<line x1="${x-2}" y1="${y+3}" x2="${x+10}" y2="${y+3}" style="stroke:${RED};stroke-width:1.5" stroke-linecap="round"/>`;
+  }
+  function drawFlat(x, y){
+    return `<line x1="${x}" y1="${y-9}" x2="${x}" y2="${y+6}" style="stroke:${RED};stroke-width:2" stroke-linecap="round"/>` +
+           `<ellipse cx="${x+3.5}" cy="${y+1}" rx="4" ry="4.5" style="fill:${RED}"/>`;
+  }
+  function drawDoubleSharp(x, y){
+    return `<line x1="${x-5}" y1="${y-5}" x2="${x+5}" y2="${y+5}" style="stroke:${RED};stroke-width:2.5" stroke-linecap="round"/>` +
+           `<line x1="${x-5}" y1="${y+5}" x2="${x+5}" y2="${y-5}" style="stroke:${RED};stroke-width:2.5" stroke-linecap="round"/>`;
+  }
+  function drawDoubleFlat(x, y){
+    return drawFlat(x, y) + drawFlat(x - 9, y);
+  }
+  function drawAccidental(diff, x, y){
+    if (diff === 1) return drawSharp(x, y);
+    if (diff === 2) return drawDoubleSharp(x, y);
+    if (diff === 11) return drawFlat(x, y);
+    if (diff === 10) return drawDoubleFlat(x, y);
+    return '';
+  }
+  // الخطوط الإضافية (ledger lines) بين حافة المدرج ونوتة معينة برّاه — تُعيد كل الخطوات
+  // (الزوجية) اللازمة، فوق أو تحت المدرج حسب step
+  function ledgerStepsFor(step){
+    const out = [];
+    if (step < 2) {
+      const lowest = Math.floor((step + 1) / 2) * 2;
+      if (lowest <= 0) for (let s = 0; s >= lowest; s -= 2) out.push(s);
+    } else if (step > 10) {
+      const highest = Math.ceil((step - 1) / 2) * 2;
+      if (highest >= 12) for (let s = 12; s <= highest; s += 2) out.push(s);
+    }
+    return out;
+  }
+
+  const rawNotes = [
+    { pc: chord.rootPC,  letterIdx: chord.rootLetterIdx,  pos: chord.positions[0] },
+    { pc: chord.thirdPC, letterIdx: chord.thirdLetterIdx, pos: chord.positions[1] },
+    { pc: chord.fifthPC, letterIdx: chord.fifthLetterIdx, pos: chord.positions[2] },
+  ];
+  const notesAll = rawNotes.map(n => {
+    const diff = accidentalDiff(n.pc, n.letterIdx);
+    return { ...n, diff, step: stepFromPosition(n.pos, n.letterIdx, diff) };
+  }).sort((a, b) => b.step - a.step); // من الأعلى للأسفل، حسب الموضع الفعلي الحقيقي
+
+  let noteheadsSVG = '';
+  let accidentalsSVG = '';
+  let ledgerStepsSet = new Set();
+  let prevStep = null, prevOffsetX = 0, prevHadAccidental = false;
+  const BASE_OFFSET = NOTE_CX - 22, STAGGER = 22;
+  notesAll.forEach(n => {
+    const y = stepY(n.step);
+    noteheadsSVG += `<ellipse cx="${NOTE_CX}" cy="${y}" rx="8" ry="6" style="fill:#000000" transform="rotate(-18 ${NOTE_CX} ${y})"/>`;
+    ledgerStepsFor(n.step).forEach(s => ledgerStepsSet.add(s));
+    if (n.diff !== 0) {
+      const offsetX = (prevStep !== null && prevHadAccidental && (prevStep - n.step <= 3)) ? (prevOffsetX - STAGGER) : BASE_OFFSET;
+      accidentalsSVG += drawAccidental(n.diff, offsetX, y);
+      prevOffsetX = offsetX; prevHadAccidental = true;
+    } else {
+      prevHadAccidental = false;
+    }
+    prevStep = n.step;
+  });
+  const ledgerSVG = [...ledgerStepsSet].map(s =>
+    `<line x1="${NOTE_CX-14}" y1="${stepY(s)}" x2="${NOTE_CX+14}" y2="${stepY(s)}" style="stroke:#000000;stroke-width:1"/>`
+  ).join('');
+
+  const minStep = notesAll[notesAll.length - 1].step; // الأسفل
+  const maxStep = notesAll[0].step; // الأعلى
+  const yLow = stepY(minStep);
+  const stemTop = stepY(maxStep) - 35; // طول الساق المعتاد: أوكتافة كاملة (٧ خطوات × ٥ بكسل)
+  // إطار الرسم يتمدد تلقائياً لو النوتات طلعت بعيدة عن المدرج (أوكتافات عالية/واطية فعلياً بالزند)
+  const topBound = Math.min(60, stemTop - 20);
+  const bottomBound = Math.max(160, yLow + 25);
+  const svgH = bottomBound - topBound;
+
+  const finalSvg = `<svg width="100%" viewBox="0 ${topBound} 300 ${svgH}" role="img" aria-label="نوتة كورد ${chord.name}">
+<line x1="50" y1="90" x2="270" y2="90" style="stroke:#000000;stroke-width:1"/>
+<line x1="50" y1="100" x2="270" y2="100" style="stroke:#000000;stroke-width:1"/>
+<line x1="50" y1="110" x2="270" y2="110" style="stroke:#000000;stroke-width:1"/>
+<line x1="50" y1="120" x2="270" y2="120" style="stroke:#000000;stroke-width:1"/>
+<line x1="50" y1="130" x2="270" y2="130" style="stroke:#000000;stroke-width:1"/>
+<line x1="270" y1="90" x2="270" y2="130" style="stroke:#000000;stroke-width:1.5"/>
+<line x1="${NOTE_CX+8}" y1="${yLow}" x2="${NOTE_CX+8}" y2="${stemTop}" style="stroke:#000000;stroke-width:1.5"/>
+${ledgerSVG}
+${noteheadsSVG}
+${accidentalsSVG}
+<text x="57" y="126" font-family="'Noto Music', serif" font-size="42" style="fill:#000000">&#x1D11E;</text>
+</svg>`;
+
+  return finalSvg;
+}
+
 function getWesternGuideKey(){
   // إصلاح: نراعي الاسم المحدد (letterOverride) لو موجود — عشان لو المستخدم اختار تحديداً
   // "دو دييز" (مو الاسم الافتراضي "رى بيمول")، تُحمَّل صورة الدليل المطابقة لنفس الإملاء المختار
@@ -6526,6 +6687,7 @@ function getWesternGuideKey(){
 // عشان لو المستخدم فتح الدليل بعدها مباشرة، الصورة تكون خلصت تحميل من زمان (نفس أسلوب
 // دليل المقامات العربية بالضبط)، بدل "ومضة" الصورة القديمة لحظة التحميل
 window.preloadWesternGuideImage = function(){
+  if (window.chordModeActive) return; // الكورد يُرسم لحظياً وقت الفتح، ما يحتاج تحميل مسبق
   const img = document.getElementById('westernGuideImg');
   if (!img) return;
   const key = getWesternGuideKey();
@@ -6534,16 +6696,25 @@ window.preloadWesternGuideImage = function(){
 
 function updateWesternGuideImage(){
   const img = document.getElementById('westernGuideImg');
-  if (!img) return;
-  const key = getWesternGuideKey();
-  if (WESTERN_GUIDE_FILES[key]) {
-    img.src = WESTERN_GUIDE_FILES[key];
+  const chordSvgBox = document.getElementById('westernGuideChordSvg');
+  if (!img || !chordSvgBox) return;
+  if (window.chordModeActive && window.selectedChord) {
+    img.style.display = 'none';
+    chordSvgBox.style.display = 'block';
+    chordSvgBox.innerHTML = buildChordNotationSVG(window.selectedChord);
+  } else {
+    chordSvgBox.style.display = 'none';
+    img.style.display = 'block';
+    const key = getWesternGuideKey();
+    if (WESTERN_GUIDE_FILES[key]) {
+      img.src = WESTERN_GUIDE_FILES[key];
+    }
   }
   const title = document.getElementById('westernGuideTitle');
   if (title) {
     const btnName = document.getElementById('westernGuideBtnName');
-    const guideLabel = (window.oudLanguage === 'en') ? 'Guide of ' : 'دليل ';
-    title.textContent = guideLabel + (btnName ? btnName.textContent : '');
+    const btnPrefix = document.getElementById('westernGuideBtnPrefix');
+    title.textContent = (btnPrefix ? btnPrefix.textContent : '') + (btnName ? btnName.textContent : '');
   }
 }
 
@@ -6811,7 +6982,7 @@ window.wxResume = wxResume;
       const maqamGuideBtnEl = document.getElementById('maqamGuideBtn');
       if (maqamGuideBtnEl && maqamGuideBtnEl.firstChild) maqamGuideBtnEl.firstChild.textContent = 'Guide of ';
       const westernGuideBtnEl = document.getElementById('westernGuideBtn');
-      if (westernGuideBtnEl && westernGuideBtnEl.firstChild) westernGuideBtnEl.firstChild.textContent = 'Guide of ';
+      if (westernGuideBtnEl && typeof updateWesternGuideButtonName === 'function') updateWesternGuideButtonName(); // يراعي كورد/دليل مع اللغة الجديدة مع بعض
       // "جزيرة" LTR لصف الدوزان والسرعة بالمشغل، عشان ترتيب العناصر يتماشى مع اتجاه القراءة الإنجليزية
       const tuningRowEl = document.querySelector('.tuning-row');
       if (tuningRowEl) { tuningRowEl.setAttribute('dir', 'ltr'); tuningRowEl.style.direction = 'ltr'; tuningRowEl.style.justifyContent = 'flex-start'; }
