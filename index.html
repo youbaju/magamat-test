@@ -1258,6 +1258,27 @@ flex-shrink: 0;
   @media (max-width: 1024px) and (orientation:portrait){
     .maqam-guide-btn{ position: fixed; top: 72px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
+  /* زر ⭐ المفضلة بالجوال العمودي فقط: يتوسط بين زر اختيار المقام (يمين) وزر التبويبات (يسار)
+     بنفس الصف العلوي، بدل ما ينزل تحت زر اختيار المقام (كان يتصادم مع زر دليل المقام اللي
+     ينزل لنفس المنطقة). عرضه يصير حسب المحتوى (مو 256px الموروث)، عشان يضمن مساحة بين الزرين */
+  @media (max-width: 1024px) and (orientation:portrait){
+    #favBtn{
+      position: fixed !important;
+      top: 10px !important;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: 130px !important;
+      font-size: .68rem !important;
+      padding: 6px 8px !important;
+      z-index: 200;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
   @media (max-height:540px) and (orientation:landscape){
     .maqam-btns-row{ top: 2px; }
   }
@@ -7406,6 +7427,14 @@ window.wxResume = wxResume;
     window.syncFavBtnWidth = function(){
       const menuBtn = document.getElementById('menuToggle');
       if (!menuBtn || !favBtnEl) return;
+      // بالجوال العمودي، الزر يتوسط بصف أعلى الشاشة بعرض مبني على المحتوى (CSS)، فما نفرض عليه عرض menuToggle
+      const isMobilePortrait = window.matchMedia('(max-width: 1024px) and (orientation: portrait)').matches;
+      if (isMobilePortrait) {
+        favBtnEl.style.width = '';
+        favBtnEl.style.minWidth = '';
+        favBtnEl.style.maxWidth = '';
+        return;
+      }
       const w = menuBtn.getBoundingClientRect().width;
       if (w > 0) {
         favBtnEl.style.width = w + 'px';
