@@ -1253,6 +1253,8 @@ flex-shrink: 0;
     text-overflow: ellipsis;
   }
   .maqam-guide-btn:hover{ background: #fff8ea; }
+  .maqam-guide-btn.guide-btn-label-only{ cursor: default; }
+  .maqam-guide-btn.guide-btn-label-only:hover{ background: #fff; }
   @media (max-width: 1024px) and (orientation:portrait){
     .maqam-guide-btn{ position: fixed; top: 72px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
@@ -4619,6 +4621,10 @@ function updateWesternGuideButtonName(){
     }
   }
   const wgBtn = document.getElementById('westernGuideBtn');
+  // بدل إخفاء الزر بالكامل، نخليه بمكانه دايماً (يعرض اسم الكورد المختار)، بس نحوّله لمجرد
+  // تسمية ثابتة (مالوش وظيفة ضغط) وقت الكورد بدل ما يفتح نافذة نوتة الكورد — كلاس CSS يلغي
+  // مؤشر اليد وتأثير hover عشان يبان بصرياً إنه مو زر قابل للضغط
+  if (wgBtn) wgBtn.classList.toggle('guide-btn-label-only', isChord);
   if (wgBtn) {
     void wgBtn.offsetHeight; // إجبار المتصفح يحسب التخطيط الجديد فوراً (Force Reflow)
     wgBtn.style.opacity = '0.999';
@@ -6781,6 +6787,8 @@ const westernGuideModal = document.getElementById('westernGuideModal');
 const westernGuideClose = document.getElementById('westernGuideClose');
 if (westernGuideBtn && westernGuideModal) {
   westernGuideBtn.addEventListener('click', () => {
+    // بوضع الكورد الزر أصبح مجرد تسمية ثابتة تعرض اسم الكورد — ما يفتح أي نافذة
+    if (window.chordModeActive && window.selectedChord) return;
     if (window.wxExerciseActive && typeof window.wxStopPlayback === 'function') window.wxStopPlayback(); // التمرين يوقف، بعكس السلّم العادي (يقصد)
     updateWesternGuideImage();
     westernGuideModal.style.display = 'flex';
