@@ -1962,14 +1962,15 @@ input[type="radio"] {
    وبسلاسة مع أي عرض نافذة بينهم (مثلاً لوحة معاينة ملف بنص شاشة الكمبيوتر)، بدل ما يبان
    الزر ضخم فجأة لأنه لسا فوق حد الـ1024px بالضبط */
 .menu-toggle, .c-menu-toggle, .site-tabs-toggle{
-  min-width: clamp(96px, 16vw, 150px);
-  max-width: clamp(96px, 16vw, 150px);
-  height: clamp(30px, 3.4vw, 38px);
+  min-width: clamp(122px, 17vw, 160px);
+  max-width: clamp(122px, 17vw, 160px);
+  height: clamp(32px, 3.6vw, 40px);
   border-radius: 12px;
   justify-content: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: clamp(.62rem, 1.6vw, .78rem);
+  white-space: nowrap;
+  font-size: clamp(.6rem, 1.5vw, .76rem);
   padding-left: clamp(6px, 1vw, 12px);
   padding-right: clamp(6px, 1vw, 12px);
 }
@@ -7471,29 +7472,11 @@ window.wxResume = wxResume;
       const menuBtn = document.getElementById('menuToggle');
       const tabsBtn = document.getElementById('siteTabsToggle');
       if (!menuBtn || !favBtnEl) return;
-      const menuRect = menuBtn.getBoundingClientRect();
-      // الأفقي (بأي جهاز): دايماً تحت زر اختيار المقام، ما نخفيه ولا نستخدم وضع الصف العلوي —
-      // فقط العمودي هو اللي يحتاج فحص تصادم فعلي
+      // بسيط ومباشر: الأفقي = دايماً تحت زر اختيار المقام. العمودي = دايماً بالصف العلوي
+      // (بين زر اختيار المقام وزر التبويبات)، بغض النظر عن نوع الجهاز — هذا يضمن عدم التصادم
+      // مع زر دليل المقام بالعمودي بشكل مؤكد ١٠٠٪، بدون الاعتماد على قياس/تخمين
       const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-      let useTopRow = false;
-      if (!isLandscape) {
-        // نقيس فعلياً هل زر المفضلة (بوضعه الطبيعي تحت زر اختيار المقام) بيتصادم مع زر دليل
-        // المقام أو زر أبعاد المقام الحقيقيين — بدل ما نخمن عرض افتراضي لصف الأزرار. هذا يفرّق
-        // صح بين آيباد عمودي (عريض، ما فيه تصادم فعلي، يضل تحت الزر) وجوال عمودي (ضيق، فيه
-        // تصادم فعلي، يحتاج الصف العلوي)
-        const favTop = 60, favBottom = favTop + menuRect.height;
-        const SAFETY = 10;
-        const collidesWith = (btn) => {
-          if (!btn || getComputedStyle(btn).display === 'none') return false;
-          const r = btn.getBoundingClientRect();
-          if (r.width === 0) return false;
-          return !(menuRect.right < r.left - SAFETY || menuRect.left > r.right + SAFETY || favBottom < r.top - SAFETY || favTop > r.bottom + SAFETY);
-        };
-        const guideBtn = document.getElementById('maqamGuideBtn');
-        const intervalsBtn = document.getElementById('maqamIntervalsBtn');
-        const realCollision = collidesWith(guideBtn) || collidesWith(intervalsBtn);
-        useTopRow = realCollision && tabsBtn && tabsBtn.offsetParent !== null;
-      }
+      const useTopRow = !isLandscape && tabsBtn && tabsBtn.offsetParent !== null;
 
       // التبديل بين الوضعين يصير بس بإضافة/إزالة كلاس — كل الحجم والموضع مكتوب بالـCSS (clamp +
       // توسيط 50% بسيط)، بدون أي حساب عرض/فجوة بالجافاسكربت. بما إن زر اختيار المقام وزر
