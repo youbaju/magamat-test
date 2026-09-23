@@ -2139,6 +2139,21 @@ window.wireCustomSelect = wireCustomSelect;
 </head>
 <body>
 <div style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#ff0000;color:#fff;font-family:monospace;font-size:16px;font-weight:bold;text-align:center;padding:6px;">TEST BUILD v-fav-debug-1</div>
+<script>
+// ماسك أخطاء مؤقت (نشيله بعد ما نلقى سبب المشكلة) — يعرض أي خطأ جافاسكربت مباشرة على الشاشة
+// بدل ما نحتاج نوصل الآيباد بماك ونستخدم أدوات المطورين
+window.addEventListener('error', function(e){
+  let box = document.getElementById('jsErrorBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'jsErrorBox';
+    box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#000;color:#ff5555;font-family:monospace;font-size:12px;padding:8px;direction:ltr;text-align:left;max-height:40vh;overflow-y:auto;white-space:pre-wrap;';
+    document.body.appendChild(box);
+  }
+  const msg = (e.message || 'unknown error') + '\n  at ' + (e.filename || '?') + ':' + (e.lineno || '?') + ':' + (e.colno || '?');
+  box.textContent += (box.textContent ? '\n---\n' : '') + msg;
+});
+</script>
 
 <button class="site-tabs-toggle" id="siteTabsToggle">☰ <span id="currentPageLabel">المقامات الغربية</span></button>
 <div class="site-tabs-overlay" id="siteTabsOverlay"></div>
