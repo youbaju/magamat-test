@@ -7528,6 +7528,26 @@ window.wxResume = wxResume;
           favBtnEl.style.setProperty('justify-content', 'center', 'important');
           favBtnEl.style.setProperty('padding', '0 6px', 'important');
           favBtnEl.style.setProperty('font-size', '.72rem', 'important');
+          // ===== تشخيص مؤقت (نشيله بعد ما نلقى السبب) — يعرض القيم الفعلية اللي حسبها
+          // الكود وقت التحميل، عشان نقارنها بالمتوقع بدون ما نحتاج نشغّل الموقع بأنفسنا =====
+          (function(){
+            let dbg = document.getElementById('favDebugOverlay');
+            if (!dbg) {
+              dbg = document.createElement('div');
+              dbg.id = 'favDebugOverlay';
+              dbg.style.cssText = 'position:fixed; bottom:6px; left:6px; z-index:99999; background:rgba(0,0,0,.85); color:#0f0; font-family:monospace; font-size:11px; padding:6px 8px; border-radius:6px; direction:ltr; text-align:left; line-height:1.5; max-width:90vw; white-space:pre;';
+              document.body.appendChild(dbg);
+            }
+            dbg.textContent =
+              'innerWidth=' + window.innerWidth +
+              ' usable=' + Math.round(usable) +
+              ' sideWidth=' + Math.round(sideWidth) +
+              ' favWidth(calc)=' + Math.round(favWidth) +
+              '\nmenuRect2.w=' + Math.round(menuRect2.width) + ' tabsRect2.w=' + Math.round(tabsRect2.width) +
+              ' actualGap=' + Math.round(actualGap) +
+              '\nfinalFavWidth=' + Math.round(finalFavWidth) +
+              ' favBtn.offsetWidth(after)=' + favBtnEl.offsetWidth;
+          })();
           return;
         }
       }
