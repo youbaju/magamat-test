@@ -7388,6 +7388,10 @@ window.wxResume = wxResume;
     }
     function goToFavorite(fav) {
       if (!maqamat[fav.fasila]) return;
+      // نفس خطوة إيقاف التمرين الموجودة بمعالجات تغيير القائمة العادية (maqamSelect/harfSelect) —
+      // كانت ناقصة هنا، فلو كان فيه تمرين شغّال وقت الانتقال من المفضلة يضل شغّال بالخلفية
+      window.exerciseActive = false;
+      if (typeof window.exStopPlayback === 'function') window.exStopPlayback();
       updateMaqam(fav.fasila);
       document.querySelectorAll('input[name="maqam"]').forEach(r => { r.checked = (r.value === fav.fasila); });
       if (maqamat[fav.fasila].includes(fav.maqam)) {
@@ -7436,6 +7440,9 @@ window.wxResume = wxResume;
     }
     function openFavMiniMenu() {
       closeFavMiniMenu();
+      // نفس سلوك زر اختيار المقام وزر التبويبات بالضبط: أي ضغطة على زر المفضلة توقف فوراً
+      // أي صوت شغال (سلّم عادي أو تمرين)، قبل ما نفتح القائمة المصغّرة
+      if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
       const isEn = window.oudLanguage === 'en';
       const btn = document.getElementById('favBtn');
       const rect = btn.getBoundingClientRect();
