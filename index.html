@@ -1229,7 +1229,10 @@ flex-shrink: 0;
     align-items: center;
     gap: 10px;
   }
-  @media (max-width: 1024px) and (orientation:portrait){
+  /* كان مقيّد بـ(orientation:portrait) بس — نافذة سطح مكتب ضيقة (مثلاً لوحة معاينة الملف
+     بنص الشاشة) ممكن تصير عرضها ≤1024px مع بقاء الاتجاه landscape فنفس مشكلة الزحام
+     تصير موجودة برضه؛ نخليه يشتغل بأي اتجاه طالما العرض ضيق */
+  @media (max-width: 1024px){
     .maqam-btns-row{ display: contents; }
   }
 
@@ -1255,13 +1258,13 @@ flex-shrink: 0;
   .maqam-guide-btn:hover{ background: #fff8ea; }
   .maqam-guide-btn.guide-btn-label-only{ cursor: default; }
   .maqam-guide-btn.guide-btn-label-only:hover{ background: #fff; }
-  @media (max-width: 1024px) and (orientation:portrait){
+  @media (max-width: 1024px){
     .maqam-guide-btn{ position: fixed; top: 72px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
   /* زر ⭐ المفضلة بالجوال العمودي فقط: يتوسط بين زر اختيار المقام (يمين) وزر التبويبات (يسار)
      بنفس الصف العلوي، بدل ما ينزل تحت زر اختيار المقام (كان يتصادم مع زر دليل المقام اللي
      ينزل لنفس المنطقة). عرضه يصير حسب المحتوى (مو 256px الموروث)، عشان يضمن مساحة بين الزرين */
-  @media (max-width: 1024px) and (orientation:portrait){
+  @media (max-width: 1024px){
     #favBtn{
       position: fixed !important;
       top: 10px !important;
@@ -1382,7 +1385,7 @@ flex-shrink: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  @media (max-width: 1024px) and (orientation:portrait){
+  @media (max-width: 1024px){
     .maqam-guide-btn, .maqam-intervals-btn { 
       font-size: .72rem; 
       padding: 4px 8px;
@@ -1391,7 +1394,7 @@ flex-shrink: 0;
       white-space: nowrap;
     }
   }
-  @media (max-width: 1024px) and (orientation:portrait){
+  @media (max-width: 1024px){
     .maqam-intervals-btn{ position: fixed; top: 120px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
   @media (max-width: 480px) and (orientation:portrait){
@@ -1939,6 +1942,25 @@ input[type="radio"] {
   .dropdown-select { font-size: 0.9rem; padding: 8px 12px; }
   .show-btn { font-size: 1rem; padding: 12px; margin-bottom: 20px; }
   .audio-player { max-width: 100%; }
+}
+
+/* توحيد حجم الأزرار الثلاثة العلوية (☰ اختيار المقام / ☰ اختر من الدائرة / ☰ التبويبات) بعرض
+   وارتفاع ثابتين بكل الشاشات — حل جذري بدل الاعتماد على طول النص جوا كل زر (اللي كان يخلي
+   زر "اختر من الدائرة" يبان أطول من زر التبويبات بالجوال تحديداً). هذه القاعدة مكتوبة آخر
+   شي بالملف الأنماط عمداً عشان تكسب أي تعارض بنفس درجة التخصيص مع القواعد الفردية الأقدم لكل زر.
+   استخدمنا clamp() بدل رقمين ثابتين (240 بالكمبيوتر / 172 بالجوال) عشان العرض يصغر تدريجياً
+   وبسلاسة مع أي عرض نافذة بينهم (مثلاً لوحة معاينة ملف بنص شاشة الكمبيوتر)، بدل ما يبان
+   الزر ضخم فجأة لأنه لسا فوق حد الـ1024px بالضبط */
+.menu-toggle, .c-menu-toggle, .site-tabs-toggle{
+  min-width: clamp(140px, 19vw, 195px);
+  max-width: clamp(140px, 19vw, 195px);
+  height: clamp(34px, 4vw, 42px);
+  border-radius: 12px;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: clamp(8px, 1.2vw, 14px);
+  padding-right: clamp(8px, 1.2vw, 14px);
 }
 
 </style>
@@ -2537,6 +2559,7 @@ window.isArabicMode = false;
       const circlePage = document.getElementById('page-circle');
       selectionSummary.style.display = (circlePage && circlePage.classList.contains('active')) ? 'flex' : 'none';
     }
+    if (typeof window.syncFavBtnWidth === 'function') setTimeout(window.syncFavBtnWidth, 0);
   }
   tabsToggle.addEventListener('click', openTabsMenu);
   tabsOverlay.addEventListener('click', closeTabsMenu);
@@ -6784,7 +6807,7 @@ window.addEventListener('orientationchange', () => { setTimeout(window.adjustWes
 // حل أبسط وأضمن من محاولة توسيع النافذة لتغطي حواف الأزرار على كل حجم شاشة (جوال أفقي، آيباد، ديسكتوب)
 // نعلّم كل زر أخفيناه فعلاً بخاصية data عشان نرجعه بس هو (مو نظهر زر كان مخفي أصلاً لسبب ثاني، زي زر التبويب الغربي وانت بتبويب عربي)
 function hideTopNavButtons(){
-  ['siteTabsToggle','menuToggle','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
+  ['siteTabsToggle','menuToggle','favBtn','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el && getComputedStyle(el).display !== 'none') {
       el.dataset.hiddenByModal = '1';
@@ -6793,7 +6816,7 @@ function hideTopNavButtons(){
   });
 }
 function showTopNavButtons(){
-  ['siteTabsToggle','menuToggle','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
+  ['siteTabsToggle','menuToggle','favBtn','c-menuToggle','maqamGuideBtn','maqamIntervalsBtn','westernGuideBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.dataset.hiddenByModal === '1') {
       el.style.display = '';
@@ -6910,6 +6933,8 @@ window.wxResume = wxResume;
       // زرا فتح القوائم (عربي وغربي)
       const menuBtnAr = document.getElementById('menuToggle');
       if (menuBtnAr) menuBtnAr.textContent = '☰ Choose Maqam';
+      const favBtnTr = document.getElementById('favBtn');
+      if (favBtnTr) favBtnTr.textContent = '⭐ Favorites';
       if (typeof window.syncFavBtnWidth === 'function') setTimeout(window.syncFavBtnWidth, 0);
       const menuBtnWest = document.getElementById('c-menuToggle');
       if (menuBtnWest) menuBtnWest.textContent = '☰ Choose from Circle';
@@ -7344,8 +7369,9 @@ window.wxResume = wxResume;
       return a.fasila === b.fasila && a.maqam === b.maqam && a.harf === b.harf;
     }
     function favLabel(fav) {
-      const maqamName = (window.oudLanguage === 'en' && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-      const harfName = (typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf;
+      const isEnLbl = window.oudLanguage === 'en';
+      const maqamName = (isEnLbl && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
+      const harfName = (isEnLbl && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf]) ? HARF_DISPLAY_EN[fav.harf] : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
       return fav.fasila + ' - ' + maqamName + ' - ' + harfName;
     }
     function goToFavorite(fav) {
@@ -7365,27 +7391,29 @@ window.wxResume = wxResume;
       closePanel();
     }
     function addCurrentToFavorites() {
+      const isEn = window.oudLanguage === 'en';
       const current = { fasila: currentFasila, maqam: maqamSelect.value, harf: harfSelect.value };
       const list = loadArFavorites();
       if (list.some(f => favEquals(f, current))) {
-        showFavToast('محفوظة مسبقاً بالمفضلة');
+        showFavToast(isEn ? 'Already saved to favorites' : 'محفوظة مسبقاً بالمفضلة');
         return;
       }
       list.push(current);
       const savedOk = saveArFavorites(list);
       if (savedOk) {
-        showFavToast('✅ تمت الإضافة للمفضلة');
+        showFavToast(isEn ? '✅ Added to favorites' : '✅ تمت الإضافة للمفضلة');
       } else {
-        showFavToast('⚠️ تعذّرت الإضافة، جرّب مرة ثانية');
+        showFavToast(isEn ? '⚠️ Could not add, please try again' : '⚠️ تعذّرت الإضافة، جرّب مرة ثانية');
       }
     }
     function showFavToast(msg) {
+      const isEn = window.oudLanguage === 'en';
       const btn = document.getElementById('favBtn');
       if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const toast = document.createElement('div');
       toast.textContent = msg;
-      toast.style.cssText = 'position:fixed; z-index:10001; background:#1B2A4A; color:#fff; padding:8px 14px; border-radius:8px; font-size:.82rem; font-family:Cairo,sans-serif; direction:rtl; box-shadow:0 3px 10px rgba(0,0,0,.25);'
+      toast.style.cssText = 'position:fixed; z-index:10001; background:#1B2A4A; color:#fff; padding:8px 14px; border-radius:8px; font-size:.82rem; font-family:Cairo,sans-serif; direction:' + (isEn ? 'ltr' : 'rtl') + ';box-shadow:0 3px 10px rgba(0,0,0,.25);'
         + ' top:' + (rect.bottom + 6) + 'px; ' + (document.body.classList.contains('hand-left-mode') ? ('left:' + rect.left + 'px;') : ('right:' + (window.innerWidth - rect.right) + 'px;'));
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 1800);
@@ -7396,17 +7424,18 @@ window.wxResume = wxResume;
     }
     function openFavMiniMenu() {
       closeFavMiniMenu();
+      const isEn = window.oudLanguage === 'en';
       const btn = document.getElementById('favBtn');
       const rect = btn.getBoundingClientRect();
       const menu = document.createElement('div');
-      menu.style.cssText = 'position:fixed; z-index:10000; background:#fff; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.25); overflow:hidden; min-width:200px; direction:rtl; font-family:Cairo,sans-serif;'
+      menu.style.cssText = 'position:fixed; z-index:10000; background:#fff; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.25); overflow:hidden; min-width:200px; direction:' + (isEn ? 'ltr' : 'rtl') + '; font-family:Cairo,sans-serif;'
         + ' top:' + (rect.bottom + 6) + 'px; ' + (document.body.classList.contains('hand-left-mode') ? ('left:' + rect.left + 'px;') : ('right:' + (window.innerWidth - rect.right) + 'px;'));
       const opt1 = document.createElement('div');
-      opt1.textContent = '➕ إضافة الحالي للمفضلة';
+      opt1.textContent = isEn ? '➕ Add current to favorites' : '➕ إضافة الحالي للمفضلة';
       opt1.style.cssText = 'padding:12px 16px; cursor:pointer; border-bottom:1px solid #eee; font-size:.9rem;';
       opt1.addEventListener('click', () => { addCurrentToFavorites(); closeFavMiniMenu(); });
       const opt2 = document.createElement('div');
-      opt2.textContent = '📂 فتح المفضلة';
+      opt2.textContent = isEn ? '📂 Open favorites' : '📂 فتح المفضلة';
       opt2.style.cssText = 'padding:12px 16px; cursor:pointer; font-size:.9rem;';
       opt2.addEventListener('click', () => { closeFavMiniMenu(); openFavList(); });
       menu.appendChild(opt1);
@@ -7422,25 +7451,81 @@ window.wxResume = wxResume;
     }
     const favBtnEl = document.getElementById('favBtn');
     if (favBtnEl) favBtnEl.addEventListener('click', openFavMiniMenu);
-    // نخلي عرض زر ⭐ المفضلة مطابق لعرض زر "☰ اختيار المقام" فعلياً (بدل الاعتماد على CSS
-    // بس)، لأن نص المفضلة أقصر بكثير وعلى الجوال العرض يصير حسب المحتوى (min-width:0)
+    // نضبط موضع وحجم زر ⭐ المفضلة بدقة بالجافاسكربت (مو بس CSS تقريبي):
+    // - بالشاشات العادية: نفس عرض زر "☰ اختيار المقام" بالضبط (تحته مباشرة)
+    // - بالجوال العمودي: يتوسط فعلياً بين زر اختيار المقام وزر التبويبات، بنفس ارتفاعهما
+    //   ومحاذاته العمودية بالضبط (بنقيس المكانين الحقيقيين بدل الاعتماد على نسبة 50% ثابتة،
+    //   لأن الزرين مختلفين بالعرض فمنتصف الشاشة مو بالضرورة منتصف الفراغ بينهما)
     window.syncFavBtnWidth = function(){
       const menuBtn = document.getElementById('menuToggle');
+      const tabsBtn = document.getElementById('siteTabsToggle');
       if (!menuBtn || !favBtnEl) return;
-      // بالجوال العمودي، الزر يتوسط بصف أعلى الشاشة بعرض مبني على المحتوى (CSS)، فما نفرض عليه عرض menuToggle
-      const isMobilePortrait = window.matchMedia('(max-width: 1024px) and (orientation: portrait)').matches;
-      if (isMobilePortrait) {
-        favBtnEl.style.width = '';
-        favBtnEl.style.minWidth = '';
-        favBtnEl.style.maxWidth = '';
-        return;
+      // نلغي أي تصغير سابق فرضناه على الزرين الجانبيين، عشان نقيس حجمهم "الطبيعي" (حسب الـCSS/clamp)
+      // قبل ما نقرر هل نحتاج نوازن الثلاثة مع بعض أو لا
+      [menuBtn, tabsBtn].forEach(b => { if (b) { b.style.removeProperty('min-width'); b.style.removeProperty('max-width'); } });
+      const menuRect = menuBtn.getBoundingClientRect();
+      const viewportCenter = window.innerWidth / 2;
+      // بدل ما نخمن نقطة تحوّل ثابتة بالبكسل (زي 1024px)، نتحقق فعلياً: لو زر المفضلة نزل تحت
+      // زر اختيار المقام بوضعه الطبيعي، هل بيتصادم مع صف "دليل مقام / أبعاد مقام" الممركز
+      // بمنتصف الشاشة؟ أعرض حالة ممكنة لهذا الصف تقريباً 540px، يعني نص عرضه حوالي 270px من
+      // المنتصف — نضيف هامش أمان ونقارن بموقع زر اختيار المقام الفعلي
+      const SAFE_CENTER_CLEARANCE = 300;
+      const wouldCollideBelow = (menuRect.left - SAFE_CENTER_CLEARANCE) < viewportCenter;
+
+      if (wouldCollideBelow && tabsBtn && tabsBtn.offsetParent !== null) {
+        // وضع الصف العلوي: نوزّع المساحة المتاحة بالتساوي بين الأزرار الثلاثة (تبويبات + مفضلة
+        // + اختيار مقام)، بدل ما نخلي الزرين الجانبيين بعرضهم الطبيعي (اللي ممكن يبان كبير)
+        // ونحشر المفضلة بالفتات المتبقي — هذا كان يخلي المفضلة تبان صغيرة جداً جنب زرين كبار
+        const totalWidth = window.innerWidth;
+        const outerMargin = 10; // نفس هامش الزرين الجانبيين (left:10 / right:10)
+        const innerGap = 8; // مسافة بسيطة بين كل زر والثاني
+        const usable = totalWidth - (outerMargin * 2) - (innerGap * 2);
+        let sideWidth = Math.max(100, Math.min(170, usable * 0.34));
+        let favWidth = usable - (sideWidth * 2);
+        if (favWidth < 70) {
+          favWidth = 70;
+          sideWidth = Math.max(60, (usable - favWidth) / 2);
+        }
+        [menuBtn, tabsBtn].forEach(b => {
+          if (!b) return;
+          b.style.setProperty('min-width', sideWidth + 'px', 'important');
+          b.style.setProperty('max-width', sideWidth + 'px', 'important');
+        });
+        // نعيد القياس بعد ما صغّرنا الزرين الجانبيين، لأن تغيّر عرضهم يغيّر مواقعهم (كل واحد ثابت من جهته)
+        const menuRect2 = menuBtn.getBoundingClientRect();
+        const tabsRect2 = tabsBtn.getBoundingClientRect();
+        const leftBtnRect = menuRect2.left <= tabsRect2.left ? menuRect2 : tabsRect2;
+        const rightBtnRect = menuRect2.left <= tabsRect2.left ? tabsRect2 : menuRect2;
+        const gapLeft = leftBtnRect.right;
+        const gapRight = rightBtnRect.left;
+        const actualGap = gapRight - gapLeft;
+        if (actualGap > 20) {
+          const finalFavWidth = Math.max(60, Math.min(actualGap - 8, favWidth));
+          const favLeft = gapLeft + (actualGap - finalFavWidth) / 2;
+          favBtnEl.style.setProperty('position', 'fixed', 'important');
+          favBtnEl.style.setProperty('top', menuRect2.top + 'px', 'important');
+          favBtnEl.style.setProperty('height', menuRect2.height + 'px', 'important');
+          favBtnEl.style.setProperty('left', favLeft + 'px', 'important');
+          favBtnEl.style.setProperty('right', 'auto', 'important');
+          favBtnEl.style.setProperty('transform', 'none', 'important');
+          favBtnEl.style.setProperty('width', finalFavWidth + 'px', 'important');
+          favBtnEl.style.setProperty('min-width', '0', 'important');
+          favBtnEl.style.setProperty('max-width', finalFavWidth + 'px', 'important');
+          favBtnEl.style.setProperty('display', 'flex', 'important');
+          favBtnEl.style.setProperty('align-items', 'center', 'important');
+          favBtnEl.style.setProperty('justify-content', 'center', 'important');
+          favBtnEl.style.setProperty('padding', '0 6px', 'important');
+          favBtnEl.style.setProperty('font-size', '.72rem', 'important');
+          return;
+        }
       }
-      const w = menuBtn.getBoundingClientRect().width;
-      if (w > 0) {
-        favBtnEl.style.width = w + 'px';
-        favBtnEl.style.minWidth = w + 'px';
-        favBtnEl.style.maxWidth = w + 'px';
-      }
+      // ما فيه خطر تصادم (أو ما لقينا زر التبويبات): نرجع الزرين الجانبيين لحجمهم الطبيعي، ونرجع
+      // للوضع الطبيعي تحت زر اختيار المقام. نرجّع top:60px صراحة (مو نمسحها)، لأنها هي اللي تنزل
+      // الزر تحت زر اختيار المقام؛ مسحها بالغلط كان يخلي الزر يرجع لـtop:10px الموروثة من
+      // الكلاس فيغطي زر اختيار المقام بالكامل
+      ['position','left','right','transform','height','width','min-width','max-width','display','align-items','justify-content','padding','font-size']
+        .forEach(p => favBtnEl.style.removeProperty(p));
+      favBtnEl.style.top = '60px';
     };
     setTimeout(window.syncFavBtnWidth, 0);
     window.addEventListener('resize', () => setTimeout(window.syncFavBtnWidth, 100));
@@ -7450,18 +7535,19 @@ window.wxResume = wxResume;
       if (favListOverlay) { favListOverlay.remove(); favListOverlay = null; }
     }
     function renderFavList() {
+      const isEn = window.oudLanguage === 'en';
       const list = loadArFavorites();
       const wrap = document.createElement('div');
       wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
       const box = document.createElement('div');
-      box.style.cssText = 'background:#fff;border-radius:12px;max-width:480px;width:95%;max-height:70vh;overflow-y:auto;padding:14px;direction:rtl;font-family:Cairo,sans-serif;box-sizing:border-box;';
+      box.style.cssText = 'background:#fff;border-radius:12px;max-width:480px;width:95%;max-height:70vh;overflow-y:auto;padding:14px;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
       const title = document.createElement('div');
-      title.textContent = 'المفضلة';
+      title.textContent = isEn ? 'Favorites' : 'المفضلة';
       title.style.cssText = 'font-weight:bold;font-size:18px;margin-bottom:10px;color:#1B2A4A;';
       box.appendChild(title);
       if (!list.length) {
         const empty = document.createElement('div');
-        empty.textContent = 'ما فيه مفضلة محفوظة بعد.';
+        empty.textContent = isEn ? 'No favorites saved yet.' : 'ما فيه مفضلة محفوظة بعد.';
         empty.style.cssText = 'color:#888;padding:10px 0;';
         box.appendChild(empty);
       } else {
@@ -7469,11 +7555,11 @@ window.wxResume = wxResume;
         table.style.cssText = 'width:100%; border-collapse:collapse; font-size:.88rem;';
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
-        ['الفصيلة', 'المقام', 'الحرف', ''].forEach((h, hi) => {
+        (isEn ? ['Family', 'Maqam', 'Letter', 'Delete'] : ['الفصيلة', 'المقام', 'الحرف', 'حذف']).forEach((h, hi) => {
           const th = document.createElement('th');
           th.textContent = h;
-          th.style.cssText = 'text-align:right; padding:8px 6px; background:#1B2A4A; color:#fff; font-weight:700; position:sticky; top:0;'
-            + (hi === 3 ? ' width:34px;' : '');
+          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:8px 6px; background:#1B2A4A; color:#fff; font-weight:700; position:sticky; top:0; white-space:nowrap;'
+            + (hi === 3 ? ' width:54px;' : '');
           headRow.appendChild(th);
         });
         thead.appendChild(headRow);
@@ -7484,9 +7570,10 @@ window.wxResume = wxResume;
           tr.style.cssText = 'cursor:pointer; border-bottom:1px solid #eee;';
           tr.addEventListener('mouseenter', () => { tr.style.background = '#f7f4ea'; });
           tr.addEventListener('mouseleave', () => { tr.style.background = ''; });
-          const maqamName = (window.oudLanguage === 'en' && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-          const harfName = (typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf;
-          [fav.fasila, maqamName, harfName].forEach(val => {
+          const fasilaName = (isEn && typeof FAMILY_NAME_EN !== 'undefined' && FAMILY_NAME_EN[fav.fasila]) ? FAMILY_NAME_EN[fav.fasila] : fav.fasila;
+          const maqamName = (isEn && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
+          const harfName = (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf]) ? HARF_DISPLAY_EN[fav.harf] : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
+          [fasilaName, maqamName, harfName].forEach(val => {
             const td = document.createElement('td');
             td.textContent = val;
             td.style.cssText = 'padding:9px 6px;';
@@ -9948,6 +10035,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-16')">١٦. تمارين المقامات والسلالم</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-17')">١٧. تثبيت الموقع كتطبيق على هاتفك</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-18')">١٨. التحقق من عزفك (باستخدام الميكروفون)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-19')">١٩. المفضلة</li>
       </ol>
     </div>
 
@@ -10163,6 +10251,17 @@ document.getElementById('shared-playBtn').onclick = async function() {
       - تأكد من ضبط الدوزان بشكل صحيح قبل البدء — فهذا أكثر الأسباب شيوعاً لعدم التطابق.</p>
     </div>
 
+    <div class="help-section" id="help-sec-ar-19">
+      <h3>١٩. المفضلة</h3>
+      <p>ميزة تتيح لك حفظ أي مقام (فصيلة + مقام + حرف) تستخدمه بشكل متكرر، للرجوع إليه لاحقاً بضغطة واحدة بدل تصفّح القائمة كل مرة.</p>
+      <p>🔹 <strong>موقع الزر:</strong> زر ⭐ المفضلة يقع أسفل زر "☰ اختيار المقام" (أعلى الشاشة).</p>
+      <div class="help-svg-wrap"><img src="data:image/png;base64,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" style="border-radius:6px;display:block;margin:8px auto;" alt="زر المفضلة"/></div>
+      <p>🔹 <strong>الإضافة:</strong> بعد اختيار المقام المطلوب على الزند، اضغط زر ⭐ المفضلة، ثم اختر "➕ إضافة الحالي للمفضلة" — يظهر تأكيد فوري بنجاح الإضافة.</p>
+      <p>🔹 <strong>الفتح والانتقال:</strong> اضغط زر ⭐ المفضلة، ثم اختر "📂 فتح المفضلة" لعرض قائمة كل المحفوظات (الفصيلة، المقام، الحرف لكل عنصر). اضغط على أي عنصر للانتقال مباشرة إليه على الزند.</p>
+      <p>🔹 <strong>الحذف:</strong> اضغط ✕ بجانب أي عنصر داخل قائمة المفضلة لحذفه.</p>
+      <p>🔹 هذه الميزة خاصة بالمقامات العربية فقط، وتُحفظ محلياً على جهازك.</p>
+    </div>
+
     </div>
     </div>
 
@@ -10203,6 +10302,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-16')">16. Maqam & Scale Exercises</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-17')">17. Installing the Site as an App on Your Phone</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-18')">18. Verify Your Playing (via Microphone)</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-19')">19. Favorites</li>
       </ol>
     </div>
 
@@ -10403,6 +10503,17 @@ document.getElementById('shared-playBtn').onclick = async function() {
       <p>- Play with a clear, sustained sound (let the note ring for at least a second), not a quick light pluck.<br>
       - Stay reasonably close to your device's microphone, in as quiet a place as possible.<br>
       - Make sure the tuning is set correctly before starting — this is the most common reason for mismatches.</p>
+    </div>
+
+    <div class="help-section" id="help-sec-en-19">
+      <h3>19. Favorites</h3>
+      <p>A feature that lets you save any maqam (family + maqam + letter) you use often, so you can jump back to it later with one tap instead of browsing the list every time.</p>
+      <p>🔹 <strong>Where to find it:</strong> the ⭐ Favorites button sits below the "☰ Choose Maqam" button (top of the screen).</p>
+      <div class="help-svg-wrap"><img src="data:image/png;base64,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" style="border-radius:6px;display:block;margin:8px auto;" alt="Favorites button"/></div>
+      <p>🔹 <strong>Adding:</strong> after choosing the maqam you want on the fretboard, tap the ⭐ Favorites button, then choose "➕ Add current to favorites" — a quick confirmation appears once it's saved.</p>
+      <p>🔹 <strong>Opening and jumping to one:</strong> tap the ⭐ Favorites button, then choose "📂 Open favorites" to see a list of everything saved (family, maqam, and letter for each item). Tap any item to jump straight to it on the fretboard.</p>
+      <p>🔹 <strong>Deleting:</strong> tap ✕ next to any item in the favorites list to remove it.</p>
+      <p>🔹 This feature is specific to the Arabic maqamat side only, and is saved locally on your device.</p>
     </div>
 
     </div>
