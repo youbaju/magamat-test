@@ -1231,8 +1231,12 @@ flex-shrink: 0;
   }
   /* كان مقيّد بـ(orientation:portrait) بس — نافذة سطح مكتب ضيقة (مثلاً لوحة معاينة الملف
      بنص الشاشة) ممكن تصير عرضها ≤1024px مع بقاء الاتجاه landscape فنفس مشكلة الزحام
-     تصير موجودة برضه؛ نخليه يشتغل بأي اتجاه طالما العرض ضيق */
-  @media (max-width: 1024px){
+     تصير موجودة برضه. بس الجوال الأفقي الحقيقي (landscape بارتفاع قصير) له تنسيق خاص
+     مضبوط أصلاً بقواعد ثانية (max-height:500/540)، فنستثنيه هنا صراحة بشرط الارتفاع
+     عشان ما نصادم تنسيقه — نطبّق التوسيع بس على portrait، أو landscape بس لو الارتفاع
+     كافي (مو جوال مقلوب أفقي) */
+  @media (max-width: 1024px) and (orientation:portrait),
+         (max-width: 1024px) and (orientation:landscape) and (min-height:601px){
     .maqam-btns-row{ display: contents; }
   }
 
@@ -1258,13 +1262,15 @@ flex-shrink: 0;
   .maqam-guide-btn:hover{ background: #fff8ea; }
   .maqam-guide-btn.guide-btn-label-only{ cursor: default; }
   .maqam-guide-btn.guide-btn-label-only:hover{ background: #fff; }
-  @media (max-width: 1024px){
+  @media (max-width: 1024px) and (orientation:portrait),
+         (max-width: 1024px) and (orientation:landscape) and (min-height:601px){
     .maqam-guide-btn{ position: fixed; top: 72px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
   /* زر ⭐ المفضلة بالجوال العمودي فقط: يتوسط بين زر اختيار المقام (يمين) وزر التبويبات (يسار)
      بنفس الصف العلوي، بدل ما ينزل تحت زر اختيار المقام (كان يتصادم مع زر دليل المقام اللي
      ينزل لنفس المنطقة). عرضه يصير حسب المحتوى (مو 256px الموروث)، عشان يضمن مساحة بين الزرين */
-  @media (max-width: 1024px){
+  @media (max-width: 1024px) and (orientation:portrait),
+         (max-width: 1024px) and (orientation:landscape) and (min-height:601px){
     #favBtn{
       position: fixed !important;
       top: 10px !important;
@@ -1394,7 +1400,8 @@ flex-shrink: 0;
       white-space: nowrap;
     }
   }
-  @media (max-width: 1024px){
+  @media (max-width: 1024px) and (orientation:portrait),
+         (max-width: 1024px) and (orientation:landscape) and (min-height:601px){
     .maqam-intervals-btn{ position: fixed; top: 120px; left: 50%; right: auto; transform: translateX(-50%); margin: 0; z-index: 40; }
   }
   @media (max-width: 480px) and (orientation:portrait){
@@ -7470,7 +7477,12 @@ window.wxResume = wxResume;
       // بمنتصف الشاشة؟ أعرض حالة ممكنة لهذا الصف تقريباً 540px، يعني نص عرضه حوالي 270px من
       // المنتصف — نضيف هامش أمان ونقارن بموقع زر اختيار المقام الفعلي
       const SAFE_CENTER_CLEARANCE = 300;
-      const wouldCollideBelow = (menuRect.left - SAFE_CENTER_CLEARANCE) < viewportCenter;
+      // الجوال الأفقي الحقيقي (landscape بارتفاع قصير) له تنسيق خاص مضبوط أصلاً لصف
+      // "دليل مقام/أبعاد مقام" (قواعد max-height:500/540 landscape) بافتراض إن الصف باقٍ
+      // على شكله العادي — فنستثنيه هنا صراحة عشان ما نفعّل وضع الصف العلوي فيه ونصادم
+      // ذاك التنسيق، بالضبط متل استثناء الـCSS
+      const isMobileLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+      const wouldCollideBelow = !isMobileLandscape && (menuRect.left - SAFE_CENTER_CLEARANCE) < viewportCenter;
 
       if (wouldCollideBelow && tabsBtn && tabsBtn.offsetParent !== null) {
         // وضع الصف العلوي: نوزّع المساحة المتاحة بالتساوي بين الأزرار الثلاثة (تبويبات + مفضلة
@@ -7519,13 +7531,31 @@ window.wxResume = wxResume;
           return;
         }
       }
-      // ما فيه خطر تصادم (أو ما لقينا زر التبويبات): نرجع الزرين الجانبيين لحجمهم الطبيعي، ونرجع
-      // للوضع الطبيعي تحت زر اختيار المقام. نرجّع top:60px صراحة (مو نمسحها)، لأنها هي اللي تنزل
-      // الزر تحت زر اختيار المقام؛ مسحها بالغلط كان يخلي الزر يرجع لـtop:10px الموروثة من
-      // الكلاس فيغطي زر اختيار المقام بالكامل
+      // ما فيه خطر تصادم مع صف دليل/أبعاد المقام (أو ما لقينا زر التبويبات): نرجع الزرين
+      // الجانبيين لحجمهم الطبيعي، ونرجع للوضع الطبيعي تحت زر اختيار المقام. نرجّع top:60px
+      // صراحة (مو نمسحها)، لأنها هي اللي تنزل الزر تحت زر اختيار المقام؛ مسحها بالغلط كان
+      // يخلي الزر يرجع لـtop:10px الموروثة من الكلاس فيغطي زر اختيار المقام بالكامل
       ['position','left','right','transform','height','width','min-width','max-width','display','align-items','justify-content','padding','font-size']
         .forEach(p => favBtnEl.style.removeProperty(p));
       favBtnEl.style.top = '60px';
+
+      // بالجوال الأفقي تحديداً: ما نخمّن عرض آمن، نقيس فعلياً هل زر المفضلة بوضعه الطبيعي
+      // (تحت زر اختيار المقام) بيتصادم بصرياً مع زر "عدد الأوتار" المرسوم جوا رسمة العود —
+      // ولو فيه تصادم حقيقي مقيس، نخفي زر المفضلة مؤقتاً بهذا الوضع الضيق بس (يرجع يظهر
+      // تلقائياً بالعمودي أو الكمبيوتر لأن هذا الفحص أصلاً ما يشتغل إلا بالأفقي القصير)
+      if (isMobileLandscape) {
+        const stringBtn = document.getElementById('stringCountBtn');
+        if (stringBtn && typeof stringBtn.getBoundingClientRect === 'function') {
+          const stringRect = stringBtn.getBoundingClientRect();
+          const menuR = menuBtn.getBoundingClientRect();
+          if (stringRect.width > 0 && menuR.width > 0) {
+            const favTop = 60;
+            const favBottom = favTop + menuR.height;
+            const overlaps = !(menuR.right < stringRect.left || menuR.left > stringRect.right || favBottom < stringRect.top || favTop > stringRect.bottom);
+            if (overlaps) favBtnEl.style.setProperty('display', 'none', 'important');
+          }
+        }
+      }
     };
     setTimeout(window.syncFavBtnWidth, 0);
     window.addEventListener('resize', () => setTimeout(window.syncFavBtnWidth, 100));
