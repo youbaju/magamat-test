@@ -7512,13 +7512,13 @@ window.wxResume = wxResume;
         box.appendChild(empty);
       } else {
         const table = document.createElement('table');
-        table.style.cssText = 'width:100%; border-collapse:collapse; font-size:.88rem;';
+        table.style.cssText = 'width:100%; border-collapse:collapse; font-size:.88rem; border:1px solid #cfcabb;';
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
         (isEn ? ['Family', 'Maqam', 'Letter', 'Delete'] : ['الفصيلة', 'المقام', 'الحرف', 'حذف']).forEach((h, hi) => {
           const th = document.createElement('th');
           th.textContent = h;
-          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:8px 6px; background:#1B2A4A; color:#fff; font-weight:700; position:sticky; top:0; white-space:nowrap;'
+          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:8px 6px; background:#1B2A4A; color:#fff; font-weight:700; position:sticky; top:0; white-space:nowrap; border:1px solid #33456e;'
             + (hi === 3 ? ' width:54px;' : '');
           headRow.appendChild(th);
         });
@@ -7527,7 +7527,7 @@ window.wxResume = wxResume;
         const tbody = document.createElement('tbody');
         list.forEach((fav, idx) => {
           const tr = document.createElement('tr');
-          tr.style.cssText = 'cursor:pointer; border-bottom:1px solid #eee;';
+          tr.style.cssText = 'cursor:pointer;';
           tr.addEventListener('mouseenter', () => { tr.style.background = '#f7f4ea'; });
           tr.addEventListener('mouseleave', () => { tr.style.background = ''; });
           const fasilaName = (isEn && typeof FAMILY_NAME_EN !== 'undefined' && FAMILY_NAME_EN[fav.fasila]) ? FAMILY_NAME_EN[fav.fasila] : fav.fasila;
@@ -7536,12 +7536,12 @@ window.wxResume = wxResume;
           [fasilaName, maqamName, harfName].forEach(val => {
             const td = document.createElement('td');
             td.textContent = val;
-            td.style.cssText = 'padding:9px 6px;';
+            td.style.cssText = 'padding:9px 6px; border:1px solid #e3ddc8;';
             td.addEventListener('click', () => goToFavorite(fav));
             tr.appendChild(td);
           });
           const delTd = document.createElement('td');
-          delTd.style.cssText = 'padding:9px 6px; text-align:center;';
+          delTd.style.cssText = 'padding:9px 6px; text-align:center; border:1px solid #e3ddc8;';
           const del = document.createElement('button');
           del.textContent = '✕';
           del.style.cssText = 'background:none;border:none;color:#C0392B;font-size:16px;cursor:pointer;padding:4px 8px;';
