@@ -1290,8 +1290,7 @@ flex-shrink: 0;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /* بالجوال الأفقي (قصير الارتفاع) لو فيه تصادم حقيقي مقيس مع زر "عدد الأوتار" بالعود */
-  #favBtn.favbtn-hide-landscape{ display: none !important; }
+  /* بالجوال الأفقي: زر المفضلة دايماً ظاهر تحت زر اختيار المقام (مافيه إخفاء) */
   @media (max-height:540px) and (orientation:landscape){
     .maqam-btns-row{ top: 2px; }
   }
@@ -7472,41 +7471,34 @@ window.wxResume = wxResume;
       const tabsBtn = document.getElementById('siteTabsToggle');
       if (!menuBtn || !favBtnEl) return;
       const menuRect = menuBtn.getBoundingClientRect();
-      const viewportCenter = window.innerWidth / 2;
-      // بدل ما نخمن نقطة تحوّل ثابتة بالبكسل، نتحقق فعلياً: لو زر المفضلة نزل تحت زر اختيار
-      // المقام بوضعه الطبيعي، هل بيتصادم مع صف "دليل مقام/أبعاد مقام" الممركز بمنتصف الشاشة؟
-      const SAFE_CENTER_CLEARANCE = 300;
-      // الجوال الأفقي الحقيقي (landscape بارتفاع قصير) له تنسيق خاص مضبوط أصلاً (max-height:500/540)
-      const isMobileLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
-      const wouldCollideBelow = !isMobileLandscape && (menuRect.left - SAFE_CENTER_CLEARANCE) < viewportCenter;
+      // الأفقي (بأي جهاز): دايماً تحت زر اختيار المقام، ما نخفيه ولا نستخدم وضع الصف العلوي —
+      // فقط العمودي هو اللي يحتاج فحص تصادم فعلي
+      const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+      let useTopRow = false;
+      if (!isLandscape) {
+        // نقيس فعلياً هل زر المفضلة (بوضعه الطبيعي تحت زر اختيار المقام) بيتصادم مع زر دليل
+        // المقام أو زر أبعاد المقام الحقيقيين — بدل ما نخمن عرض افتراضي لصف الأزرار. هذا يفرّق
+        // صح بين آيباد عمودي (عريض، ما فيه تصادم فعلي، يضل تحت الزر) وجوال عمودي (ضيق، فيه
+        // تصادم فعلي، يحتاج الصف العلوي)
+        const favTop = 60, favBottom = favTop + menuRect.height;
+        const SAFETY = 10;
+        const collidesWith = (btn) => {
+          if (!btn || getComputedStyle(btn).display === 'none') return false;
+          const r = btn.getBoundingClientRect();
+          if (r.width === 0) return false;
+          return !(menuRect.right < r.left - SAFETY || menuRect.left > r.right + SAFETY || favBottom < r.top - SAFETY || favTop > r.bottom + SAFETY);
+        };
+        const guideBtn = document.getElementById('maqamGuideBtn');
+        const intervalsBtn = document.getElementById('maqamIntervalsBtn');
+        const realCollision = collidesWith(guideBtn) || collidesWith(intervalsBtn);
+        useTopRow = realCollision && tabsBtn && tabsBtn.offsetParent !== null;
+      }
 
       // التبديل بين الوضعين يصير بس بإضافة/إزالة كلاس — كل الحجم والموضع مكتوب بالـCSS (clamp +
       // توسيط 50% بسيط)، بدون أي حساب عرض/فجوة بالجافاسكربت. بما إن زر اختيار المقام وزر
       // التبويبات صار عندهم نفس العرض بالضبط (نفس معادلة clamp())، التوسيط بـleft:50% يطلع
       // بينهم بالظبط رياضياً — ما نحتاج نقيس مواقعهم الفعلية إطلاقاً
-      const useTopRow = wouldCollideBelow && tabsBtn && tabsBtn.offsetParent !== null;
       favBtnEl.classList.toggle('favbtn-toprow', useTopRow);
-
-      // بالجوال الأفقي تحديداً: نتحقق هل زر المفضلة (بوضعه العادي تحت زر اختيار المقام)
-      // قريب/متصادم مع زر "عدد الأوتار" المرسوم جوا رسمة العود، بهامش أمان بسيط (مو بس تلامس حرفي)
-      let hideForStrings = false;
-      if (isMobileLandscape && !useTopRow) {
-        const stringBtn = document.getElementById('stringCountBtn');
-        if (stringBtn && typeof stringBtn.getBoundingClientRect === 'function') {
-          const stringRect = stringBtn.getBoundingClientRect();
-          if (stringRect.width > 0) {
-            const SAFETY_MARGIN = 14;
-            const favTop = 60, favBottom = favTop + menuRect.height;
-            hideForStrings = !(
-              menuRect.right < stringRect.left - SAFETY_MARGIN ||
-              menuRect.left > stringRect.right + SAFETY_MARGIN ||
-              favBottom < stringRect.top - SAFETY_MARGIN ||
-              favTop > stringRect.bottom + SAFETY_MARGIN
-            );
-          }
-        }
-      }
-      favBtnEl.classList.toggle('favbtn-hide-landscape', hideForStrings);
     };
     setTimeout(window.syncFavBtnWidth, 0);
     window.addEventListener('resize', () => setTimeout(window.syncFavBtnWidth, 100));
@@ -9610,6 +9602,9 @@ window.wxResume = wxResume;
         // باختلاف اللغة ("Guide of" أقصر من "Intervals of")، فنقيس أعرض واحد ونفرضه عالاثنين
         if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
           requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth());
+        }
+        if (typeof window.syncFavBtnWidth === 'function') {
+          requestAnimationFrame(() => requestAnimationFrame(() => window.syncFavBtnWidth()));
         }
       } else {
         window.isArabicMode = false;
