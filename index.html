@@ -1970,7 +1970,7 @@ input[type="radio"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: clamp(.6rem, 1.5vw, .76rem);
+  font-size: clamp(.72rem, 1.9vw, .88rem);
   padding-left: clamp(6px, 1vw, 12px);
   padding-right: clamp(6px, 1vw, 12px);
 }
@@ -7476,7 +7476,8 @@ window.wxResume = wxResume;
       // (بين زر اختيار المقام وزر التبويبات)، بغض النظر عن نوع الجهاز — هذا يضمن عدم التصادم
       // مع زر دليل المقام بالعمودي بشكل مؤكد ١٠٠٪، بدون الاعتماد على قياس/تخمين
       const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-      const useTopRow = !isLandscape && tabsBtn && tabsBtn.offsetParent !== null;
+      const isTabsBtnVisible = tabsBtn && getComputedStyle(tabsBtn).display !== 'none' && tabsBtn.offsetWidth > 0;
+      const useTopRow = !isLandscape && isTabsBtnVisible;
 
       // التبديل بين الوضعين يصير بس بإضافة/إزالة كلاس — كل الحجم والموضع مكتوب بالـCSS (clamp +
       // توسيط 50% بسيط)، بدون أي حساب عرض/فجوة بالجافاسكربت. بما إن زر اختيار المقام وزر
