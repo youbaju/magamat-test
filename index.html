@@ -5820,14 +5820,18 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
       () => ({ liveEl: rectEl, freq: OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset) }),
       (liveEl) => { // عند بدء الصوت (liveEl = المستطيل الحالي الفعلي، ممكن يكون تغير لو انعاد رسم السلم)
         const target = liveEl || rectEl;
+        // نلتقط اللون الفعلي الظاهر حالياً وقت الضغط (مو لون وقت الرسم بس) — نفس إصلاح
+        // مشكلة "تحقق من عزفي" اللي تخلي النغمة ترجع للون رسمها الأصلي بدل اللون الحالي الصحيح
+        target._pressOrigFill = target.getAttribute('fill') || origFillForToggle;
+        target._pressOrigStroke = target.getAttribute('stroke') || origStrokeForToggle;
         target.setAttribute('fill', '#d64545');
         target.setAttribute('stroke', '#a82f2f');
         if (typeof window.vibrateString === 'function') window.vibrateString(pos.string);
       },
       (liveEl) => { // عند إيقاف الصوت (liveEl = العنصر الحقيقي المضاء حالياً، ممكن يكون تغير لو انعاد رسم السلم)
         const target = liveEl || rectEl;
-        target.setAttribute('fill', origFillForToggle);
-        target.setAttribute('stroke', origStrokeForToggle);
+        target.setAttribute('fill', target._pressOrigFill || origFillForToggle);
+        target.setAttribute('stroke', target._pressOrigStroke || origStrokeForToggle);
       },
       () => OUD.frequencyAt(pos.string, pos.fret, state.tuningOffset)
     );
@@ -8062,14 +8066,19 @@ window.wxResume = wxResume;
           () => ({ liveEl: rect, freq: posToFreq(effectiveQ) }), // نحسبه وقت الحاجة الفعلية (وقت الضغط) عشان يعكس آخر دوزان مختار
           (liveEl) => {
             const target = liveEl || rect;
+            // نلتقط اللون الفعلي الظاهر حالياً وقت الضغط (مو لون وقت الرسم بس) — يضمن الرجوع
+            // للون الصحيح حتى لو تغيّر خارجياً بعد الرسم (مثلاً ميزة "تحقق من عزفي" رجّعته
+            // أزرق بعد الإلغاء، بينما لون الرسم الأصلي كان أحمر لأنها كانت "النغمة الحالية")
+            target._pressOrigFill = target.getAttribute('fill') || origFillAr;
+            target._pressOrigStroke = target.getAttribute('stroke') || origStrokeAr;
             target.setAttribute('fill', '#d64545');
             target.setAttribute('stroke', '#a82f2f');
             if (typeof window.vibrateString === 'function') window.vibrateString(vibStrIdx);
           },
           (liveEl) => {
             const target = liveEl || rect;
-            target.setAttribute('fill', origFillAr);
-            target.setAttribute('stroke', origStrokeAr);
+            target.setAttribute('fill', target._pressOrigFill || origFillAr);
+            target.setAttribute('stroke', target._pressOrigStroke || origStrokeAr);
           },
           () => posToFreq(effectiveQ)
         );
