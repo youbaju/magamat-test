@@ -9455,7 +9455,8 @@ window.wxResume = wxResume;
         for (let i = 0; i < 6; i++) { // حد أقصى 6 محاولات تصغير، كل مرة 8%
           const rowWidth = neededWidth * 2 + gap;
           const rowRight = (window.innerWidth / 2) + (rowWidth / 2);
-          if (rowRight + safety <= menuRect.left || menuBtn.style.display === 'none' || menuBtn.offsetParent === null) break;
+          const menuVisible = getComputedStyle(menuBtn).display !== 'none' && menuBtn.offsetWidth > 0;
+          if (rowRight + safety <= menuRect.left || !menuVisible) break;
           fontScale *= 0.92;
           neededWidth = Math.ceil(Math.max(guideNatural, intervalsNatural) * fontScale) + 3;
         }
