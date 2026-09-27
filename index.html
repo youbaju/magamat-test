@@ -7391,7 +7391,11 @@ window.wxResume = wxResume;
     function favLabel(fav) {
       const isEnLbl = window.oudLanguage === 'en';
       const maqamName = (isEnLbl && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-      const harfName = (isEnLbl && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf]) ? HARF_DISPLAY_EN[fav.harf] : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
+      const harfName = (isEnLbl && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
+        ? HARF_DISPLAY_LETTER[fav.harf]
+        : (isEnLbl && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
+        ? HARF_DISPLAY_EN[fav.harf]
+        : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
       return fav.fasila + ' - ' + maqamName + ' - ' + harfName;
     }
     function goToFavorite(fav) {
@@ -7526,7 +7530,11 @@ window.wxResume = wxResume;
           tr.addEventListener('mouseleave', () => { tr.style.background = ''; });
           const fasilaName = (isEn && typeof FAMILY_NAME_EN !== 'undefined' && FAMILY_NAME_EN[fav.fasila]) ? FAMILY_NAME_EN[fav.fasila] : fav.fasila;
           const maqamName = (isEn && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-          const harfName = (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf]) ? HARF_DISPLAY_EN[fav.harf] : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
+          const harfName = (isEn && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
+            ? HARF_DISPLAY_LETTER[fav.harf]
+            : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
+            ? HARF_DISPLAY_EN[fav.harf]
+            : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
           [fasilaName, maqamName, harfName].forEach(val => {
             const td = document.createElement('td');
             td.textContent = val;
