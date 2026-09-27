@@ -2215,6 +2215,7 @@ window.wireCustomSelect = wireCustomSelect;
         <button id="micCustomNoticeClose" type="button" aria-label="إغلاق" style="position:absolute; top:8px; left:10px; background:none; border:none; color:#8a6d35; font-size:22px; cursor:pointer; line-height:1; padding:4px;">×</button>
       </div>
     </div>
+    <div id="arHarfLabel" style="display:none; position:fixed; z-index:39; color:#3ab4e8; font-family:'Cairo',Arial,sans-serif; font-weight:800; font-size:1rem; white-space:nowrap; pointer-events:none; text-align:center;"></div>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">ماجور</button>
@@ -2601,6 +2602,8 @@ window.isArabicMode = false;
       const exerciseToggleWrapEl = document.getElementById('exerciseModeToggleWrap');
       if(targetId === 'page-maqamat'){
         window.isArabicMode = true;
+        const arHarfLabelEl = document.getElementById('arHarfLabel');
+        if (arHarfLabelEl) arHarfLabelEl.style.display = '';
         if(westernBtnsRow) westernBtnsRow.style.display = 'none';
         // خانة التفعيل تبدأ دايماً غير مفعّلة عند فتح تبويب المقامات (وضع مقام عادي افتراضياً)
         if(exerciseToggleEl) exerciseToggleEl.checked = false;
@@ -2615,6 +2618,8 @@ window.isArabicMode = false;
         setTimeout(() => { if(typeof window.showMaqam === 'function') window.showMaqam(); }, 100);
       } else if(targetId === 'page-circle'){
         window.isArabicMode = false;
+        const arHarfLabelEl2 = document.getElementById('arHarfLabel');
+        if (arHarfLabelEl2) arHarfLabelEl2.style.display = 'none';
         if(westernBtnsRow) westernBtnsRow.style.display = '';
         // زر التمرين وخانة التفعيل يشتغلون بالغربي كمان الحين — نظهرهم، وتصفّر
         // الخانة دايماً عند فتح التبويب (نفس سلوك العربي)
@@ -4797,6 +4802,7 @@ const OUD = (function(){
     neckTopY, neckBottomY, fretX, stringY, getPoint, noteAt, frequencyAt, setStringCount
   };
 })();
+window.OUD = OUD; // نعرّضه لباقي الصفحة (بعكس الافتراض الأصلي) — يحتاجه مثلاً نص "الحرف الحالي" فوق الزند بـ<script> ثاني
 
 const oudSvg = document.getElementById('shared-oudSvg');
 // نجعل stringY و fretX متاحتين للمقامات العربية
@@ -6841,6 +6847,9 @@ function showTopNavButtons(){
       delete el.dataset.hiddenByModal;
     }
   });
+  if (typeof window.syncArHarfLabelPosition === 'function') {
+    requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
+  }
 }
 window.hideTopNavButtons = hideTopNavButtons;
 window.showTopNavButtons = showTopNavButtons;
@@ -9507,6 +9516,45 @@ window.wxResume = wxResume;
     window.addEventListener('orientationchange', () => {
       setTimeout(() => { if (typeof window.syncGuideIntervalsBtnWidth === 'function') window.syncGuideIntervalsBtnWidth(); }, 150);
     });
+
+    // موضع نص "الحرف الحالي" فوق الزند: أفقياً في منتصف الفراغ بين زري دليل/أبعاد المقام
+    // (أو فوق أيهم ظاهر لو واحد بس مختفي)، ورأسياً بمحاذاة صف زر المايك/نغمة مستمرة بالضبط —
+    // كله بالقياس الفعلي وقت التشغيل، مو أرقام مفترضة
+    window.syncArHarfLabelPosition = function(){
+      const label = document.getElementById('arHarfLabel');
+      if (!label || label.style.display === 'none' || !window.isArabicMode) return;
+      const micBtn = document.getElementById('micVerifyHtmlBtn');
+      const gBtn = document.getElementById('maqamGuideBtn');
+      const iBtn = document.getElementById('maqamIntervalsBtn');
+      if (!micBtn) return;
+
+      const micRect = micBtn.getBoundingClientRect();
+      const gVisible = gBtn && getComputedStyle(gBtn).display !== 'none' && gBtn.offsetWidth > 0;
+      const iVisible = iBtn && getComputedStyle(iBtn).display !== 'none' && iBtn.offsetWidth > 0;
+      let centerX;
+      if (gVisible && iVisible) {
+        const gRect = gBtn.getBoundingClientRect();
+        const iRect = iBtn.getBoundingClientRect();
+        const leftMost = Math.min(gRect.left, iRect.left);
+        const rightMost = Math.max(gRect.right, iRect.right);
+        centerX = (leftMost + rightMost) / 2;
+      } else if (iVisible) {
+        const iRect = iBtn.getBoundingClientRect();
+        centerX = (iRect.left + iRect.right) / 2;
+      } else if (gVisible) {
+        const gRect = gBtn.getBoundingClientRect();
+        centerX = (gRect.left + gRect.right) / 2;
+      } else {
+        centerX = window.innerWidth / 2; // احتياط لو الزرين مختفيين لسبب ما
+      }
+      const centerY = micRect.top + micRect.height / 2;
+      label.style.left = centerX + 'px';
+      label.style.top = centerY + 'px';
+      label.style.transform = 'translate(-50%, -50%)';
+    };
+    window.addEventListener('resize', () => setTimeout(window.syncArHarfLabelPosition, 100));
+    window.addEventListener('orientationchange', () => setTimeout(window.syncArHarfLabelPosition, 200));
+
     const maqamIntervalsModal = document.getElementById('maqamIntervalsModal');
     const mitClose = document.getElementById('mitClose');
 
@@ -9599,6 +9647,24 @@ window.wxResume = wxResume;
         if (exToggleWrap) exToggleWrap.style.display = '';
         // زر الدليل
         maqamGuideBtnName.textContent = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN && window.MAQAM_NAME_EN[maqam]) ? window.MAQAM_NAME_EN[maqam] : maqam;
+        // نص الحرف الحالي فوق الزند — الحرف لوحده بدون بادئة (اسم المقام مغطّى أصلاً بزر
+        // الدليل)، يحترم نظام تسمية النغمات المختار (Do أو C) ولغة الواجهة، بنفس منطق جدول
+        // المفضلة تمامًا. الموضع الفعلي (أفقي بين زري دليل/أبعاد المقام، رأسي بمحاذاة صف
+        // زر المايك/نغمة مستمرة) يُحسب بدالة منفصلة (window.syncArHarfLabelPosition) عشان
+        // نقدر نعيد استدعاءها وقت تغيّر حجم الشاشة أو ظهور/اختفاء الأزرار بعدين
+        const arHarfLabelEl3 = document.getElementById('arHarfLabel');
+        if (arHarfLabelEl3) {
+          const isEnHarf = window.oudLanguage === 'en';
+          const harfDisplayName = (isEnHarf && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[harf])
+            ? HARF_DISPLAY_LETTER[harf]
+            : (isEnHarf && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[harf])
+            ? HARF_DISPLAY_EN[harf]
+            : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[harf]) ? HARF_DISPLAY[harf] : harf);
+          arHarfLabelEl3.textContent = harfDisplayName;
+        }
+        if (typeof window.syncArHarfLabelPosition === 'function') {
+          requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
+        }
         if (MAQAM_GUIDE_FILES[maqam]) {
           maqamGuideImg.src = MAQAM_GUIDE_FILES[maqam];
           maqamGuideBtn.style.display = '';
@@ -9628,6 +9694,9 @@ window.wxResume = wxResume;
         // باختلاف اللغة ("Guide of" أقصر من "Intervals of")، فنقيس أعرض واحد ونفرضه عالاثنين
         if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
           requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth());
+        }
+        if (typeof window.syncArHarfLabelPosition === 'function') {
+          requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
         }
       } else {
         window.isArabicMode = false;
