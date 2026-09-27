@@ -9440,26 +9440,45 @@ window.wxResume = wxResume;
 
       const guideNatural = measureNatural(gBtn);
       const intervalsNatural = measureNatural(iBtn);
-      // هامش أمان بسيط ٣px بس لفروق التقريب العشري بين المتصفحات
-      let neededWidth = Math.ceil(Math.max(guideNatural, intervalsNatural)) + 3;
-
-      // نتحقق من المساحة الفعلية المتاحة (بدل ما نفرض سقف تخميني ثابت): لو الصف (زرين +
-      // فجوة) بهذا العرض، وهو ممركز بمنتصف الشاشة، بيتصادم فعلياً مع زر اختيار المقام —
-      // نصغّر حجم الخط تدريجياً (نص كامل بدون قص) لين تصير المساحة كافية
-      const menuBtn = document.getElementById('menuToggle');
+      const naturalMax = Math.max(guideNatural, intervalsNatural);
+      const gap = 10; // نفس الفجوة المستخدمة بـ.maqam-btns-row
+      const safety = 12; // هامش أمان عن حافة أي من الزرين الجانبيين
+      let neededWidth = Math.ceil(naturalMax) + 3;
       let fontScale = 1;
-      if (menuBtn) {
-        const gap = 10; // نفس الفجوة المستخدمة بـ.maqam-btns-row
-        const safety = 12; // هامش أمان إضافي عن حافة زر اختيار المقام
+
+      const menuBtn = document.getElementById('menuToggle');
+      const tabsBtn = document.getElementById('siteTabsToggle');
+      const row = document.getElementById('maqamBtnsRow');
+      const menuVisible = menuBtn && getComputedStyle(menuBtn).display !== 'none' && menuBtn.offsetWidth > 0;
+      const tabsVisible = tabsBtn && getComputedStyle(tabsBtn).display !== 'none' && tabsBtn.offsetWidth > 0;
+
+      if (menuVisible && tabsVisible) {
         const menuRect = menuBtn.getBoundingClientRect();
-        for (let i = 0; i < 6; i++) { // حد أقصى 6 محاولات تصغير، كل مرة 8%
-          const rowWidth = neededWidth * 2 + gap;
-          const rowRight = (window.innerWidth / 2) + (rowWidth / 2);
-          const menuVisible = getComputedStyle(menuBtn).display !== 'none' && menuBtn.offsetWidth > 0;
-          if (rowRight + safety <= menuRect.left || !menuVisible) break;
-          fontScale *= 0.92;
-          neededWidth = Math.ceil(Math.max(guideNatural, intervalsNatural) * fontScale) + 3;
+        const tabsRect = tabsBtn.getBoundingClientRect();
+        // نحدد أي الزرين فعلياً يمين وأيهم يسار (يتبدلون بوضع اليد اليسرى)
+        const leftBtnRect = tabsRect.left <= menuRect.left ? tabsRect : menuRect;
+        const rightBtnRect = tabsRect.left <= menuRect.left ? menuRect : tabsRect;
+        const availableGap = rightBtnRect.left - leftBtnRect.right;
+        const maxRowWidth = availableGap - 2 * safety;
+        const maxPerButton = (maxRowWidth - gap) / 2;
+        if (maxPerButton > 0 && maxPerButton < neededWidth) {
+          const MIN_SCALE = 0.7; // حد أدنى — ما ننزل تحته حتى لو المساحة ضيقة جداً (يبقى النص مقروء)
+          fontScale = Math.max(MIN_SCALE, maxPerButton / naturalMax);
+          // ما نضيف أي هامش تقريب بعد التصغير هنا — نستخدم القيمة المحسوبة بالضبط (floor
+          // للأمان) عشان النتيجة تبقى داخل الحيز المتاح فعلياً، بدل ما تتجاوزه بهامش التقريب
+          neededWidth = Math.max(20, Math.min(Math.floor(maxPerButton), Math.floor(naturalMax * fontScale)));
         }
+        // نمركز الصف بمنتصف الفراغ الفعلي بين الزرين (مو منتصف الشاشة بالضرورة)، لأن الزرين
+        // ممكن يختلفون بالعرض (خصوصاً بعد إضافة أيقونة المفضلة جنب زر اختيار المقام)
+        if (row && maxPerButton > 0) {
+          const rowWidth = neededWidth * 2 + gap;
+          const gapCenter = (leftBtnRect.right + rightBtnRect.left) / 2;
+          row.style.left = (gapCenter - rowWidth / 2) + 'px';
+          row.style.transform = 'none';
+        }
+      } else if (row) {
+        row.style.removeProperty('left');
+        row.style.removeProperty('transform');
       }
 
       const finalWidth = neededWidth;
