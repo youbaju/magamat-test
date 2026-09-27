@@ -2215,7 +2215,7 @@ window.wireCustomSelect = wireCustomSelect;
         <button id="micCustomNoticeClose" type="button" aria-label="إغلاق" style="position:absolute; top:8px; left:10px; background:none; border:none; color:#8a6d35; font-size:22px; cursor:pointer; line-height:1; padding:4px;">×</button>
       </div>
     </div>
-    <div id="arHarfLabel" style="display:none; position:fixed; z-index:39; color:#3ab4e8; font-family:'Cairo',Arial,sans-serif; font-weight:800; font-size:1rem; white-space:nowrap; pointer-events:none; text-align:center;"></div>
+    <div id="arHarfLabel" style="display:none; position:absolute; z-index:5; color:#3ab4e8; font-family:'Cairo',Arial,sans-serif; font-weight:800; font-size:1rem; white-space:nowrap; pointer-events:none; text-align:center;"></div>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">ماجور</button>
@@ -9518,26 +9518,34 @@ window.wxResume = wxResume;
     });
 
     // موضع نص "الحرف الحالي" فوق الزند: أفقياً في منتصف الفراغ بين زري دليل/أبعاد المقام
-    // (أو فوق أيهم ظاهر لو واحد بس مختفي)، ورأسياً بمحاذاة صف زر المايك/نغمة مستمرة بالضبط —
-    // كله بالقياس الفعلي وقت التشغيل، مو أرقام مفترضة
+    // (أو فوق أيهم ظاهر لو واحد بس مختفي)، ورأسياً بمحاذاة زر المايك/نغمة مستمرة بالضبط.
+    // الإحداثي الرأسي نحسبه من نفس نقطة الـSVG اللي يُبنى عليها زر المايك (micBtnSvgX/Y عبر
+    // getScreenCTM) — مو بقراءة موضع زر المايك بالـDOM بلحظة مستقلة، لأن هذا كان يلتقط موضع
+    // قديم (قبل استقرار التخطيط) بحسب توقيت التحميل، فيتناوب الموضع بين تحديث وتحديث.
+    // ونحسبه نسبة لنفس الـwrapper (position:absolute) اللي فيه زر المايك، عشان يتحركون مع بعض.
     window.syncArHarfLabelPosition = function(){
       const label = document.getElementById('arHarfLabel');
       if (!label || label.style.display === 'none' || !window.isArabicMode) return;
-      const micBtn = document.getElementById('micVerifyHtmlBtn');
+      const svg = document.getElementById('shared-oudSvg');
+      const wrapper = document.querySelector('.shared-oud-wrapper');
+      if (!svg || !wrapper || typeof window.micBtnSvgY !== 'number') return;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return;
+      const pt = svg.createSVGPoint();
+      pt.x = (typeof window.micBtnSvgX === 'number') ? window.micBtnSvgX : 0;
+      pt.y = window.micBtnSvgY;
+      const screenPt = pt.matrixTransform(ctm);
+      const wrapperRect = wrapper.getBoundingClientRect();
+
       const gBtn = document.getElementById('maqamGuideBtn');
       const iBtn = document.getElementById('maqamIntervalsBtn');
-      if (!micBtn) return;
-
-      const micRect = micBtn.getBoundingClientRect();
       const gVisible = gBtn && getComputedStyle(gBtn).display !== 'none' && gBtn.offsetWidth > 0;
       const iVisible = iBtn && getComputedStyle(iBtn).display !== 'none' && iBtn.offsetWidth > 0;
       let centerX;
       if (gVisible && iVisible) {
         const gRect = gBtn.getBoundingClientRect();
         const iRect = iBtn.getBoundingClientRect();
-        const leftMost = Math.min(gRect.left, iRect.left);
-        const rightMost = Math.max(gRect.right, iRect.right);
-        centerX = (leftMost + rightMost) / 2;
+        centerX = (Math.min(gRect.left, iRect.left) + Math.max(gRect.right, iRect.right)) / 2;
       } else if (iVisible) {
         const iRect = iBtn.getBoundingClientRect();
         centerX = (iRect.left + iRect.right) / 2;
@@ -9547,11 +9555,38 @@ window.wxResume = wxResume;
       } else {
         centerX = window.innerWidth / 2; // احتياط لو الزرين مختفيين لسبب ما
       }
-      const centerY = micRect.top + micRect.height / 2;
-      label.style.left = centerX + 'px';
-      label.style.top = centerY + 'px';
+      label.style.left = (centerX - wrapperRect.left) + 'px';
+      label.style.top = (screenPt.y - wrapperRect.top) + 'px';
       label.style.transform = 'translate(-50%, -50%)';
     };
+    // نربط النص بنفس دالة تموضع زر المايك (تشتغل مرتين بالرسم: فوراً وبعد 150ms عشان التخطيط
+    // يستقر) — فكل ما زر المايك تحرّك لموضعه النهائي، النص يتحدّث معه مباشرة بنفس اللحظة
+    (function(){
+      const origPos = window.positionMicHtmlBtn;
+      if (typeof origPos === 'function' && !origPos._harfWrapped) {
+        const wrapped = function(){
+          const r = origPos.apply(this, arguments);
+          if (typeof window.syncArHarfLabelPosition === 'function') window.syncArHarfLabelPosition();
+          return r;
+        };
+        wrapped._harfWrapped = true;
+        window.positionMicHtmlBtn = wrapped;
+      }
+      // طبقة أمان إضافية: أي تغيّر فعلي بحجم الأزرار/الـSVG (خطوط تنحمّل متأخر، تغيّر عرض
+      // الأزرار...) يعيد الحساب تلقائياً — يغطي أي حالة ما تمر عبر دالة زر المايك
+      const rerun = () => requestAnimationFrame(() => {
+        if (typeof window.syncArHarfLabelPosition === 'function') window.syncArHarfLabelPosition();
+      });
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(rerun);
+        ['maqamGuideBtn','maqamIntervalsBtn','shared-oudSvg'].forEach(id => {
+          const el = document.getElementById(id); if (el) ro.observe(el);
+        });
+        const wr = document.querySelector('.shared-oud-wrapper'); if (wr) ro.observe(wr);
+      }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(rerun);
+      window.addEventListener('load', rerun);
+    })();
     window.addEventListener('resize', () => setTimeout(window.syncArHarfLabelPosition, 100));
     window.addEventListener('orientationchange', () => setTimeout(window.syncArHarfLabelPosition, 200));
 
