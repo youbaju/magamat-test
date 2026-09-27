@@ -9558,6 +9558,11 @@ window.wxResume = wxResume;
       label.style.left = (centerX - wrapperRect.left) + 'px';
       label.style.top = (screenPt.y - wrapperRect.top) + 'px';
       label.style.transform = 'translate(-50%, -50%)';
+      // حجم الخط يتناسب مع حجم أزرار الزند نفسها (زر نغمة مستمرة/قصيرة) بنفس معامل تكبير الـSVG،
+      // فيبقى متناسق معها بأي شاشة (كان 1rem ثابت — أكبر بكثير من خط الأزرار على الجوال)
+      const scaleFactor = Math.hypot(ctm.a, ctm.b);
+      const refH = (window.noteModeBtnSvgH || 66) * scaleFactor;
+      label.style.fontSize = Math.max(9, refH * 0.36) + 'px';
     };
     // نربط النص بنفس دالة تموضع زر المايك (تشتغل مرتين بالرسم: فوراً وبعد 150ms عشان التخطيط
     // يستقر) — فكل ما زر المايك تحرّك لموضعه النهائي، النص يتحدّث معه مباشرة بنفس اللحظة
