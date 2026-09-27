@@ -1402,7 +1402,7 @@ flex-shrink: 0;
     .maqam-guide-btn, .maqam-intervals-btn { 
       font-size: .72rem; 
       padding: 4px 8px;
-      max-width: 230px; /* سقف احتياطي بس — العرض الفعلي يُضبط بدقة عبر JS (syncGuideIntervalsBtnWidth) حسب أطول اسم مقام حقيقي */
+      max-width: none; /* العرض والخط الفعليين يُضبطان بدقة عبر JS (syncGuideIntervalsBtnWidth) بدون أي قص للنص */
       min-width: 0; /* نلغي قفل min-width:256px الموروث من القاعدة الأساسية، عشان JS يقدر يضبط العرض الحقيقي بحرية */
       white-space: nowrap;
     }
@@ -1416,7 +1416,7 @@ flex-shrink: 0;
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
-      max-width: 230px; /* سقف احتياطي بس — العرض الفعلي يُضبط بدقة عبر JS حسب أطول اسم مقام حقيقي */
+      max-width: none; /* العرض والخط الفعليين يُضبطان بدقة عبر JS بدون أي قص للنص */
       min-width: 0; /* نلغي قفل min-width:256px الموروث من القاعدة الأساسية */
       text-align: center;
       line-height: 1.3;
@@ -1428,7 +1428,7 @@ flex-shrink: 0;
   /* الجوال الأفقي: الزرين يطلعون بصف واحد جنب زر "☰" (فوق)، والمسافة بينهم كانت ضيقة جداً —
      ننزّل الصف لتحت شوي ونصغّر الخط عشان يبقى فيه مسافة واضحة عن زر القائمة */
   @media (max-height: 500px) and (orientation:landscape){
-    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; max-width: 230px; min-width: 0; } /* سقف احتياطي — العرض الفعلي عبر JS، min-width:0 يلغي القفل الموروث */
+    .maqam-guide-btn, .maqam-intervals-btn{ font-size: .72rem; padding: 4px 10px; max-width: none; min-width: 0; } /* العرض والخط الفعليين عبر JS بدون قص، min-width:0 يلغي القفل الموروث */
   }
 
   /* ===== Modal الأبعاد ===== */
@@ -2147,7 +2147,6 @@ window.wireCustomSelect = wireCustomSelect;
 </script>
 </head>
 <body>
-
 <button class="site-tabs-toggle" id="siteTabsToggle">☰ <span id="currentPageLabel">المقامات الغربية</span></button>
 <div class="site-tabs-overlay" id="siteTabsOverlay"></div>
 <nav class="site-tabs" id="siteTabsMenu">
@@ -9420,27 +9419,10 @@ window.wxResume = wxResume;
       const iBtn = document.getElementById('maqamIntervalsBtn');
       if (!gBtn || !iBtn || gBtn.style.display === 'none' || iBtn.style.display === 'none') return;
 
-      if (!window.maqamat) {
-        // احتياط لو لأي سبب قاموس المقامات ما توفر — نرجع لأسلوب القياس القديم (أعرض زر بين الاثنين حالياً)
-        gBtn.style.width = 'auto'; iBtn.style.width = 'auto';
-        const w = Math.max(gBtn.offsetWidth, iBtn.offsetWidth);
-        gBtn.style.width = w + 'px'; iBtn.style.width = w + 'px';
-        return;
-      }
-
-      let allNames = [];
-      Object.values(window.maqamat).forEach(list => { allNames = allNames.concat(list); });
-
-      // اللغة تأثر على الحساب من ناحيتين: (1) البادئة نفسها ("دليل مقام "/"أبعاد مقام " بالعربي، أو "Guide of "/"Intervals of " بالإنجليزي)،
-      // و(2) اسم المقام نفسه قد يكون أطول بلغة عن الثانية (مثلاً "نهاوند ذو الحساس" أقصر من ترجمته الإنجليزية Nahawand Dhu al-Hasas)
-      const isEn = (window.oudLanguage === 'en' && window.MAQAM_NAME_EN);
-      const guidePrefix = isEn ? 'Guide of ' : 'دليل مقام ';
-      const intervalsPrefix = isEn ? 'Intervals of ' : 'أبعاد مقام ';
-      function displayName(name){
-        return (isEn && window.MAQAM_NAME_EN[name]) ? window.MAQAM_NAME_EN[name] : name;
-      }
-
-      function measureMax(realBtn, prefix){
+      // نقيس النص الفعلي الحالي لكل زر بس (مو أطول اسم ممكن من كل الـ46 مقام) — هذا يقلل
+      // العرض المطلوب فعلياً بمعظم الحالات، ويقلل خطر التصادم مع زر اختيار المقام بالجوال
+      // الأفقي، خصوصاً بالإنجليزي حيث بعض الأسماء أطول من نظيرتها العربية
+      function measureNatural(realBtn){
         const clone = realBtn.cloneNode(true);
         clone.style.position = 'fixed';
         clone.style.visibility = 'hidden';
@@ -9449,23 +9431,46 @@ window.wxResume = wxResume;
         clone.style.maxWidth = 'none';
         clone.style.minWidth = '0';
         clone.style.whiteSpace = 'nowrap';
+        clone.style.fontSize = '';
         document.body.appendChild(clone);
-        let max = 0;
-        allNames.forEach(name => {
-          clone.textContent = prefix + displayName(name);
-          const w = clone.getBoundingClientRect().width;
-          if (w > max) max = w;
-        });
+        const w = clone.getBoundingClientRect().width;
         document.body.removeChild(clone);
-        return max;
+        return w;
       }
 
-      const guideMax = measureMax(gBtn, guidePrefix);
-      const intervalsMax = measureMax(iBtn, intervalsPrefix);
-      // هامش أمان بسيط ٣px بس لفروق التقريب العشري بين المتصفحات، مو تخمين إضافي زي قبل
-      const finalWidth = Math.ceil(Math.max(guideMax, intervalsMax)) + 3;
-      gBtn.style.width = finalWidth + 'px';
-      iBtn.style.width = finalWidth + 'px';
+      const guideNatural = measureNatural(gBtn);
+      const intervalsNatural = measureNatural(iBtn);
+      // هامش أمان بسيط ٣px بس لفروق التقريب العشري بين المتصفحات
+      let neededWidth = Math.ceil(Math.max(guideNatural, intervalsNatural)) + 3;
+
+      // نتحقق من المساحة الفعلية المتاحة (بدل ما نفرض سقف تخميني ثابت): لو الصف (زرين +
+      // فجوة) بهذا العرض، وهو ممركز بمنتصف الشاشة، بيتصادم فعلياً مع زر اختيار المقام —
+      // نصغّر حجم الخط تدريجياً (نص كامل بدون قص) لين تصير المساحة كافية
+      const menuBtn = document.getElementById('menuToggle');
+      let fontScale = 1;
+      if (menuBtn) {
+        const gap = 10; // نفس الفجوة المستخدمة بـ.maqam-btns-row
+        const safety = 12; // هامش أمان إضافي عن حافة زر اختيار المقام
+        const menuRect = menuBtn.getBoundingClientRect();
+        for (let i = 0; i < 6; i++) { // حد أقصى 6 محاولات تصغير، كل مرة 8%
+          const rowWidth = neededWidth * 2 + gap;
+          const rowRight = (window.innerWidth / 2) + (rowWidth / 2);
+          if (rowRight + safety <= menuRect.left || menuBtn.style.display === 'none' || menuBtn.offsetParent === null) break;
+          fontScale *= 0.92;
+          neededWidth = Math.ceil(Math.max(guideNatural, intervalsNatural) * fontScale) + 3;
+        }
+      }
+
+      const finalWidth = neededWidth;
+      [gBtn, iBtn].forEach(btn => {
+        btn.style.width = finalWidth + 'px';
+        if (fontScale < 1) {
+          const baseSize = parseFloat(getComputedStyle(btn).fontSize);
+          btn.style.setProperty('font-size', (baseSize * fontScale) + 'px', 'important');
+        } else {
+          btn.style.removeProperty('font-size');
+        }
+      });
     };
     // نعيد الحساب لما يدوّر الجهاز أو يتغيّر حجم الشاشة — لأن حجم الخط يختلف بين الاتجاهين
     // (كان الحساب يشتغل بس وقت اختيار مقام، فلو دوّرت الجهاز بعدها يضل العرض القديم غير مناسب)
