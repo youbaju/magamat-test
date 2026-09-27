@@ -9451,14 +9451,15 @@ window.wxResume = wxResume;
       const row = document.getElementById('maqamBtnsRow');
       const menuVisible = menuBtn && getComputedStyle(menuBtn).display !== 'none' && menuBtn.offsetWidth > 0;
       const tabsVisible = tabsBtn && getComputedStyle(tabsBtn).display !== 'none' && tabsBtn.offsetWidth > 0;
-      // هذا الحساب (الفراغ بين زر التبويبات وزر اختيار المقام) يخص بس الوضع اللي فيه الزرين
-      // "دليل مقام/أبعاد مقام" فعلاً بنفس الصف العلوي (الجوال الأفقي القصير تحديداً — نفس شرط
-      // .maqam-btns-row{display:contents} بالضبط). بالعمودي، الزرين ينزلون تحت زر اختيار
-      // المقام (top:72/120)، بعيدين عنه تمامًا رأسياً، فما فيه أي خطر تصادم حقيقي هناك —
-      // تطبيق هذا الحساب هناك غلط ويصغّر الزرين لمساحة ضيقة مالها علاقة بوضعهم الفعلي
+      // هذا الحساب (الفراغ بين زر التبويبات وزر اختيار المقام) يخص بس الجوال الضيق فعلياً —
+      // بالعمودي عمومًا، وبالأفقي بس لو الشاشة ضيقة (جوال، مو آيباد). بالعمودي، الزرين ينزلون
+      // تحت زر اختيار المقام (top:72/120)، بعيدين عنه رأسياً، فما فيه خطر تصادم حقيقي. وبأي
+      // شاشة عريضة (آيباد وما شابه)، المساحة واسعة كفاية أصلاً وما تحتاج أي تدخل — تطبيق هذا
+      // الحساب هناك بدون داعٍ يحرّك الأزرار من مكانها الطبيعي المستقر بدون أي فايدة حقيقية
       const isPortraitNarrowRow = window.matchMedia('(max-width:1024px) and (orientation:portrait)').matches;
+      const isNarrowScreen = window.innerWidth < 1024;
 
-      if (!isPortraitNarrowRow && menuVisible && tabsVisible) {
+      if (isNarrowScreen && !isPortraitNarrowRow && menuVisible && tabsVisible) {
         const menuRect = menuBtn.getBoundingClientRect();
         const tabsRect = tabsBtn.getBoundingClientRect();
         // نحدد أي الزرين فعلياً يمين وأيهم يسار (يتبدلون بوضع اليد اليسرى)
