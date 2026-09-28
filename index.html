@@ -9426,7 +9426,12 @@ window.wxResume = wxResume;
     window.syncGuideIntervalsBtnWidth = function(){
       const gBtn = document.getElementById('maqamGuideBtn');
       const iBtn = document.getElementById('maqamIntervalsBtn');
-      if (!gBtn || !iBtn || gBtn.style.display === 'none' || iBtn.style.display === 'none') return;
+      if (!gBtn || !iBtn) return;
+      // لو مقام ما له صورة دليل (مثل السيكاه البلدي) يكون زر الدليل مخفي، وزر الأبعاد لازم يتحجّم
+      // لوحده حسب نصه — كان الكود يخرج هنا بدون أي حساب فيضل عرضه القديم (من مقام ثاني) ويُقص نصه
+      const visibleBtns = [gBtn, iBtn].filter(b => b.style.display !== 'none');
+      if (!visibleBtns.length) return;
+      const btnCount = visibleBtns.length;
 
       // نقيس النص الفعلي الحالي لكل زر بس (مو أطول اسم ممكن من كل الـ46 مقام) — هذا يقلل
       // العرض المطلوب فعلياً بمعظم الحالات، ويقلل خطر التصادم مع زر اختيار المقام بالجوال
@@ -9447,9 +9452,7 @@ window.wxResume = wxResume;
         return w;
       }
 
-      const guideNatural = measureNatural(gBtn);
-      const intervalsNatural = measureNatural(iBtn);
-      const naturalMax = Math.max(guideNatural, intervalsNatural);
+      const naturalMax = Math.max(...visibleBtns.map(measureNatural));
       const gap = 10; // نفس الفجوة المستخدمة بـ.maqam-btns-row
       const safety = 12; // هامش أمان عن حافة أي من الزرين الجانبيين
       let neededWidth = Math.ceil(naturalMax) + 3;
@@ -9476,7 +9479,7 @@ window.wxResume = wxResume;
         const rightBtnRect = tabsRect.left <= menuRect.left ? menuRect : tabsRect;
         const availableGap = rightBtnRect.left - leftBtnRect.right;
         const maxRowWidth = availableGap - 2 * safety;
-        const maxPerButton = (maxRowWidth - gap) / 2;
+        const maxPerButton = (maxRowWidth - gap * (btnCount - 1)) / btnCount;
         if (maxPerButton > 0 && maxPerButton < neededWidth) {
           const MIN_SCALE = 0.7; // حد أدنى — ما ننزل تحته حتى لو المساحة ضيقة جداً (يبقى النص مقروء)
           fontScale = Math.max(MIN_SCALE, maxPerButton / naturalMax);
@@ -9487,7 +9490,7 @@ window.wxResume = wxResume;
         // نمركز الصف بمنتصف الفراغ الفعلي بين الزرين (مو منتصف الشاشة بالضرورة)، لأن الزرين
         // ممكن يختلفون بالعرض (خصوصاً بعد إضافة أيقونة المفضلة جنب زر اختيار المقام)
         if (row && maxPerButton > 0) {
-          const rowWidth = neededWidth * 2 + gap;
+          const rowWidth = neededWidth * btnCount + gap * (btnCount - 1);
           const gapCenter = (leftBtnRect.right + rightBtnRect.left) / 2;
           row.style.left = (gapCenter - rowWidth / 2) + 'px';
           row.style.transform = 'none';
@@ -9498,7 +9501,7 @@ window.wxResume = wxResume;
       }
 
       const finalWidth = neededWidth;
-      [gBtn, iBtn].forEach(btn => {
+      visibleBtns.forEach(btn => {
         btn.style.width = finalWidth + 'px';
         if (fontScale < 1) {
           const baseSize = parseFloat(getComputedStyle(btn).fontSize);
