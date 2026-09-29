@@ -8049,14 +8049,14 @@ window.wxResume = wxResume;
     // (أغلب النغمات) ما توصل لهذا الحد أصلاً فتبقى بحجمها الطبيعي 22 بدون أي تغيير
     function shrinkLongNoteLabel(label){
       try {
-        const maxW = 95, minFont = 14, baseFont = 22;
+        // ما فيه حد أدنى للخط يمنع الوصول للعرض المطلوب — الأولوية لعدم لمس رسمة العود، مهما
+        // احتجنا نصغّر. minFont هنا بس "شبكة أمان" أخيرة لأسماء طويلة جداً بشكل غير واقعي
+        // (نادراً ما تُحتاج عملياً)، مو حد يقيّد التصغير الطبيعي المطلوب هنا
+        const maxW = 95, minFont = 8, baseFont = 22;
         const bbox = label.getBBox();
         if (bbox.width > maxW) {
           const scale = Math.max(minFont / baseFont, maxW / bbox.width);
           label.setAttribute('font-size', String(baseFont * scale));
-          // ما نغيّر x إطلاقاً — يبقى نفس المرجع اللي حدده كل فرع أصلاً (مركز النغمة بالفرع
-          // العادي، أو x±9 بالفرع اللي فيه علامة عرضية عشان يفسح مكان للعلامة جنبه)، لأن
-          // text-anchor:middle يخلي التصغير يصير حول نفس نقطة المرجع تلقائياً بدون أي تعديل إضافي
         }
       } catch(e) {}
     }
