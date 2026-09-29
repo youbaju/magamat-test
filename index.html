@@ -5231,6 +5231,10 @@ function buildOudStatic(){
       return hg;
     }
     oudControlBtnsLayer.appendChild(makeSingleHandBtn(hand1X, handY));
+    // نعرّضه لباقي الصفحة — نستخدمه كمرجع دقيق لتوسيط "الحرف فوق الزند" رأسياً، لأنه مستطيل
+    // SVG خالص بمركز محسوب هندسياً بالضبط (بعكس أزرار HTML النصية اللي فيها التباس بحساب المتصفح
+    // لصندوق النص الداخلي حسب line-height وعدد الأسطر)
+    window.handBtnSvgY = handY;
     // زر التحقق (مايكروفون) صار زر HTML عادي فوق الرسمة (أضمن للمس بالجوال من عنصر SVG)
     // نخزن إحداثياته بالـwindow عشان دالة التموضع الخارجية توصلها وتحدّث مكانه بعد كل رسم
     // ياخذ المكان البارز فوق الزند (بين فريت ٠ وفريت ١) — نفس الموقع اللي كان زر المساعدة
@@ -9546,12 +9550,12 @@ window.wxResume = wxResume;
       if (!label || label.style.display === 'none' || !window.isArabicMode) return;
       const svg = document.getElementById('shared-oudSvg');
       const wrapper = document.querySelector('.shared-oud-wrapper');
-      if (!svg || !wrapper || typeof window.micBtnSvgY !== 'number') return;
+      if (!svg || !wrapper || typeof window.handBtnSvgY !== 'number') return;
       const ctm = svg.getScreenCTM();
       if (!ctm) return;
       const pt = svg.createSVGPoint();
-      pt.x = (typeof window.micBtnSvgX === 'number') ? window.micBtnSvgX : 0;
-      pt.y = window.micBtnSvgY;
+      pt.x = 0; // ما يأثر على الإحداثي الرأسي إطلاقاً بمصفوفة تحويل بسيطة (تكبير + إزاحة بدون دوران)
+      pt.y = window.handBtnSvgY;
       const screenPt = pt.matrixTransform(ctm);
       const wrapperRect = wrapper.getBoundingClientRect();
 
