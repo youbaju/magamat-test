@@ -8044,6 +8044,23 @@ window.wxResume = wxResume;
     // ملاحظة: visibleDegIdxSet باراميتر اختياري (Set لأرقام degIdx) — لو تم تمريره، تُرسم بس
     // الدرجات الموجودة فيه (يخدم وضع تمرين المقام عشان ما يرسم كل الـ١٤ درجة الممتدة كل خطوة،
     // بس اللي فعلياً مستخدمة بالتمرين الحالي). المشغل العادي ما يمرره فترسم كل الدرجات زي ما كانت.
+    // تصغير خط اسم النغمة لو عرضه الفعلي المرسوم تجاوز حد معقول (95 وحدة SVG — أوسع شوي من
+    // صندوق النغمة 70 عشان نسيب هامش طبيعي)، بحد أدنى 14 يبقى معه مقروء. الأسماء القصيرة
+    // (أغلب النغمات) ما توصل لهذا الحد أصلاً فتبقى بحجمها الطبيعي 22 بدون أي تغيير
+    function shrinkLongNoteLabel(label){
+      try {
+        const maxW = 95, minFont = 14, baseFont = 22;
+        const bbox = label.getBBox();
+        if (bbox.width > maxW) {
+          const scale = Math.max(minFont / baseFont, maxW / bbox.width);
+          label.setAttribute('font-size', String(baseFont * scale));
+          // ما نغيّر x إطلاقاً — يبقى نفس المرجع اللي حدده كل فرع أصلاً (مركز النغمة بالفرع
+          // العادي، أو x±9 بالفرع اللي فيه علامة عرضية عشان يفسح مكان للعلامة جنبه)، لأن
+          // text-anchor:middle يخلي التصغير يصير حول نفس نقطة المرجع تلقائياً بدون أي تعديل إضافي
+        }
+      } catch(e) {}
+    }
+
     function drawArabicMaqam(startHarf, intervals, highlightIdx, maqamName, isDescending, highlightQuarters, visibleDegIdxSet) {
       const layer = document.getElementById('oudNotesLayer');
       while (layer.firstChild) layer.removeChild(layer.firstChild);
@@ -8132,6 +8149,10 @@ window.wxResume = wxResume;
           layer.appendChild(label);
           label.setAttribute('data-scale-idx', degIdx);
           label.setAttribute('data-x', x);
+          // الأسماء الطويلة (زي "سي نصف بيمول جواب") تتجاوز عرض صندوق النغمة (70 وحدة) بأضعاف
+          // بحجم الخط الثابت 22 — نصغّر الخط لهذي الحالات بس (نقيس العرض الفعلي المرسوم)، عشان
+          // ما تلامس رسمة العود بالشاشات الصغيرة، بدون ما نأثر على الأسماء القصيرة العادية
+          shrinkLongNoteLabel(label);
           // نحسب مكان الرمز حسب عرض الحرف الفعلي المرسوم (مو مسافة ثابتة)، عشان يبتعد المقدار
           // الصح لكل حرف — "صول" أطول من باقي الحروف فيحتاج مسافة أكبر، والحروف القصيرة أقل
           let accCx = isEnglishMode ? (x + 15) : (x - 15);
@@ -8151,6 +8172,7 @@ window.wxResume = wxResume;
           label.textContent = displayBaseName(text);
           layer.appendChild(label);
           label.setAttribute('data-scale-idx', degIdx); // كانت ناقصة هنا (موجودة بالفرع الثاني بس) — بدونها ميزة التحقق بالمايكروفون ما تلقى النص لتغيّر لونه فوق الأصفر
+          shrinkLongNoteLabel(label);
         }
       });
 
