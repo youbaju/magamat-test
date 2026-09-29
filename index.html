@@ -6847,6 +6847,13 @@ function showTopNavButtons(){
       delete el.dataset.hiddenByModal;
     }
   });
+  // نعيد حساب عرض زرّي الدليل/الأبعاد هنا أيضًا (مو بس موضع نص الحرف) — لأن فتح مودال
+  // الأبعاد كان يخفي هذين الزرّين ضمن هذه القائمة، فأي دوران للجهاز أثناء فتح المودال يمرّ
+  // بصمت (الزرّان مخفيّان وقت الحساب)، ويبقى عرضهما/حجم خطهما محسوبَين لاتجاه قديم بعد
+  // الإغلاق ما لم نعِد الحساب هنا صراحةً
+  if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
+    requestAnimationFrame(() => requestAnimationFrame(window.syncGuideIntervalsBtnWidth));
+  }
   if (typeof window.syncArHarfLabelPosition === 'function') {
     requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
   }
