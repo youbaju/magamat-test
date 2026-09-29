@@ -1240,6 +1240,14 @@ flex-shrink: 0;
     .maqam-btns-row{ display: contents; }
   }
 
+  /* حجم خط "الحرف فوق الزند" ثابت بنِسَب CSS عادية (زي زرّي دليل/أبعاد المقام بالضبط)،
+     مو مرتبط بمعامل تكبير الـSVG المتغيّر — لأن ربطه بمعامل الـSVG كان يصغّره كثير بالجوال
+     العمودي (المعامل هناك صغير جداً)، فيبان صغير وباهت رغم إنه بلون واضح */
+  .ar-harf-label{ font-size: 1.05rem; }
+  @media (max-width: 1024px){
+    .ar-harf-label{ font-size: .9rem; }
+  }
+
   /* ===== زر دليل المقام ===== */
   .maqam-guide-btn{
     font-family: 'Cairo', sans-serif;
@@ -2215,7 +2223,7 @@ window.wireCustomSelect = wireCustomSelect;
         <button id="micCustomNoticeClose" type="button" aria-label="إغلاق" style="position:absolute; top:8px; left:10px; background:none; border:none; color:#8a6d35; font-size:22px; cursor:pointer; line-height:1; padding:4px;">×</button>
       </div>
     </div>
-    <div id="arHarfLabel" style="display:none; position:absolute; z-index:5; color:#3ab4e8; font-family:'Cairo',Arial,sans-serif; font-weight:800; font-size:1rem; white-space:nowrap; pointer-events:none; text-align:center;"></div>
+    <div id="arHarfLabel" class="ar-harf-label" style="display:none; position:absolute; z-index:5; color:#1a8abf; font-family:'Cairo',Arial,sans-serif; font-weight:800; white-space:nowrap; pointer-events:none; text-align:center;"></div>
     <div class="c-selection-summary" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">ماجور</button>
@@ -9568,11 +9576,10 @@ window.wxResume = wxResume;
       label.style.left = (centerX - wrapperRect.left) + 'px';
       label.style.top = (screenPt.y - wrapperRect.top) + 'px';
       label.style.transform = 'translate(-50%, -50%)';
-      // حجم الخط يتناسب مع حجم أزرار الزند نفسها (زر نغمة مستمرة/قصيرة) بنفس معامل تكبير الـSVG،
-      // فيبقى متناسق معها بأي شاشة (كان 1rem ثابت — أكبر بكثير من خط الأزرار على الجوال)
-      const scaleFactor = Math.hypot(ctm.a, ctm.b);
-      const refH = (window.noteModeBtnSvgH || 66) * scaleFactor;
-      label.style.fontSize = Math.max(9, refH * 0.36) + 'px';
+      // حجم الخط ثابت عبر CSS (كلاس .ar-harf-label)، مو مرتبط بمعامل تكبير الـSVG —
+      // كان الحساب السابق (مبني على حجم زر نغمة مستمرة الديناميكي) يصغّره كثير جداً
+      // بالجوال العمودي لأن معامل تكبير الـSVG هناك صغير جداً
+      label.style.removeProperty('font-size');
     };
     // نربط النص بنفس دالة تموضع زر المايك (تشتغل مرتين بالرسم: فوراً وبعد 150ms عشان التخطيط
     // يستقر) — فكل ما زر المايك تحرّك لموضعه النهائي، النص يتحدّث معه مباشرة بنفس اللحظة
