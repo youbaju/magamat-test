@@ -8052,7 +8052,7 @@ window.wxResume = wxResume;
         // ما فيه حد أدنى للخط يمنع الوصول للعرض المطلوب — الأولوية لعدم لمس رسمة العود، مهما
         // احتجنا نصغّر. minFont هنا بس "شبكة أمان" أخيرة لأسماء طويلة جداً بشكل غير واقعي
         // (نادراً ما تُحتاج عملياً)، مو حد يقيّد التصغير الطبيعي المطلوب هنا
-        const maxW = 95, minFont = 8, baseFont = 22;
+        const maxW = 62, minFont = 5, baseFont = 22; // minFont منخفض عمداً (5) عشان ما يوقف التصغير قبل الوصول لعرض الهدف (62) — لو baseFont/minFont أعلى من (baseFont*maxW/الطول الطبيعي)، الحد الأدنى يفوز بدل الهدف ويبقى النص عريض، وهذا بالضبط الخطأ اللي صار مرتين قبل
         const bbox = label.getBBox();
         if (bbox.width > maxW) {
           const scale = Math.max(minFont / baseFont, maxW / bbox.width);
