@@ -6296,7 +6296,8 @@ function nextStep(){
         rect.setAttribute('stroke', '#a82f2f');
       } else {
         rect.setAttribute('fill', '#2b6fc9');
-        rect.setAttribute('stroke', '#fff');
+        // ما نغيّر الحدود هنا — تبقى بنفس لونها الأساسي (#1a5fa8) اللي انرسمت فيه أصلاً،
+        // بدل ما نفرض أبيض فوقه أثناء التشغيل (نفس سلوك المقامات العربية بالضبط)
       }
     });
   } else {
@@ -6308,7 +6309,8 @@ function nextStep(){
         rect.setAttribute('stroke', '#a82f2f');
       } else {
         rect.setAttribute('fill', '#2b6fc9');
-        rect.setAttribute('stroke', '#fff');
+        // ما نغيّر الحدود هنا — تبقى بنفس لونها الأساسي (#1a5fa8) اللي انرسمت فيه أصلاً،
+        // بدل ما نفرض أبيض فوقه أثناء التشغيل (نفس سلوك المقامات العربية بالضبط)
       }
     });
   }
@@ -6459,7 +6461,7 @@ let wxNextNoteAudioTime = 0; // إصلاح #24 — نفس آلية مرساة ت
 function wxResetBoardColors() {
   oudNotesLayer.querySelectorAll('rect').forEach(rect => {
     rect.setAttribute('fill', '#2b6fc9');
-    rect.setAttribute('stroke', '#fff');
+    // ما نغيّر الحدود — تبقى بلونها الأساسي (#1a5fa8)، نفس سلوك المقامات العربية
   });
 }
 
@@ -6493,7 +6495,7 @@ function wxNextStep() {
     oudNotesLayer.querySelectorAll('rect').forEach(rect => {
       const idx = parseInt(rect.getAttribute('data-scale-idx'));
       if (idx === step.deg - 1) { rect.setAttribute('fill', '#d64545'); rect.setAttribute('stroke', '#a82f2f'); }
-      else { rect.setAttribute('fill', '#2b6fc9'); rect.setAttribute('stroke', '#fff'); }
+      else { rect.setAttribute('fill', '#2b6fc9'); } // الحدود تبقى بلونها الأساسي (#1a5fa8)، نفس المقامات العربية
     });
     if (pos) {
       // نحسب التردد من جديد هنا (وتر/فريت المخزّنين + الدوزان الحالي state.tuningOffset)
