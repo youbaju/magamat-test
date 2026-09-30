@@ -9550,59 +9550,45 @@ window.wxResume = wxResume;
       if (!label || label.style.display === 'none' || !window.isArabicMode) return;
       const svg = document.getElementById('shared-oudSvg');
       const wrapper = document.querySelector('.shared-oud-wrapper');
-      if (!svg || !wrapper || typeof window.handBtnSvgY !== 'number') return;
+      if (!svg || !wrapper || typeof window.handBtnSvgY !== 'number' || typeof window._oudFretX !== 'function' || !window.OUD) return;
       const ctm = svg.getScreenCTM();
       if (!ctm) return;
-      const pt = svg.createSVGPoint();
-      pt.x = 0; // ما يأثر على الإحداثي الرأسي إطلاقاً بمصفوفة تحويل بسيطة (تكبير + إزاحة بدون دوران)
-      pt.y = window.handBtnSvgY;
-      const screenPt = pt.matrixTransform(ctm);
       const wrapperRect = wrapper.getBoundingClientRect();
 
-      const gBtn = document.getElementById('maqamGuideBtn');
-      const iBtn = document.getElementById('maqamIntervalsBtn');
-      const gVisible = gBtn && getComputedStyle(gBtn).display !== 'none' && gBtn.offsetWidth > 0;
-      const iVisible = iBtn && getComputedStyle(iBtn).display !== 'none' && iBtn.offsetWidth > 0;
-      let centerX;
-      if (gVisible && iVisible) {
-        const gRect = gBtn.getBoundingClientRect();
-        const iRect = iBtn.getBoundingClientRect();
-        centerX = (Math.min(gRect.left, iRect.left) + Math.max(gRect.right, iRect.right)) / 2;
-      } else if (iVisible) {
-        const iRect = iBtn.getBoundingClientRect();
-        centerX = (iRect.left + iRect.right) / 2;
-      } else if (gVisible) {
-        const gRect = gBtn.getBoundingClientRect();
-        centerX = (gRect.left + gRect.right) / 2;
-      } else {
-        centerX = window.innerWidth / 2; // احتياط لو الزرين مختفيين لسبب ما
-      }
-      label.style.left = (centerX - wrapperRect.left) + 'px';
+      // الموضع الأفقي: ثابت دائماً عند الفريت 4.5 (مساحة عريضة بالزند، بعيدة عن تضيّق رأس
+      // العود)، بنفس معادلة الانعكاس اللي تستخدمها كل أزرار الزند الثانية (المايك، تبديل
+      // اليد، اللغة) عند تبديل العود بين اليمين واليسار — يضمن ثبات الموضع بصرياً على نفس
+      // الفريت الحقيقي بالاتجاهين، بدل ما يرتبط بموضع أزرار HTML ثانية متحركة
+      const midX = (window.OUD.NUT_X + window.OUD.NECK_END_X) / 2;
+      const naturalFretX = window._oudFretX(4.5);
+      const targetSvgX = window.isLeftHanded ? naturalFretX : (2 * midX - naturalFretX);
+
+      const pt = svg.createSVGPoint();
+      pt.x = targetSvgX; pt.y = window.handBtnSvgY;
+      const screenPt = pt.matrixTransform(ctm);
+      label.style.left = (screenPt.x - wrapperRect.left) + 'px';
       label.style.top = (screenPt.y - wrapperRect.top) + 'px';
       label.style.transform = 'translate(-50%, -50%)';
 
       // نقيس حجم الخط الآمن بدل ما نفرضه ثابتاً — نحول حدود رسمة العود الفعلية (يمين النقرة،
-      // يسار نهاية الجسم) لإحداثيات شاشة حقيقية بنفس مصفوفة الـSVG، ونتأكد إن عرض الكلمة
-      // الفعلي المرسوم (getBoundingClientRect لعنصر HTML عادي، مو تخمين) ما يتجاوزها. هذا
-      // يلتقط أي حرف طويل (زي أسماء أرباع التون المركبة "سي نصف بيمول جواب") تلقائياً، لأنه
-      // مبني على حدود الرسمة الحقيقية نفسها وليس رقماً مفترضاً
+      // يسار نهاية الجسم) لإحداثيات شاشة حقيقية بنفس مصفوفة الـSVG، عند نفس ارتفاع الكلمة
+      // بالضبط (مو عند الزند العريض)، ونتأكد إن عرض الكلمة الفعلي المرسوم (قياس حقيقي، مو
+      // تخمين) ما يتجاوزها. هذا يلتقط أي حرف طويل (زي "سي نصف بيمول جواب") تلقائياً
       label.style.removeProperty('font-size');
-      if (window.OUD && typeof window.OUD.VISUAL_NUT_X === 'number' && typeof window.OUD.NECK_END_X === 'number') {
-        const rp = svg.createSVGPoint();
-        rp.x = window.OUD.VISUAL_NUT_X; rp.y = window.handBtnSvgY;
-        const rightEdge = rp.matrixTransform(ctm).x;
-        const lp = svg.createSVGPoint();
-        lp.x = window.OUD.NECK_END_X; lp.y = window.handBtnSvgY;
-        const leftEdge = lp.matrixTransform(ctm).x;
-        const safety = 14; // بكسل شاشة حقيقية — هامش أمان عن حافة الرسمة
-        const maxWidthPx = Math.abs(rightEdge - leftEdge) - safety * 2;
-        const rect = label.getBoundingClientRect();
-        if (maxWidthPx > 0 && rect.width > maxWidthPx) {
-          const baseSize = parseFloat(getComputedStyle(label).fontSize);
-          const MIN_SCALE = 0.45; // شبكة أمان أخيرة بس — الأولوية لعدم اللمس، مو للحد الأدنى
-          const scale = Math.max(MIN_SCALE, maxWidthPx / rect.width);
-          label.style.setProperty('font-size', (baseSize * scale) + 'px', 'important');
-        }
+      const rp = svg.createSVGPoint();
+      rp.x = window.OUD.VISUAL_NUT_X; rp.y = window.handBtnSvgY;
+      const rightEdge = rp.matrixTransform(ctm).x;
+      const lp = svg.createSVGPoint();
+      lp.x = window.OUD.NECK_END_X; lp.y = window.handBtnSvgY;
+      const leftEdge = lp.matrixTransform(ctm).x;
+      const safety = 14; // بكسل شاشة حقيقية — هامش أمان عن حافة الرسمة
+      const maxWidthPx = Math.abs(rightEdge - leftEdge) - safety * 2;
+      const rect = label.getBoundingClientRect();
+      if (maxWidthPx > 0 && rect.width > maxWidthPx) {
+        const baseSize = parseFloat(getComputedStyle(label).fontSize);
+        const MIN_SCALE = 0.45; // شبكة أمان أخيرة بس — الأولوية لعدم اللمس، مو للحد الأدنى
+        const scale = Math.max(MIN_SCALE, maxWidthPx / rect.width);
+        label.style.setProperty('font-size', (baseSize * scale) + 'px', 'important');
       }
     };
     // نربط النص بنفس دالة تموضع زر المايك (تشتغل مرتين بالرسم: فوراً وبعد 150ms عشان التخطيط
