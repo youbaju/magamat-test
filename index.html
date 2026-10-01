@@ -5419,8 +5419,10 @@ function buildOudStatic(){
           if (typeof window.updateNowPlaying === 'function') window.updateNowPlaying(); // يحدّث اسم السلم/الجذر بزر دليل السلم الغربي (كان يبقى بالنظام القديم لحد ما تختار سلم جديد)
           if (typeof window.renderChordsList === 'function' && window.chordModeActive) window.renderChordsList();
           if (window.selectedChord && typeof renderChordHighlight === 'function') renderChordHighlight(window.selectedChord.positions, false); // تسميات الكورد على الزند بطبقة منفصلة، تحتاج تحديث صريح
-          const maqamSelEl = document.getElementById('maqam-select');
-          if (maqamSelEl && maqamSelEl.value && typeof window.setDefaultHarf === 'function') window.setDefaultHarf(maqamSelEl.value); // نحدّث قائمة الحروف (اختيار المحطّ) عشان تعكس نظام Do/C الجديد فوراً
+          // نحدّث نصوص قائمة الحروف بس (تعكس Do/C الجديد) بدون إعادة ضبط المحطّ المختار حالياً —
+          // استخدام setDefaultHarf الكاملة هنا بالغلط كان يفرض رجوع المحطّ لافتراضي المقام
+          // بكل ضغطة على هذا الزر، ويضيع أي حرف اختاره المستخدم يدوياً (الخلل اللي لاحظه يوسف)
+          if (typeof window.refreshHarfSelectLabels === 'function') window.refreshHarfSelectLabels();
         });
         return ng;
       }
@@ -7338,8 +7340,9 @@ window.wxResume = wxResume;
     }
     window.HARF_DISPLAY_LETTER = HARF_DISPLAY_LETTER;
 
-    function setDefaultHarf(maqam) {
-      const idx = defaultHarf[maqam];
+    // تحدّث نصوص خيارات قائمة الحروف بس (حسب اللغة/نظام Do-C الحاليين)، بدون أي لمس للاختيار
+    // الحالي — هذا الجزء بس اللي يحتاجه زر Do/C (تبديل طريقة الكتابة لا يفترض يغيّر الحرف المختار)
+    function refreshHarfSelectLabels() {
       for (let i = 0; i < harfSelect.options.length; i++) {
         const opt = harfSelect.options[i];
         // نشيل أي علامة قديمة ("( محط المقام )" أو "( Root )") من النص الحالي أول، عشان الحساب يبدأ دايماً من نص نظيف
@@ -7352,16 +7355,30 @@ window.wxResume = wxResume;
           ? window.HARF_DISPLAY_EN[opt.value]
           : (window.HARF_DISPLAY && window.HARF_DISPLAY[opt.value]) || cleanCurrentText;
         opt.dataset.original = correctText;
-        opt.textContent = correctText;
+        // نحافظ على علامة "( محط المقام )" إن كانت موجودة على هذا الخيار تحديداً (هو المختار
+        // حالياً كمحطّ)، بدل ما نمسحها بالغلط لو هذا الخيار هو المختار فعلاً وقت نداء الدالة
+        const hadMarker = /\s*\(\s*(محط المقام|Root)\s*\)\s*$/.test(opt.textContent) || (harfSelect.selectedIndex === i && opt.dataset.isRoot === '1');
+        opt.textContent = hadMarker ? (correctText + ((window.oudLanguage === 'en') ? '   ( Root )' : '   ( محط المقام )')) : correctText;
       }
+      if (harfSelect._customSelectApi) harfSelect._customSelectApi.refresh();
+    }
+    window.refreshHarfSelectLabels = refreshHarfSelectLabels;
+
+    function setDefaultHarf(maqam) {
+      const idx = defaultHarf[maqam];
+      // نصفّر علامة "هو المحطّ الافتراضي" عن كل الخيارات أول (تُستخدم فقط داخل هذي الدالة
+      // عشان refreshHarfSelectLabels تعرف تحافظ على العلامة الصحيحة لو استُدعيت بعدها)
+      for (let i = 0; i < harfSelect.options.length; i++) delete harfSelect.options[i].dataset.isRoot;
+      refreshHarfSelectLabels();
       if (idx !== undefined) {
         harfSelect.selectedIndex = idx;
+        harfSelect.options[idx].dataset.isRoot = '1';
         const markerText = (window.oudLanguage === 'en') ? '   ( Root )' : '   ( محط المقام )';
         harfSelect.options[idx].textContent = harfSelect.options[idx].dataset.original + markerText;
       }
       if (harfSelect._customSelectApi) harfSelect._customSelectApi.refresh();
     }
-    window.setDefaultHarf = setDefaultHarf; // نكشفها عالمياً عشان زر Do/C (بمجال مختلف) يقدر يستدعيها
+    window.setDefaultHarf = setDefaultHarf; // نكشفها عالمياً — تُستخدم عند تغيير المقام نفسه (تغيير المحطّ للافتراضي مقصود هناك)
     maqamSelect.addEventListener('change', () => setDefaultHarf(maqamSelect.value));
 
     document.getElementById('r1b').value = "الراست";
