@@ -7355,9 +7355,11 @@ window.wxResume = wxResume;
           ? window.HARF_DISPLAY_EN[opt.value]
           : (window.HARF_DISPLAY && window.HARF_DISPLAY[opt.value]) || cleanCurrentText;
         opt.dataset.original = correctText;
-        // نحافظ على علامة "( محط المقام )" إن كانت موجودة على هذا الخيار تحديداً (هو المختار
-        // حالياً كمحطّ)، بدل ما نمسحها بالغلط لو هذا الخيار هو المختار فعلاً وقت نداء الدالة
-        const hadMarker = /\s*\(\s*(محط المقام|Root)\s*\)\s*$/.test(opt.textContent) || (harfSelect.selectedIndex === i && opt.dataset.isRoot === '1');
+        // المصدر الوحيد للحقيقة هل هذا الخيار هو محطّ المقام: علم dataset.isRoot اللي تضبطه
+        // setDefaultHarf حصرياً — لا نتفحص النص الحالي نفسه إطلاقاً (كان هذا هو سبب الخلل:
+        // أي خيار احتفظ بكلمة "محط المقام" مكتوبة من مقام سابق كان يعيد نسخها لنفسه كل مرة
+        // تلقائياً بلا توقف، فتتراكم العلامة على أكثر من خيار بعد التنقل بين عدة مقامات)
+        const hadMarker = opt.dataset.isRoot === '1';
         opt.textContent = hadMarker ? (correctText + ((window.oudLanguage === 'en') ? '   ( Root )' : '   ( محط المقام )')) : correctText;
       }
       if (harfSelect._customSelectApi) harfSelect._customSelectApi.refresh();
