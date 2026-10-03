@@ -4240,6 +4240,10 @@ document.getElementById('cTabCircle').addEventListener('click', () => {
     if (typeof clearChordHighlight === 'function') clearChordHighlight();
     syncExerciseControlsVisibility();
     if (typeof window.renderAll === 'function') window.renderAll();
+    // renderAll() يعيد رسم الزند بس، ما يلمس نص زر "دليل" — لازم updateNowPlaying() صراحة هنا
+    // عشان يرجع يعرض اسم السلم/الجذر بدل ما يبقى عالقاً على اسم آخر كورد كان مختاراً (هذا
+    // بالضبط سبب عدم التزامن اللي لاحظه يوسف بين تبويبي الدائرة والكوردات)
+    if (typeof window.updateNowPlaying === 'function') window.updateNowPlaying();
   }
   showDrawerMode('circle');
 });
