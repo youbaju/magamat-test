@@ -7567,37 +7567,48 @@ window.wxResume = wxResume;
       wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
       // الشاشات القصيرة (جوال أفقي) نرفع الارتفاع الأقصى لـ85% عشان تظهر صفوف أكثر بعد تثبيت الرأس
       const shortScreenFav = window.matchMedia && window.matchMedia('(max-height: 500px)').matches;
-      // ارتفاع النافذة يتناسب مع الشاشة: بالجوال كما كان (٧٠٪، أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر
-      // نافذة أطول (من ٥٥٪ إلى ٨٥٪ من ارتفاع الشاشة) بدل مربع صغير يضيع وسط شاشة كبيرة. الحد الأدنى
-      // لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
+      // ارتفاع النافذة يتناسب مع الشاشة: بالجوال ٧٠٪ (أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر من ٥٥٪ إلى ٨٥٪.
+      // الحد الأدنى لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
       const isPhoneFav = favPx(1, 0) === 1;
       const favBoxMaxH = isPhoneFav ? (shortScreenFav ? '85vh' : '70vh') : '85vh';
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
-      // الصندوق نفسه ما يتمرر ولا فيه حشو: العنوان خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
-      box.style.cssText = 'background:#fff;border-radius:12px;max-width:' + favPx(480, 620) + 'px;width:95%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
-      const title = document.createElement('div');
+      // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
+      box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:95%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
+      // رأس النافذة: العنوان مع عدّاد المحفوظات، وخط أزرق ساطع تحته
+      const head = document.createElement('div');
+      head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
+      const title = document.createElement('span');
       title.textContent = isEn ? 'Favorites' : 'المفضلة';
-      title.style.cssText = 'flex:none;font-weight:bold;font-size:' + favPx(16, 20) + 'px;padding:14px 14px 10px;color:#1a8abf;background:#fff;';
-      box.appendChild(title);
+      title.style.cssText = 'font-weight:bold;font-size:' + favPx(16, 20) + 'px;color:#1a8abf;';
+      head.appendChild(title);
+      if (list.length) {
+        const cnt = document.createElement('span');
+        cnt.textContent = isEn ? (list.length + ' saved') : (list.length.toLocaleString('ar-EG') + ' محفوظة');
+        cnt.style.cssText = 'font-size:' + favPx(12, 14) + 'px;background:#eaf6fc;color:#1a5fa8;border:1px solid #bfe3f5;border-radius:999px;padding:2px 10px;white-space:nowrap;';
+        head.appendChild(cnt);
+      }
+      box.appendChild(head);
       // حاوية التمرير: بلا حشو علوي عشان صف عناوين الأعمدة يلصق بحافتها بلا فراغ تظهر منه الصفوف
       const scroller = document.createElement('div');
-      scroller.style.cssText = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 14px 14px;';
+      scroller.style.cssText = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;';
       box.appendChild(scroller);
       if (!list.length) {
         const empty = document.createElement('div');
         empty.textContent = isEn ? 'Favorites is empty' : 'المفضلة فارغة';
-        empty.style.cssText = 'color:#888;padding:10px 0;';
+        empty.style.cssText = 'color:#888;padding:16px 14px;';
         scroller.appendChild(empty);
       } else {
         const table = document.createElement('table');
-        table.style.cssText = 'width:100%; border-collapse:separate; border-spacing:0; font-size:' + favPx(12, 16) + 'px; border-top:1px solid #bfe3f5; border-left:1px solid #bfe3f5;';
+        table.style.cssText = 'width:100%; border-collapse:separate; border-spacing:0; font-size:' + favPx(12, 16) + 'px;';
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
         (isEn ? ['Family', 'Maqam', 'Letter', 'Delete'] : ['الفصيلة', 'المقام', 'الحرف', 'حذف']).forEach((h, hi) => {
           const th = document.createElement('th');
           th.textContent = h;
-          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:' + favPx(6, 10) + 'px; background:#1a8abf; color:#fff; font-weight:700; position:sticky; top:0; z-index:2; white-space:nowrap; border-right:1px solid #1a8abf; border-bottom:1px solid #1a8abf;'
+          // فواصل بيضاء خفيفة بين العناوين (من الخلية الثانية فصاعداً، بحسب اتجاه الكتابة)
+          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:' + favPx(8, 11) + 'px ' + favPx(8, 10) + 'px; background:#1a8abf; color:#fff; font-weight:700; position:sticky; top:0; z-index:2; white-space:nowrap;'
+            + (hi > 0 ? ' border-inline-start:1px solid rgba(255,255,255,.35);' : '')
             + (hi === 3 ? ' width:' + favPx(54, 70) + 'px;' : '');
           headRow.appendChild(th);
         });
@@ -7606,32 +7617,54 @@ window.wxResume = wxResume;
         const tbody = document.createElement('tbody');
         list.forEach((fav, idx) => {
           const tr = document.createElement('tr');
-          tr.style.cssText = 'cursor:pointer;';
-          tr.addEventListener('mouseenter', () => { tr.style.background = '#eaf6fc'; });
-          tr.addEventListener('mouseleave', () => { tr.style.background = ''; });
+          // صفوف بلونين متبادلين واضحين: أبيض وأزرق متوسط، وعند اللمس/المرور ذهبي هادئ بعيد عن لوني التبادل
+          const zebra = (idx % 2 === 0) ? '#ffffff' : '#bfe3f5';
+          tr.style.cssText = 'cursor:pointer; background:' + zebra + ';';
+          tr.addEventListener('mouseenter', () => { tr.style.background = '#f9dc9a'; });
+          tr.addEventListener('mouseleave', () => { tr.style.background = zebra; });
           const fasilaName = (isEn && typeof FAMILY_NAME_EN !== 'undefined' && FAMILY_NAME_EN[fav.fasila]) ? FAMILY_NAME_EN[fav.fasila] : fav.fasila;
           const maqamName = (isEn && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-          const harfNameBase = (isEn && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
+          const harfName = (isEn && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
             ? HARF_DISPLAY_LETTER[fav.harf]
             : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
             ? HARF_DISPLAY_EN[fav.harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
-          // نضيف "( محط المقام )" لو الحرف المحفوظ بهذي المفضلة هو نفسه محطّ المقام الافتراضي —
-          // مقارنة مباشرة باسم المقام المحفوظ، بنفس نص الإضافة المستخدم فوق الزند تمامًا
+          // الحرف المحفوظ هو نفسه محطّ المقام الافتراضي؟ مقارنة مباشرة باسم المقام المحفوظ
           const favIsRoot = (typeof defaultHarf !== 'undefined' && HARF_LIST && defaultHarf[fav.maqam] !== undefined && HARF_LIST[defaultHarf[fav.maqam]] === fav.harf);
-          const harfName = harfNameBase + (favIsRoot ? (isEn ? '  ( Root )' : '  ( محط المقام )') : '');
-          [fasilaName, maqamName, harfName].forEach(val => {
+          const cellPad = favPx(10, 12) + 'px ' + favPx(8, 10) + 'px';
+          // حدود داخلية ظاهرة: خط أسفل كل صف (ما عدا الأخير، يكفيه إطار النافذة)، وفاصل بين الأعمدة
+          const rowBorder = (idx < list.length - 1) ? ' border-bottom:1px solid #8ecde9;' : '';
+          const colBorder = ' border-inline-start:1px solid #8ecde9;';
+          // الأعمدة الثلاثة بنفس اللون والحجم والوزن (بدون تمييز بين الفصيلة والمقام والحرف)
+          const cellTextCss = 'color:#1a120c; font-weight:400;';
+          const cells = [
+            { text: fasilaName, css: cellTextCss },
+            { text: maqamName, css: cellTextCss },
+            { text: harfName, css: cellTextCss, root: favIsRoot }
+          ];
+          cells.forEach((c, ci) => {
             const td = document.createElement('td');
-            td.textContent = val;
-            td.style.cssText = 'padding:' + favPx(7, 11) + 'px ' + favPx(6, 10) + 'px; color:#1a120c; border-right:1px solid #bfe3f5; border-bottom:1px solid #bfe3f5;';
+            td.textContent = c.text;
+            td.style.cssText = 'padding:' + cellPad + '; vertical-align:middle;' + c.css + rowBorder + (ci > 0 ? colBorder : '');
+            if (c.root) {
+              // شارة "محط المقام" بنفس أسلوب زر دليل المقام (ذهبي فاتح) بدل النص بين قوسين
+              const badge = document.createElement('span');
+              badge.textContent = isEn ? 'Root' : 'محط المقام';
+              badge.style.cssText = 'display:inline-block; margin-inline-start:6px; font-size:' + favPx(11, 13) + 'px; background:#fff8ea; border:1px solid #e8a83a; color:#1b1410; border-radius:999px; padding:1px 8px; white-space:nowrap; font-weight:400;';
+              td.appendChild(badge);
+            }
             td.addEventListener('click', () => goToFavorite(fav));
             tr.appendChild(td);
           });
           const delTd = document.createElement('td');
-          delTd.style.cssText = 'padding:' + favPx(7, 11) + 'px ' + favPx(6, 10) + 'px; text-align:center; border-right:1px solid #bfe3f5; border-bottom:1px solid #bfe3f5;';
+          delTd.style.cssText = 'padding:' + cellPad + '; text-align:center; vertical-align:middle;' + rowBorder + colBorder;
           const del = document.createElement('button');
           del.textContent = '✕';
-          del.style.cssText = 'background:none;border:none;color:#C0392B;font-size:' + favPx(16, 20) + 'px;cursor:pointer;padding:4px 8px;';
+          del.setAttribute('aria-label', isEn ? 'Delete' : 'حذف');
+          const delSize = favPx(24, 30) + 'px';
+          del.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:' + delSize + ';height:' + delSize + ';border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:' + favPx(13, 16) + 'px;cursor:pointer;padding:0;';
+          del.addEventListener('mouseenter', () => { del.style.background = '#c0392b'; });
+          del.addEventListener('mouseleave', () => { del.style.background = '#e74c3c'; });
           del.addEventListener('click', (e) => {
             e.stopPropagation();
             const updated = loadArFavorites().filter((_, i) => i !== idx);
