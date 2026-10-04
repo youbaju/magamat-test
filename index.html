@@ -1243,9 +1243,9 @@ flex-shrink: 0;
   /* حجم خط "الحرف فوق الزند" ثابت بنِسَب CSS عادية (زي زرّي دليل/أبعاد المقام بالضبط)،
      مو مرتبط بمعامل تكبير الـSVG المتغيّر — لأن ربطه بمعامل الـSVG كان يصغّره كثير بالجوال
      العمودي (المعامل هناك صغير جداً)، فيبان صغير وباهت رغم إنه بلون واضح */
-  .ar-harf-label{ font-size: 1.05rem; line-height: 1; }
+  .ar-harf-label{ font-size: .9rem; line-height: 1; }
   @media (max-width: 1024px){
-    .ar-harf-label{ font-size: .9rem; }
+    .ar-harf-label{ font-size: .77rem; }
   }
 
   /* ===== زر دليل المقام ===== */
@@ -7443,11 +7443,13 @@ window.wxResume = wxResume;
     function favLabel(fav) {
       const isEnLbl = window.oudLanguage === 'en';
       const maqamName = (isEnLbl && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-      const harfName = (isEnLbl && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
+      const harfNameBase = (isEnLbl && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
         ? HARF_DISPLAY_LETTER[fav.harf]
         : (isEnLbl && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
         ? HARF_DISPLAY_EN[fav.harf]
         : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
+      const favIsRootLbl = (typeof defaultHarf !== 'undefined' && typeof HARF_LIST !== 'undefined' && defaultHarf[fav.maqam] !== undefined && HARF_LIST[defaultHarf[fav.maqam]] === fav.harf);
+      const harfName = harfNameBase + (favIsRootLbl ? (isEnLbl ? '  ( Root )' : '  ( محط المقام )') : '');
       return fav.fasila + ' - ' + maqamName + ' - ' + harfName;
     }
     function goToFavorite(fav) {
@@ -7582,11 +7584,15 @@ window.wxResume = wxResume;
           tr.addEventListener('mouseleave', () => { tr.style.background = ''; });
           const fasilaName = (isEn && typeof FAMILY_NAME_EN !== 'undefined' && FAMILY_NAME_EN[fav.fasila]) ? FAMILY_NAME_EN[fav.fasila] : fav.fasila;
           const maqamName = (isEn && typeof MAQAM_NAME_EN !== 'undefined' && MAQAM_NAME_EN[fav.maqam]) ? MAQAM_NAME_EN[fav.maqam] : fav.maqam;
-          const harfName = (isEn && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
+          const harfNameBase = (isEn && window.oudNoteSystem === 'letter' && typeof HARF_DISPLAY_LETTER !== 'undefined' && HARF_DISPLAY_LETTER[fav.harf])
             ? HARF_DISPLAY_LETTER[fav.harf]
             : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
             ? HARF_DISPLAY_EN[fav.harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
+          // نضيف "( محط المقام )" لو الحرف المحفوظ بهذي المفضلة هو نفسه محطّ المقام الافتراضي —
+          // مقارنة مباشرة باسم المقام المحفوظ، بنفس نص الإضافة المستخدم فوق الزند تمامًا
+          const favIsRoot = (typeof defaultHarf !== 'undefined' && HARF_LIST && defaultHarf[fav.maqam] !== undefined && HARF_LIST[defaultHarf[fav.maqam]] === fav.harf);
+          const harfName = harfNameBase + (favIsRoot ? (isEn ? '  ( Root )' : '  ( محط المقام )') : '');
           [fasilaName, maqamName, harfName].forEach(val => {
             const td = document.createElement('td');
             td.textContent = val;
@@ -9752,7 +9758,14 @@ window.wxResume = wxResume;
             : (isEnHarf && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[harf])
             ? HARF_DISPLAY_EN[harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[harf]) ? HARF_DISPLAY[harf] : harf);
-          arHarfLabelEl3.textContent = harfDisplayName;
+          // نضيف "( محط المقام )" لو الحرف المعروض فوق الزند هو نفسه محطّ المقام الحقيقي —
+          // نعتمد على نفس العلم (dataset.isRoot) اللي تضبطه setDefaultHarf حصرياً بقائمة
+          // الحروف، عشان الكتابتين (فوق الزند، وبالقائمة) يبقيان متزامنتين دائماً بلا احتمال تعارض
+          const harfSelectEl = document.getElementById('harf-select');
+          const selectedHarfOpt = harfSelectEl ? harfSelectEl.options[harfSelectEl.selectedIndex] : null;
+          const isRootHarf = !!(selectedHarfOpt && selectedHarfOpt.dataset.isRoot === '1');
+          const rootSuffix = isRootHarf ? (isEnHarf ? '  ( Root )' : '  ( محط المقام )') : '';
+          arHarfLabelEl3.textContent = harfDisplayName + rootSuffix;
         }
         if (typeof window.syncArHarfLabelPosition === 'function') {
           requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
