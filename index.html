@@ -7617,7 +7617,7 @@ window.wxResume = wxResume;
           // فواصل بيضاء خفيفة بين العناوين (من الخلية الثانية فصاعداً، بحسب اتجاه الكتابة)
           th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:' + favPx(8, 11) + 'px ' + favPx(8, 10) + 'px; background:#1a8abf; color:#fff; font-weight:700; position:sticky; top:0; z-index:2; white-space:nowrap;'
             + (hi > 0 ? ' border-inline-start:1px solid rgba(255,255,255,.35);' : '')
-            + (hi === 3 ? ' width:' + favPx(54, 70) + 'px;' : '');
+            + (hi === 1 ? '' : ' width:1%;');
           headRow.appendChild(th);
         });
         thead.appendChild(headRow);
@@ -7637,8 +7637,6 @@ window.wxResume = wxResume;
             : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
             ? HARF_DISPLAY_EN[fav.harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
-          // الحرف المحفوظ هو نفسه محطّ المقام الافتراضي؟ مقارنة مباشرة باسم المقام المحفوظ
-          const favIsRoot = (typeof defaultHarf !== 'undefined' && HARF_LIST && defaultHarf[fav.maqam] !== undefined && HARF_LIST[defaultHarf[fav.maqam]] === fav.harf);
           const cellPad = favPx(10, 12) + 'px ' + favPx(8, 10) + 'px';
           // حدود داخلية ظاهرة: خط أسفل كل صف (ما عدا الأخير، يكفيه إطار النافذة)، وفاصل بين الأعمدة
           const rowBorder = (idx < list.length - 1) ? ' border-bottom:1px solid #8ecde9;' : '';
@@ -7648,19 +7646,12 @@ window.wxResume = wxResume;
           const cells = [
             { text: fasilaName, css: cellTextCss },
             { text: maqamName, css: cellTextCss },
-            { text: harfName, css: cellTextCss, root: favIsRoot }
+            { text: harfName, css: cellTextCss }
           ];
           cells.forEach((c, ci) => {
             const td = document.createElement('td');
             td.textContent = c.text;
-            td.style.cssText = 'padding:' + cellPad + '; vertical-align:middle;' + c.css + rowBorder + (ci > 0 ? colBorder : '');
-            if (c.root) {
-              // شارة "محط المقام" بنفس أسلوب زر دليل المقام (ذهبي فاتح) بدل النص بين قوسين
-              const badge = document.createElement('span');
-              badge.textContent = isEn ? 'Root' : 'محط المقام';
-              badge.style.cssText = 'display:inline-block; margin-inline-start:6px; font-size:' + favPx(11, 13) + 'px; background:#fff8ea; border:1px solid #e8a83a; color:#1b1410; border-radius:999px; padding:1px 8px; white-space:nowrap; font-weight:400;';
-              td.appendChild(badge);
-            }
+            td.style.cssText = 'padding:' + cellPad + '; vertical-align:middle; white-space:nowrap;' + c.css + rowBorder + (ci > 0 ? colBorder : '');
             td.addEventListener('click', () => goToFavorite(fav));
             tr.appendChild(td);
           });
