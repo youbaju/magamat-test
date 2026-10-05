@@ -4228,6 +4228,9 @@ function showDrawerMode(mode){
       }
     }
   }
+  // نحدّث النص تحت أزرار أنواع السلالم (وزر الدليل) بعد ضبط الوضع الجديد — كان يبقى بصيغته القديمة
+  // لأن مصدره يُحسب بدالة تُستدعى قبل تغيّر وضع التبويب
+  if (typeof updateNowPlaying === 'function') updateNowPlaying();
 }
 document.getElementById('cTabCircle').addEventListener('click', () => {
   // لو كان الزند يعرض كورداً (وضع الكورد فعّال)، نرجّعه لعرض السلم الحالي عادياً
@@ -4721,7 +4724,12 @@ function updateNowPlaying(){
   const scaleName = (window.oudLanguage === 'en' && SCALE_NAME_EN[rawScaleName]) ? SCALE_NAME_EN[rawScaleName] : rawScaleName;
   const rootLetterIdx = getRootLetterIndex(state.root, state.scaleType, state.letterOverride);
   const correctRootName = getCorrectNoteName(state.root, rootLetterIdx);
-  document.getElementById('c-nowPlaying').textContent = `${correctRootName} ${scaleName}`;
+  // بتبويب الكوردات نوضّح أن هذا السلم هو الذي تُشتق منه الكوردات المعروضة ("كوردات لا مينور طبيعي")،
+  // بدل ما يبدو كأنه وصف لما على الزند (المعروض كورد). بتبويب الدائرة يبقى اسم السلم كما كان
+  const nowPlayingBase = `${correctRootName} ${scaleName}`;
+  document.getElementById('c-nowPlaying').textContent = (currentDrawerMode === 'chords')
+    ? ((window.oudLanguage === 'en') ? ('Chords of ' + nowPlayingBase) : ('كوردات ' + nowPlayingBase))
+    : nowPlayingBase;
   updateWesternGuideButtonName();
 }
 window.updateNowPlaying = updateNowPlaying; // نكشفها عالمياً عشان زر Do/C (بمجال/scope مختلف) يقدر يستدعيها بثقة
