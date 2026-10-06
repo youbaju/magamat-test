@@ -7572,7 +7572,7 @@ window.wxResume = wxResume;
       const isEn = window.oudLanguage === 'en';
       const list = loadArFavorites();
       const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+      wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:' + favPx(6, 16) + 'px;box-sizing:border-box;';
       // الشاشات القصيرة (جوال أفقي) نرفع الارتفاع الأقصى لـ85% عشان تظهر صفوف أكثر بعد تثبيت الرأس
       const shortScreenFav = window.matchMedia && window.matchMedia('(max-height: 500px)').matches;
       // ارتفاع النافذة يتناسب مع الشاشة: بالجوال ٧٠٪ (أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر من ٥٥٪ إلى ٨٥٪.
@@ -7582,7 +7582,7 @@ window.wxResume = wxResume;
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
-      box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:95%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
+      box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(100, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
       // رأس النافذة: العنوان مع عدّاد المحفوظات، وخط أزرق ساطع تحته
       const head = document.createElement('div');
       head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
