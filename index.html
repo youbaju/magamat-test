@@ -7582,7 +7582,7 @@ window.wxResume = wxResume;
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
-      box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(100, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
+      box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(98, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
       // رأس النافذة: العنوان مع عدّاد المحفوظات، وخط أزرق ساطع تحته
       const head = document.createElement('div');
       head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
@@ -9857,7 +9857,7 @@ window.wxResume = wxResume;
         // نوحّد عرض زر الدليل وزر الأبعاد دايماً (مو بس بحد أدنى ثابت) — لأن طول الاسمين يختلف
         // باختلاف اللغة ("Guide of" أقصر من "Intervals of")، فنقيس أعرض واحد ونفرضه عالاثنين
         if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
-          requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth()); 
+          requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth());
         }
         if (typeof window.syncArHarfLabelPosition === 'function') {
           requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
