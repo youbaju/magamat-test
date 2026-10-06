@@ -7579,7 +7579,7 @@ window.wxResume = wxResume;
       // الحد الأدنى لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
       const isPhoneFav = favPx(1, 0) === 1;
       const favBoxMaxH = isPhoneFav ? (shortScreenFav ? 'calc(100dvh - 12px)' : 'min(60vh, calc(100dvh - 120px))') : '85vh';
-      const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
+      const favBoxMinH = (isPhoneFav && shortScreenFav && list.length) ? 'calc(100dvh - 12px)' : ((!isPhoneFav && list.length) ? '55vh' : '0');
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
       box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(98, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
@@ -7696,6 +7696,15 @@ window.wxResume = wxResume;
       favListOverlay = wrap;
     }
     function openFavList() { closeFavList(); renderFavList(); }
+    // عند تدوير الجوال والنافذة مفتوحة: نعيد حساب الأحجام (كانت تُحسب لحظة الفتح فقط فتبقى بمقاسات الاتجاه القديم)
+    let favRotateTimer = null;
+    function refreshFavOnRotate() {
+      if (!favListOverlay) return;
+      clearTimeout(favRotateTimer);
+      favRotateTimer = setTimeout(() => { if (favListOverlay) openFavList(); }, 150);
+    }
+    window.addEventListener('resize', refreshFavOnRotate);
+    window.addEventListener('orientationchange', refreshFavOnRotate);
 
     // مراجع للعناصر المشتركة مع تبويب المقامات الغربية
     const oudSvgAr = document.getElementById('shared-oudSvg');
