@@ -7642,7 +7642,7 @@ window.wxResume = wxResume;
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
           const cellPad = favPx(8, 12) + 'px ' + favPx(6, 10) + 'px';
           // حدود داخلية ظاهرة: خط أسفل كل صف (ما عدا الأخير، يكفيه إطار النافذة)، وفاصل بين الأعمدة
-          const rowBorder = (idx < list.length - 1) ? ' border-bottom:1px solid #8ecde9;' : '';
+          const rowBorder = ' border-bottom:1px solid #8ecde9;';
           const colBorder = ' border-inline-start:1px solid #8ecde9;';
           // الأعمدة الثلاثة بنفس اللون والحجم والوزن (بدون تمييز بين الفصيلة والمقام والحرف)
           const cellTextCss = 'color:#1a120c; font-weight:400;';
