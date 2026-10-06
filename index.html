@@ -7578,14 +7578,14 @@ window.wxResume = wxResume;
       // ارتفاع النافذة يتناسب مع الشاشة: بالجوال ٧٠٪ (أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر من ٥٥٪ إلى ٨٥٪.
       // الحد الأدنى لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
       const isPhoneFav = favPx(1, 0) === 1;
-      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? 'min(85vh, calc(100dvh - 24px))' : 'min(60vh, calc(100dvh - 120px))') : '85vh';
+      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? 'calc(100dvh - 12px)' : 'min(60vh, calc(100dvh - 120px))') : '85vh';
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
       box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(98, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
       // رأس النافذة: العنوان مع عدّاد المحفوظات، وخط أزرق ساطع تحته
       const head = document.createElement('div');
-      head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
+      head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:' + (shortScreenFav ? '6px 14px' : '12px 14px') + ';border-bottom:3px solid #3ab4e8;background:#fff;';
       const title = document.createElement('span');
       title.textContent = isEn ? 'Favorites' : 'المفضلة';
       title.style.cssText = 'font-weight:bold;font-size:' + favPx(16, 20) + 'px;color:#1a8abf;';
@@ -7647,7 +7647,7 @@ window.wxResume = wxResume;
             : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
             ? HARF_DISPLAY_EN[fav.harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
-          const cellPad = favPx(8, 12) + 'px ' + favPx(6, 10) + 'px';
+          const cellPad = (shortScreenFav ? 5 : favPx(8, 12)) + 'px ' + favPx(6, 10) + 'px';
           // حدود داخلية ظاهرة: خط أسفل كل صف (ما عدا الأخير، يكفيه إطار النافذة)، وفاصل بين الأعمدة
           const rowBorder = ' border-bottom:1px solid #8ecde9;';
           const colBorder = ' border-inline-start:1px solid #8ecde9;';
