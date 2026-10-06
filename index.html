@@ -9857,7 +9857,7 @@ window.wxResume = wxResume;
         // نوحّد عرض زر الدليل وزر الأبعاد دايماً (مو بس بحد أدنى ثابت) — لأن طول الاسمين يختلف
         // باختلاف اللغة ("Guide of" أقصر من "Intervals of")، فنقيس أعرض واحد ونفرضه عالاثنين
         if (typeof window.syncGuideIntervalsBtnWidth === 'function') {
-          requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth());
+          requestAnimationFrame(() => window.syncGuideIntervalsBtnWidth()); 
         }
         if (typeof window.syncArHarfLabelPosition === 'function') {
           requestAnimationFrame(() => requestAnimationFrame(window.syncArHarfLabelPosition));
