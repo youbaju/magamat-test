@@ -7578,7 +7578,7 @@ window.wxResume = wxResume;
       // ارتفاع النافذة يتناسب مع الشاشة: بالجوال ٧٠٪ (أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر من ٥٥٪ إلى ٨٥٪.
       // الحد الأدنى لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
       const isPhoneFav = favPx(1, 0) === 1;
-      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? '85vh' : '70vh') : '85vh';
+      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? '85vh' : '60vh') : '85vh';
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
@@ -7608,16 +7608,19 @@ window.wxResume = wxResume;
         scroller.appendChild(empty);
       } else {
         const table = document.createElement('table');
-        table.style.cssText = 'width:100%; border-collapse:separate; border-spacing:0; font-size:' + favPx(11, 16) + 'px;';
+        table.style.cssText = 'width:100%; border-collapse:separate; border-spacing:0; font-size:' + favPx(12, 16) + 'px;';
         const thead = document.createElement('thead');
         const headRow = document.createElement('tr');
-        (isEn ? ['Family', 'Maqam', 'Letter', 'Delete'] : ['الفصيلة', 'المقام', 'الحرف', 'حذف']).forEach((h, hi) => {
+        (isEn ? ['Family', 'Maqam', 'Letter', 'Delete'] : ['الفصيلة', 'المقام', 'الحرف', 'حذف']).forEach((h, hiOrig) => {
+          // عمود الفصيلة محذوف من الجدول في كل الأجهزة (المقام والحرف يكفيان)
+          if (hiOrig === 0) return;
+          const hi = hiOrig - 1;
           const th = document.createElement('th');
           th.textContent = h;
           // فواصل بيضاء خفيفة بين العناوين (من الخلية الثانية فصاعداً، بحسب اتجاه الكتابة)
-          th.style.cssText = 'text-align:' + (hi === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:' + favPx(8, 11) + 'px ' + favPx(5, 10) + 'px; background:#1a8abf; color:#fff; font-weight:700; position:sticky; top:0; z-index:2; white-space:nowrap;'
+          th.style.cssText = 'text-align:' + (hiOrig === 3 ? 'center' : (isEn ? 'left' : 'right')) + '; padding:' + favPx(8, 11) + 'px ' + favPx(6, 10) + 'px; background:#1a8abf; color:#fff; font-weight:700; position:sticky; top:0; z-index:2; white-space:nowrap;'
             + (hi > 0 ? ' border-inline-start:1px solid rgba(255,255,255,.35);' : '')
-            + (hi === 1 ? '' : ' width:1%;');
+            + (hiOrig === 3 ? ' width:1%;' : ' width:45%;');
           headRow.appendChild(th);
         });
         thead.appendChild(headRow);
@@ -7637,7 +7640,7 @@ window.wxResume = wxResume;
             : (isEn && typeof HARF_DISPLAY_EN !== 'undefined' && HARF_DISPLAY_EN[fav.harf])
             ? HARF_DISPLAY_EN[fav.harf]
             : ((typeof HARF_DISPLAY !== 'undefined' && HARF_DISPLAY[fav.harf]) ? HARF_DISPLAY[fav.harf] : fav.harf);
-          const cellPad = favPx(10, 12) + 'px ' + favPx(5, 10) + 'px';
+          const cellPad = favPx(8, 12) + 'px ' + favPx(6, 10) + 'px';
           // حدود داخلية ظاهرة: خط أسفل كل صف (ما عدا الأخير، يكفيه إطار النافذة)، وفاصل بين الأعمدة
           const rowBorder = (idx < list.length - 1) ? ' border-bottom:1px solid #8ecde9;' : '';
           const colBorder = ' border-inline-start:1px solid #8ecde9;';
@@ -7648,10 +7651,12 @@ window.wxResume = wxResume;
             { text: maqamName, css: cellTextCss },
             { text: harfName, css: cellTextCss }
           ];
-          cells.forEach((c, ci) => {
+          cells.forEach((c, ciOrig) => {
+            if (ciOrig === 0) return;
+            const ci = ciOrig - 1;
             const td = document.createElement('td');
             td.textContent = c.text;
-            td.style.cssText = 'padding:' + cellPad + '; vertical-align:middle; white-space:' + ((ci === 1 && isPhoneFav) ? 'normal' : 'nowrap') + ';' + c.css + rowBorder + (ci > 0 ? colBorder : '');
+            td.style.cssText = 'padding:' + cellPad + '; vertical-align:middle; white-space:nowrap;' + c.css + rowBorder + (ci > 0 ? colBorder : '');
             td.addEventListener('click', () => goToFavorite(fav));
             tr.appendChild(td);
           });
