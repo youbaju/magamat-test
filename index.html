@@ -7578,14 +7578,14 @@ window.wxResume = wxResume;
       // ارتفاع النافذة يتناسب مع الشاشة: بالجوال ٧٠٪ (أو ٨٥٪ بالأفقي القصير)، وبالآيباد والكمبيوتر من ٥٥٪ إلى ٨٥٪.
       // الحد الأدنى لا يُطبَّق على قائمة فارغة حتى لا تظهر رسالة "المفضلة فارغة" داخل صندوق ضخم
       const isPhoneFav = favPx(1, 0) === 1;
-      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? '85vh' : '60vh') : '85vh';
+      const favBoxMaxH = isPhoneFav ? (shortScreenFav ? 'min(85vh, calc(100dvh - 24px))' : 'min(60vh, calc(100dvh - 120px))') : '85vh';
       const favBoxMinH = (!isPhoneFav && list.length) ? '55vh' : '0';
       const box = document.createElement('div');
       // الصندوق نفسه ما يتمرر ولا فيه حشو: الرأس خارج منطقة التمرير فيبقى ثابتاً، والتمرير للصفوف فقط
       box.style.cssText = 'background:#fff;border:1px solid #bfe3f5;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:' + favPx(480, 620) + 'px;width:' + favPx(98, 95) + '%;max-height:' + favBoxMaxH + ';min-height:' + favBoxMinH + ';display:flex;flex-direction:column;overflow:hidden;padding:0;direction:' + (isEn ? 'ltr' : 'rtl') + ';font-family:Cairo,sans-serif;box-sizing:border-box;';
       // رأس النافذة: العنوان مع عدّاد المحفوظات، وخط أزرق ساطع تحته
       const head = document.createElement('div');
-      head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
+      head.style.cssText = 'flex:none;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:12px 14px;border-bottom:3px solid #3ab4e8;background:#fff;';
       const title = document.createElement('span');
       title.textContent = isEn ? 'Favorites' : 'المفضلة';
       title.style.cssText = 'font-weight:bold;font-size:' + favPx(16, 20) + 'px;color:#1a8abf;';
@@ -7596,6 +7596,13 @@ window.wxResume = wxResume;
         cnt.style.cssText = 'font-size:' + favPx(12, 14) + 'px;background:#eaf6fc;color:#1a5fa8;border:1px solid #bfe3f5;border-radius:999px;padding:2px 10px;white-space:nowrap;';
         head.appendChild(cnt);
       }
+      // زر إغلاق صريح في الرأس: يضمن وجود مخرج حتى لو غطّت النافذة الصفحة كلها
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '✕';
+      closeBtn.setAttribute('aria-label', isEn ? 'Close' : 'إغلاق');
+      closeBtn.style.cssText = 'flex:none;display:inline-flex;align-items:center;justify-content:center;width:' + favPx(30, 34) + 'px;height:' + favPx(30, 34) + 'px;border-radius:50%;border:1px solid #bfe3f5;background:#eaf6fc;color:#1a5fa8;font-size:' + favPx(14, 16) + 'px;cursor:pointer;padding:0;margin-inline-start:auto;';
+      closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeFavList(); });
+      head.appendChild(closeBtn);
       box.appendChild(head);
       // حاوية التمرير: بلا حشو علوي عشان صف عناوين الأعمدة يلصق بحافتها بلا فراغ تظهر منه الصفوف
       const scroller = document.createElement('div');
