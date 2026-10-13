@@ -5606,6 +5606,10 @@ function buildOudStatic(){
     maxX = mirroredMaxX;
   }
   oudSvg.setAttribute('viewBox', `${minX} ${minY} ${maxX-minX} ${maxY-minY}`);
+  // نعيد تموضع زر المايك وزر النغمة فوراً بعد تحديث الـviewBox (حسابهما الأول بأعلى الدالة يتم قبل تغيّر الـviewBox
+  // فيستخدم مقياساً قديماً من وضع اليد السابق، وكان يظهر قفز الأزرار أو بقاؤها بمكان خاطئ أحياناً)
+  if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
+  if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
 
   const btnX = btnX2;
   const btnY = visionY + (visionSize - btnH) / 2;
@@ -11046,7 +11050,13 @@ h1{color:#d6c4a0}
 [style*="color: rgb(26, 18, 12)"]{color:#eee6e0 !important}
 /* ===== زند العود (SVG يُبنى بالجافاسكربت) ===== */
 #shared-oudSvg line[stroke="#111"]{stroke:#d4d4d4}
-#shared-oudSvg line[stroke="#3a3a3a"]{stroke:#9a9a9a}
+/* ألوان الأوتار بالداكن: أفتح من الفاتح حتى لا تختفي فوق خلفية الزند الداكنة (تشمل خطوط الوتر المهتزّ path وخطوط رأس الزند) */
+#shared-oudSvg line[stroke="#5c3414"],#shared-oudSvg path[stroke="#5c3414"]{stroke:#c08848}
+#shared-oudSvg line[stroke="#9c5a18"],#shared-oudSvg path[stroke="#9c5a18"]{stroke:#dc9a34}
+#shared-oudSvg line[stroke="#c98a2e"],#shared-oudSvg path[stroke="#c98a2e"]{stroke:#f2c468}
+#shared-oudSvg line[stroke="#7a7a7a"],#shared-oudSvg path[stroke="#7a7a7a"]{stroke:#b8b8b8}
+#shared-oudSvg line[stroke="#3a3a3a"],#shared-oudSvg path[stroke="#3a3a3a"]{stroke:#d6d6d6}
+#shared-oudSvg line[stroke="#2a2a2a"],#shared-oudSvg path[stroke="#2a2a2a"]{stroke:#ececec}
 #shared-oudSvg text[fill="#111"],#shared-oudSvg text[fill="#222"]{fill:#e6e6e6}
 #shared-oudSvg text[fill="#000000"]{fill:#f4efe6}
 #shared-oudSvg text[fill="#1b1410"]{fill:#bdd7f0}
