@@ -1224,7 +1224,12 @@ flex-shrink: 0;
 }
   .c-selection-summary > *{ pointer-events: auto; }
   .c-selection-summary.cs-pending{ opacity:0 !important; }
-  @media (max-height:540px) and (orientation:landscape){ .c-selection-summary.cs-tight .now-playing{ display:none !important; } }
+  /* الجوال الأفقي (ارتفاع قصير): العنوان (مثل "دو ماجور") وأزرار الأنواع بسطر واحد جنب بعض — ثابت وبدون أي قياسات متأخرة، فلا يختفي العنوان ولا يلامس أرقام الفريتات */
+  @media (max-height:540px) and (orientation:landscape){
+    .c-selection-summary{ flex-direction:row-reverse !important; align-items:center !important; justify-content:center !important; gap:10px !important; flex-wrap:nowrap !important; }
+    .c-selection-summary .now-playing{ white-space:nowrap !important; }
+    .c-selection-summary .scale-buttons{ flex-wrap:nowrap !important; }
+  }
 
   /* ===== أزرار اختيار نوع السلم ===== */
   .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
