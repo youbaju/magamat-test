@@ -1224,12 +1224,6 @@ flex-shrink: 0;
 }
   .c-selection-summary > *{ pointer-events: auto; }
   .c-selection-summary.cs-pending{ opacity:0 !important; }
-  /* الجوال الأفقي (ارتفاع قصير): العنوان (مثل "دو ماجور") وأزرار الأنواع بسطر واحد جنب بعض — ثابت وبدون أي قياسات متأخرة، فلا يختفي العنوان ولا يلامس أرقام الفريتات */
-  @media (max-height:540px) and (orientation:landscape){
-    .c-selection-summary{ flex-direction:row-reverse !important; align-items:center !important; justify-content:center !important; gap:10px !important; flex-wrap:nowrap !important; }
-    .c-selection-summary .now-playing{ white-space:nowrap !important; }
-    .c-selection-summary .scale-buttons{ flex-wrap:nowrap !important; }
-  }
 
   /* ===== أزرار اختيار نوع السلم ===== */
   .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
@@ -3590,7 +3584,6 @@ window.isArabicMode = false;
       rafId = requestAnimationFrame(() => {
         if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
         if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
-        if (typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance();
       });
     };
     const settle = () => { repos(); [150, 400, 900, 1800].forEach(t => setTimeout(repos, t)); };
@@ -7004,10 +6997,7 @@ window._adjustWesternButtonsClearanceInner = function(){
   const guideRow = document.getElementById('westernBtnsRow');
   const summary = document.querySelector('.c-selection-summary');
   if (!guideRow || !summary || guideRow.style.display === 'none') return;
-  summary.classList.remove('cs-tight'); // دائماً نبدأ من الوضع العادي (حتى لو خرجنا مبكراً لاحقاً)
   // نرجع القيمة المضبوطة يدويًا (لو موجودة) قبل ما نعيد القياس
-  summary.style.removeProperty('top');
-  summary.style.removeProperty('bottom');
   summary.style.top = '';
   summary.style.bottom = '';
   const isDesktop = window.innerWidth > 1024;
@@ -7022,37 +7012,6 @@ window._adjustWesternButtonsClearanceInner = function(){
     return;
   }
 
-  // الجوال الأفقي بارتفاع صغير: الصف (العنوان + أزرار الأنواع) لازم ما يلامس أرقام الفريتات.
-  // نقيس أعلى رقم فريت فعلياً؛ لو ما يكفي المكان نخفي سطر العنوان (مكرر أصلاً بزر "دليل ...") ونرفع الصف تحت زر الدليل مباشرة.
-  summary.classList.remove('cs-tight');
-  const _isShortLand = window.innerHeight < 540 && window.innerWidth > window.innerHeight;
-  if (_isShortLand) {
-    // نجمع أرقام الفريتات (١–١٣): أكبر مجموعة أرقام على نفس الارتفاع تقريباً (نستثني أرقام أخرى مثل عدد الأوتار)
-    const _tops = [];
-    document.querySelectorAll('#shared-oudSvg text').forEach(t => {
-      const tx = t.textContent.trim();
-      if (!/^[0-9\u0660-\u0669]{1,2}$/.test(tx)) return;
-      const v = parseInt(tx.replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660)), 10);
-      if (!(v >= 1 && v <= 13)) return;
-      const rr = t.getBoundingClientRect();
-      if (rr.height > 0 && rr.top > guideRect.bottom) _tops.push(rr.top);
-    });
-    let numTop = Infinity, bestCnt = 0;
-    _tops.forEach(a => {
-      const grp = _tops.filter(b => Math.abs(b - a) < 14);
-      if (grp.length > bestCnt) { bestCnt = grp.length; numTop = Math.min(...grp); }
-    });
-    if (bestCnt < 5) numTop = Infinity;
-    if (isFinite(numTop)) {
-      let sr = summary.getBoundingClientRect();
-      if (sr.bottom > numTop - 10) {
-        summary.classList.add('cs-tight');
-        summary.style.setProperty('top', (guideRect.bottom + 3) + 'px', 'important');
-        summary.style.setProperty('bottom', 'auto', 'important');
-        return;
-      }
-    }
-  }
   // بالجوال/الأيباد: نرجع للسلوك الأصلي (تحت الدليل بس لو فيه تصادم فعلي، وإلا نخليه بمكانه الافتراضي من CSS)
   const summaryRect = summary.getBoundingClientRect();
   const isOverlapping = !(guideRect.right < summaryRect.left || guideRect.left > summaryRect.right ||
