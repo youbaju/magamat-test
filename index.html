@@ -5655,7 +5655,7 @@ function buildOudStatic(){
   let themeParts = null;
   // الزر يظهر بكل المتصفحات (بعضها مثل سامسونج لا يبلّغ الصفحة بوضع الجهاز الداكن)
   {
-    const tW = 160;
+    const tW = btnW; // نفس عرض زري التواصل والتقييم تماماً
     const tX = visionX + (visionSize - tW) / 2;
     const isEn = (window.oudLanguage === 'en');
     const themeG = el('g', { id:'svgThemeBtn', style:'cursor:pointer; pointer-events:auto;' });
