@@ -17,12 +17,14 @@
   var KEY='oudTheme';
   function get(){ try{ var v=localStorage.getItem(KEY); return (v==='dark'||v==='light')?v:'auto'; }catch(e){ return 'auto'; } }
   function apply(m){
-    var st=document.getElementById('dark-mode-css'); if(!st) return;
-    st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
+    var st=document.getElementById('dark-mode-css'); // قد لا يكون موجوداً بعد (ينتهي تحميله بآخر الصفحة)، فنكمل لضبط وسوم المتصفح مبكراً
+    if(st) st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
     var fl=document.getElementById('force-light-css');
-    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root,html,body{color-scheme:only light !important}'; document.head.appendChild(fl); } }
+    var autoDark=false; try{ autoDark=window.matchMedia('(prefers-color-scheme: dark)').matches; }catch(e){}
+    var asLight=(m==='light')||(m==='auto'&&!autoDark); // الفاتح الفعلي (يدوي أو تلقائي): نمنع تغميق المتصفح التلقائي (مثل Samsung Internet)
+    if(asLight){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root,html,body{color-scheme:only light !important}'; document.head.appendChild(fl); } }
     else if(fl){ fl.parentNode.removeChild(fl); }
-    var cs=document.getElementById('cs-meta'); if(cs) cs.setAttribute('content', m==='dark'?'dark':(m==='light'?'only light':'light dark'));
+    var cs=document.getElementById('cs-meta'); if(cs) cs.setAttribute('content', m==='dark'?'dark':(asLight?'only light':'light dark'));
     var td=document.getElementById('tc-dark');
     if(td) td.setAttribute('media', m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)'));
   }
