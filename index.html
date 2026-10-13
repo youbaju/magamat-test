@@ -3568,6 +3568,34 @@ window.isArabicMode = false;
     if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
     if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
   }, 200); });
+  // إعادة التموضع تلقائياً كلما استقر/تغيّر حجم الرسمة (حل مشكلة الآيباد عند فتح التطبيق: الحجم يستقر بعد الرسم بدون أي حدث resize)
+  (function(){
+    let rafId = 0;
+    const repos = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
+        if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
+      });
+    };
+    const settle = () => { repos(); [150, 400, 900, 1800].forEach(t => setTimeout(repos, t)); };
+    try {
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(repos);
+        const w = document.querySelector('.shared-oud-wrapper');
+        const s = document.getElementById('shared-oudSvg');
+        if (w) ro.observe(w);
+        if (s) ro.observe(s);
+        ro.observe(document.documentElement);
+      }
+    } catch(e){}
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', repos);
+    window.addEventListener('load', settle);
+    window.addEventListener('pageshow', settle);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) settle(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
+    settle();
+  })();
   (function(){
     const modeBtn = document.getElementById('noteModeToggleBtn');
     if (modeBtn) {
