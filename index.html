@@ -7,6 +7,8 @@
 <!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3ab4e8">
+<meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <meta name="color-scheme" content="only light">
 <!-- يمنع خاصية "Force Dark" التلقائية بمتصفحات أندرويد (زي Chrome) من محاولة تخمين/عكس
      ألوان الصفحة بنفسها لو المستخدم بوضع ليلي — يضمن بقاء التصميم بحالته الفاتحة الأصلية
@@ -10772,5 +10774,163 @@ document.getElementById('shared-playBtn').onclick = async function() {
     </div>
   </div>
 
+<style id="dark-mode-css">
+@media (prefers-color-scheme: dark){
+:root{color-scheme:dark;--ink:#e8e2dc}
+.help-search-input{background:#171717;border:1px solid #534935;color:#e6dccb}
+.help-search-results{background:#171717;border:1px solid #534935}
+.help-search-results-count{background:#262011;color:#b8ac94;border-bottom:1px solid #463d2a}
+.help-search-result-item{color:#e6dccb;border-bottom:1px solid #463d2a}
+.help-search-result-item:hover, .help-search-result-item:active{background:#382c15;color:#e2bb9f}
+.help-search-noresult{color:#b8ac94}
+html, body{background:#171717}
+.social-page-toggle{background:#171717;color:#ebe4e0}
+.social-page-toggle:hover{background:#0d222e}
+.site-tabs{background:#171717;border-bottom:1px solid #353535}
+.site-tab-btn{background:#1a1a1a;color:#ababab}
+.site-tab-btn:hover{background:#202020;color:#c9c9c9}
+.site-tab-btn.active{background:linear-gradient(135deg, #30250e 0%, #3e3214 100%);color:#ebe4e0}
+#page-circle.active{background:#171717}
+#page-maqamat{background:#171717}
+#micVerifyHtmlBtn{background:#264050;color:#bdd7f0}
+#noteModeToggleBtn{background:#264050;color:#bdd7f0}
+#noteModeToggleBtn:active{background:#2b495d}
+@media (max-width:600px){
+.tuning-row label{color:#e8e8e8 !important}
+}
+@media (max-height:540px) and (orientation:landscape){
+.tuning-row label{color:#e8e8e8 !important}
+}
+.audio-player{background:#0d1d2b;border:1px solid #304554}
+.audio-progress{background:#1f2e3a}
+.audio-time{color:#bfbfbf}
+.exercise-new-btn:disabled{background:#23292f}
+.exercise-mode-toggle{color:#8fb7e2}
+.tuning-row label{color:#bfbfbf}
+.tuning-select{background:#171717;border:1px solid #304554;color:#e8e8e8}
+.speed-step-btn{background:#171717;border:1px solid #304554;color:#a0c6d9}
+.speed-step-btn:hover{background:#152127}
+.speed-step-btn:active{background:#1a2a31}
+.speed-bpm-value{background:#152127;color:#bfd5e5;border:1px solid #304554}
+.speed-bpm-value:focus{background:#171717}
+h1{color:#d6c4a0}
+.c-panel{background:#171717;border:1px solid #353535}
+.c-drawer-tabs{border-bottom:1px solid #353535}
+.c-drawer-tab{background:#1a1a1a;color:#ababab}
+.c-drawer-tab.active{background:linear-gradient(135deg, #12232b 0%, #172c36 100%);color:#ebe4e0}
+.c-chords-type-btn{background:#302511;color:#e8ceb9}
+.c-chords-type-btn:hover{background:#3d3016}
+.c-chords-type-btn.active{border-color:#aecbed}
+.c-chord-btn{background:#12232b;color:#8fb7e2}
+.c-chord-btn:hover{background:#142935}
+.c-chord-degree{color:#8fb7e2}
+.scale-btn{background:#27231b;color:#d3c9bc;border:1.5px solid #494336}
+.scale-btn.active{color:#ebe4e0}
+.maqam-guide-btn{background:#171717;color:#ebe4e0}
+.maqam-guide-btn:hover{background:#2e230d}
+.maqam-guide-btn.guide-btn-label-only:hover{background:#171717}
+#favBtn{background:#171717 !important}
+.maqam-help-btn{background:#3d311d;color:#e8ceb9}
+.maqam-guide-container{background:#171717}
+.maqam-guide-header{border-bottom:1px solid #3c3c3c}
+.maqam-intervals-btn{background:#171717;color:#ebe4e0}
+.maqam-intervals-table{background:#171717}
+.mit-header{border-bottom:1px solid #3c3c3c}
+.mit-title{color:#ebe4e0}
+.mit-close:hover{color:#d6827d}
+.mit-cell{border:1px solid #3c3c3c}
+.mit-cell.value{background:#27231b;color:#ebe4e0}
+.circle-zoom-note{color:#7da3d6}
+.no-result{background:rgba(23,23,23,0.95)}
+#page-help, #page-help-en{background:#171717}
+.help-section{border-bottom:1px solid #343434}
+.help-toc{background:#272115;border:1px solid #534935}
+.help-toc-title{color:#e8ceb9}
+.help-toc-hint{color:#e8ceb9}
+.help-toc-hint strong{color:#e6dccb}
+.help-toc-item{background:#271f0b;color:#e6dccb;border:1px solid #534935}
+.help-toc-item:hover, .help-toc-item:active{background:#382c15;color:#e2bb9f}
+.help-section h3{color:#e8ceb9}
+.help-section p{color:#d4d4d4}
+.help-svg-wrap{background:#1a1a1a;border:1px solid #343434}
+#page-social.active{background:#171717}
+.social-page-content h2{color:#d6c4a0}
+.social-snap span{color:#f2f2f2}
+.social-instagram{background:radial-gradient(circle at 30% 107%, #58521b 0%, #58521b 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%)}
+.panel{background:#171717;border:1px solid #4d4d4d}
+.options-list li{color:#e8e8e8;border-bottom:1px solid #343434}
+.sep{background:#383838}
+.dropdown-select{background:#1b1b1b;border-bottom:1px solid #454545;color:#d4d4d4}
+.custom-select-list{background:#171717;border:1px solid #454545}
+.custom-select-option{color:#bdd7f0;border-bottom:1px solid #343434}
+.custom-select-option:hover, .custom-select-option:active{background:#11222c}
+.custom-select-option.selected{background:#162a36}
+.rating-star-num{color:#ababab}
+[style*="background:linear-gradient(180deg,#fffaf0,#fbf1dd)"]{background:linear-gradient(180deg,#2b210d,#332814) !important}
+[style*="background: linear-gradient(180deg,rgb(255, 250, 240),rgb(251, 241, 221))"]{background:linear-gradient(180deg,#2b210d,#332814) !important}
+[style*="color:#3d2f18"]{color:#e6dccb !important}
+[style*="color: rgb(61, 47, 24)"]{color:#e6dccb !important}
+[style*="color:#8a6d35"]{color:#d2c1a0 !important}
+[style*="color: rgb(138, 109, 53)"]{color:#d2c1a0 !important}
+[style*="color:#1a8abf"]{color:#82c2e1 !important}
+[style*="color: rgb(26, 138, 191)"]{color:#82c2e1 !important}
+[style*="color:#333"]{color:#d4d4d4 !important}
+[style*="color: rgb(51, 51, 51)"]{color:#d4d4d4 !important}
+[style*="background:#fff"]{background:#171717 !important}
+[style*="background: rgb(255, 255, 255)"]{background:#171717 !important}
+[style*="color:#000"]{color:#f2f2f2 !important}
+[style*="color: rgb(0, 0, 0)"]{color:#f2f2f2 !important}
+[style*="color:#3a2a12"]{color:#eadecc !important}
+[style*="color: rgb(58, 42, 18)"]{color:#eadecc !important}
+[style*="color:#2b1608"]{color:#f2e0d4 !important}
+[style*="color: rgb(43, 22, 8)"]{color:#f2e0d4 !important}
+[style*="color:#666"]{color:#b5b5b5 !important}
+[style*="color: rgb(102, 102, 102)"]{color:#b5b5b5 !important}
+[style*="color:#1f7a4d"]{color:#a8e0c5 !important}
+[style*="color: rgb(31, 122, 77)"]{color:#a8e0c5 !important}
+[style*="background:#eafbf1"]{background:#132b1d !important}
+[style*="background: rgb(234, 251, 241)"]{background:#132b1d !important}
+[style*="color:#777"]{color:#ababab !important}
+[style*="color: rgb(119, 119, 119)"]{color:#ababab !important}
+[style*="background:#bbb"]{background:#434343 !important}
+[style*="background: rgb(187, 187, 187)"]{background:#434343 !important}
+[style*="background:#eaf6fc"]{background:#12232b !important}
+[style*="background: rgb(234, 246, 252)"]{background:#12232b !important}
+[style*="color:#1a5fa8"]{color:#8fb7e2 !important}
+[style*="color: rgb(26, 95, 168)"]{color:#8fb7e2 !important}
+[style*="border-top:1px solid #eee"]{border-top:1px solid #343434 !important}
+[style*="border-top: 1px solid rgb(238, 238, 238)"]{border-top:1px solid #343434 !important}
+[style*="background:#fdf6ec"]{background:#2b2011 !important}
+[style*="background: rgb(253, 246, 236)"]{background:#2b2011 !important}
+[style*="color:#555"]{color:#bfbfbf !important}
+[style*="color: rgb(85, 85, 85)"]{color:#bfbfbf !important}
+[style*="border:1px solid #bfe3f5"]{border:1px solid #274554 !important}
+[style*="border: 1px solid rgb(191, 227, 245)"]{border:1px solid #274554 !important}
+[style*="border-bottom:1px solid #8ecde9"]{border-bottom:1px solid #335767 !important}
+[style*="border-bottom: 1px solid rgb(142, 205, 233)"]{border-bottom:1px solid #335767 !important}
+[style*="color:#1a120c"]{color:#eee6e0 !important}
+[style*="color: rgb(26, 18, 12)"]{color:#eee6e0 !important}
+/* ===== زند العود (SVG يُبنى بالجافاسكربت) ===== */
+#shared-oudSvg line[stroke="#111"]{stroke:#d4d4d4}
+#shared-oudSvg line[stroke="#3a3a3a"]{stroke:#9a9a9a}
+#shared-oudSvg text[fill="#111"],#shared-oudSvg text[fill="#222"]{fill:#e6e6e6}
+#shared-oudSvg text[fill="#000000"]{fill:#f4efe6}
+#shared-oudSvg text[fill="#1b1410"]{fill:#ebe4e0}
+#shared-oudSvg text[fill="#0a2f52"]{fill:#d3ebfa}
+#shared-oudSvg text[fill="#c0392b"]{fill:#ff8a7a}
+#shared-oudSvg rect[fill="#a3d0ec"]{fill:#14405a}
+#shared-oudSvg rect[fill="#ffffff"][stroke]{fill:#1c1c1c}
+#shared-oudSvg polygon[fill="#f3e2c7"]{fill:#7b6a4a}
+/* ===== صور الأدلة: ورقة بيضاء مخفّفة السطوع + إطار ===== */
+#maqamGuideImgWrap,#westernGuideImg,#westernGuideChordSvg{filter:brightness(.86);outline:1px solid #6a6a6a;outline-offset:3px;border-radius:8px}
+#maqamGuideTitleOverlay{background:#fff !important;color:#000 !important}
+#westernGuideImg,#westernGuideChordSvg{background:#fff !important}
+/* صفوف جدول المفضلة (ألوانها تُحقن بالجافاسكربت) */
+tr[style*="background: rgb(255, 255, 255)"]{background:#181818 !important}
+tr[style*="background: rgb(191, 227, 245)"]{background:#14303f !important}
+tr[style*="background: rgb(249, 220, 154)"]{background:#4a3c14 !important}
+.help-svg-wrap svg,.help-svg-wrap img{filter:brightness(.9)}
+}
+</style>
 </body>
 </html>
