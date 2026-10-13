@@ -10927,10 +10927,28 @@ h1{color:#d6c4a0}
 #maqamGuideTitleOverlay{background:transparent !important;color:#000 !important;-webkit-text-fill-color:#000}
 #westernGuideImg,#westernGuideChordSvg{background:#fff !important}
 /* صفوف جدول المفضلة (ألوانها تُحقن بالجافاسكربت) */
-tr[style*="background: rgb(255, 255, 255)"]{background:#181818 !important}
-tr[style*="background: rgb(191, 227, 245)"]{background:#14303f !important}
-tr[style*="background: rgb(249, 220, 154)"]{background:#4a3c14 !important}
 .help-svg-wrap svg,.help-svg-wrap img{filter:brightness(.9)}
+/* أزرار القوائم العلوية: نفس أزرق الأزرار الداكنة */
+.site-tabs-toggle,.menu-toggle,.c-menu-toggle{background:#264050 !important;color:#bdd7f0 !important;border:1px solid #3ab4e8}
+.site-tabs-toggle:hover,.menu-toggle:hover,.c-menu-toggle:hover{background:#2d4d5f !important}
+/* ===== المفضلة: نفس لوحة الأزرار الداكنة ===== */
+body div[style*="z-index: 10000"]{background:#264050 !important;border-color:#3ab4e8 !important}
+body div[style*="z-index: 10000"] div{color:#bdd7f0 !important}
+body div[style*="z-index: 10000"] div[style*="rgb(216, 238, 251)"]{background:#2d4d5f !important}
+body div[style*="border-radius: 14px"][style*="rgb(191, 227, 245)"]{background:#1a2a33 !important;border-color:#3a6a82 !important}
+body div[style*="border-bottom: 3px solid"]{background:#264050 !important}
+body span[style*="rgb(26, 138, 191)"]{color:#bdd7f0 !important}
+body span[style*="rgb(234, 246, 252)"]{background:#1a2a33 !important;color:#bdd7f0 !important;border-color:#3a6a82 !important}
+body button[style*="rgb(234, 246, 252)"]{background:#1a2a33 !important;color:#bdd7f0 !important;border-color:#3a6a82 !important}
+body th[style*="rgb(26, 138, 191)"]{background:#264050 !important;color:#bdd7f0 !important}
+body tr[style*="background: rgb(255, 255, 255)"]{background:#1a2a33 !important}
+body tr[style*="background: rgb(191, 227, 245)"]{background:#213845 !important}
+body tr[style*="background: rgb(249, 220, 154)"]{background:#2d4d5f !important}
+/* ===== مشغّل الميديا وزر تمرين جديد ===== */
+.ctrl-btn:not(.stop-btn),.repeat-btn:not(.active),.exercise-new-btn:not(:disabled){background:#264050 !important;color:#bdd7f0 !important;border:1px solid #3ab4e8 !important}
+.ctrl-btn:not(.stop-btn):hover,.repeat-btn:not(.active):hover,.exercise-new-btn:not(:disabled):hover{background:#2d4d5f !important}
+.ctrl-btn.stop-btn{background:#9b3a32 !important;color:#f5d9d5 !important}
+.ctrl-btn.stop-btn:hover{background:#b0443b !important}
 }
 </style>
 </body>
