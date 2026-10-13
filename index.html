@@ -532,6 +532,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
 .shared-oud-wrapper > *{ pointer-events: auto; }
 .shared-oud-wrapper svg{ max-height: 100%; max-width: 100%; }
 #micVerifyHtmlBtn{
+  visibility: hidden; /* يظهر بعد ما يصير الـviewBox نهائياً ويُحسب مكانه الصحيح (يمنع القفز أثناء التحميل) */
   position: absolute;
   z-index: 5;
   border-radius: 12px;
@@ -553,6 +554,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   color: #fff;
 }
 #noteModeToggleBtn{
+  visibility: hidden; /* نفس السبب أعلاه */
   position: absolute;
   z-index: 5;
   border-radius: 12px;
@@ -3525,6 +3527,7 @@ window.isArabicMode = false;
     btn.style.height = h + 'px';
     btn.style.borderRadius = (12 * scaleFactor) + 'px';
     btn.style.fontSize = (h * 0.42) + 'px';
+    if (window._oudVBReady) btn.style.visibility = 'visible';
   };
   // زر تبديل وضع الضغط على النغمات ("مطوّل"/"قصير") — نفس أسلوب تموضع زر المايك بالضبط،
   // بجانبه ومحاذي له أفقياً (نفس الإحداثي Y، بفارق X ثابت بمقدار عرض الزر + فسحة صغيرة)
@@ -3563,6 +3566,7 @@ window.isArabicMode = false;
     btn.style.height = h + 'px';
     btn.style.borderRadius = (12 * scaleFactor) + 'px';
     btn.style.fontSize = (h * 0.29) + 'px';
+    if (window._oudVBReady) btn.style.visibility = 'visible';
   };
   window.addEventListener('resize', () => {
     if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
@@ -5641,6 +5645,8 @@ function buildOudStatic(){
     maxX = mirroredMaxX;
   }
   oudSvg.setAttribute('viewBox', `${minX} ${minY} ${maxX-minX} ${maxY-minY}`);
+  window._oudVBReady = true; // من هنا الـviewBox نهائي، فمواضع الأزرار صحيحة وتُظهَر
+  setTimeout(() => { ['micVerifyHtmlBtn','noteModeToggleBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.style.visibility = 'visible'; }); }, 2000); // شبكة أمان
   // نعيد تموضع زر المايك وزر النغمة فوراً بعد تحديث الـviewBox (حسابهما الأول بأعلى الدالة يتم قبل تغيّر الـviewBox
   // فيستخدم مقياساً قديماً من وضع اليد السابق، وكان يظهر قفز الأزرار أو بقاؤها بمكان خاطئ أحياناً)
   if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
