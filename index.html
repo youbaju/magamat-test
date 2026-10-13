@@ -5678,11 +5678,17 @@ function buildOudStatic(){
       if (/[?&]debug/.test(location.search)) {
         try {
           const st = document.getElementById('dark-mode-css');
-          alert('stored=' + localStorage.getItem('oudTheme') + '\neff=' + window.oudTheme.effective() +
-            '\nmedia=' + (st && st.media) + '\nsheetDisabled=' + (st && st.sheet && st.sheet.disabled) +
-            '\nmatchDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
+          let box = document.getElementById('oudDbg');
+          if (!box) { box = document.createElement('div'); box.id = 'oudDbg';
+            box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
+            document.body.appendChild(box); }
+          const cs = getComputedStyle(document.documentElement);
+          box.textContent = 'build=v22 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+            '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
+            '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
-            '\ncs=' + (document.getElementById('cs-meta') || {}).content);
+            '\nrootCS=' + cs.colorScheme + ' meta=' + (document.getElementById('cs-meta') || {}).content +
+            '\nforceLightStyle=' + !!document.getElementById('force-light-css');
         } catch (e) { alert('err ' + e); }
         return;
       }
