@@ -507,6 +507,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   height: calc(100vh - var(--tabs-h));
   height: calc(100svh - var(--tabs-h));
   height: calc(100dvh - var(--tabs-h));
+  height: calc(var(--app-h, 100dvh) - var(--tabs-h)); /* --app-h = الارتفاع الفعلي المرئي (يُحدَّث بالجافاسكربت) — أدق من dvh بمتصفحات الجوال (سامسونج) */
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -598,7 +599,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
   stroke: #1a120c !important;
 }
 @media (max-width:1024px){
-  .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
+  .shared-oud-area{ top: var(--tabs-h-mobile); height: calc(100vh - var(--tabs-h-mobile)); height: calc(100svh - var(--tabs-h-mobile)); height: calc(100dvh - var(--tabs-h-mobile)); height: calc(var(--app-h, 100dvh) - var(--tabs-h-mobile)); padding: 6px 12px; gap: 4px; }
 }
 
 /* أزرار نوع السلم (Major/Minor...) بوضع الجوال/التابلت العمودي فقط — نفرض صفين × زرين ثابتة
@@ -11153,6 +11154,19 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 #c-circleSvg .circle-segment:not(.active){filter:brightness(.88)}
 #c-circleSvg text[fill="#5a4a35"]{fill:#bdd7f0}
 </style>
+<script>
+/* ارتفاع التطبيق الفعلي المرئي: بعض متصفحات الجوال (سامسونج) تحسب dvh/vh أكبر من المساحة المرئية بعد إعادة التحميل فيختفي جزء من المشغل بالأسفل */
+(function(){
+  var de=document.documentElement;
+  function setH(){ var h=window.innerHeight; if (h>200) de.style.setProperty('--app-h', h+'px'); }
+  setH();
+  window.addEventListener('resize', setH);
+  window.addEventListener('orientationchange', function(){ setTimeout(setH,150); setTimeout(setH,500); });
+  window.addEventListener('pageshow', setH);
+  window.addEventListener('load', function(){ setH(); setTimeout(setH,300); setTimeout(setH,1000); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
+})();
+</script>
 <script>if(window.oudTheme)window.oudTheme.apply(window.oudTheme.get());requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.classList.remove('pre-dark')})});</script>
 </body>
 </html>
