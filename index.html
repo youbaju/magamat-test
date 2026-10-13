@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#3ab4e8">
 <meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<meta name="color-scheme" content="only light">
+<!-- [تجربة] أُزيل "only light" لأنه قد يجعل Samsung Internet يبلّغ الصفحة أن الجهاز فاتح دائماً -->
 <!-- يمنع خاصية "Force Dark" التلقائية بمتصفحات أندرويد (زي Chrome) من محاولة تخمين/عكس
      ألوان الصفحة بنفسها لو المستخدم بوضع ليلي — يضمن بقاء التصميم بحالته الفاتحة الأصلية
      ثابتاً دائماً، بغض النظر عن إعدادات الجهاز أو المتصفح -->
@@ -10979,9 +10979,8 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 <script>
 (function(){function bg(s){var e=document.querySelector(s);return e?getComputedStyle(e).backgroundColor:'none'}
 function run(){var m=window.matchMedia('(prefers-color-scheme: dark)').matches;
-var sw=(navigator.serviceWorker&&navigator.serviceWorker.controller)?'SW:yes':'SW:no';
 var d=document.getElementById('dbg-bar');
-d.textContent='dark='+m+' '+sw+' ua='+(navigator.userAgent.match(/SamsungBrowser\/[\d.]+|Chrome\/[\d.]+/g)||[]).join(' ')+'\nurl='+location.pathname+location.search+'\nmic='+bg('#micVerifyHtmlBtn')+' mode='+bg('#noteModeToggleBtn')+'\ntoggle='+bg('.site-tabs-toggle')+' '+bg('.menu-toggle')+'\ndarkcss='+(document.getElementById('dark-mode-css')?'yes':'no')+' bodybg='+getComputedStyle(document.body).backgroundColor}
+d.textContent='V2 dark='+m+' ua='+(navigator.userAgent.match(/SamsungBrowser\/[\d.]+|Chrome\/[\d.]+/g)||[]).join(' ')+'\nurl='+location.pathname+location.search+'\nmic='+bg('#micVerifyHtmlBtn')+' toggle='+bg('.site-tabs-toggle')+'\nmeta='+Array.from(document.querySelectorAll('meta[name=color-scheme]')).map(function(x){return x.content}).join('|')+' bodybg='+getComputedStyle(document.body).backgroundColor}
 window.addEventListener('load',function(){run();setTimeout(run,1500)})})();
 </script>
 </body>
