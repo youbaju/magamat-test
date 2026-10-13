@@ -10970,7 +10970,19 @@ body tr[style*="background: rgb(249, 220, 154)"]{background:#2d4d5f !important}
 body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !important;border:1px solid #3ab4e8 !important}
 /* عناوين جدول الأبعاد */
 .mit-cell.header{background:#264050 !important;color:#bdd7f0 !important;border-color:#3a6a82 !important}
+/* عناوين قوائم الفصائل والدائرة والكوردات */
+.panel-title,.dropdown-label,.c-drawer-title{background:#264050 !important;color:#bdd7f0 !important}
+.c-chords-type-btn-major.active{background:#2d4d5f !important;color:#e6f2fb !important;border-color:#3ab4e8 !important}
 }
 </style>
+<div id="dbg-bar" style="position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#ffe066;color:#000;font:12px/1.4 monospace;padding:4px;direction:ltr;white-space:pre-wrap">DBG</div>
+<script>
+(function(){function bg(s){var e=document.querySelector(s);return e?getComputedStyle(e).backgroundColor:'none'}
+function run(){var m=window.matchMedia('(prefers-color-scheme: dark)').matches;
+var sw=(navigator.serviceWorker&&navigator.serviceWorker.controller)?'SW:yes':'SW:no';
+var d=document.getElementById('dbg-bar');
+d.textContent='dark='+m+' '+sw+' ua='+(navigator.userAgent.match(/SamsungBrowser\/[\d.]+|Chrome\/[\d.]+/g)||[]).join(' ')+'\nurl='+location.pathname+location.search+'\nmic='+bg('#micVerifyHtmlBtn')+' mode='+bg('#noteModeToggleBtn')+'\ntoggle='+bg('.site-tabs-toggle')+' '+bg('.menu-toggle')+'\ndarkcss='+(document.getElementById('dark-mode-css')?'yes':'no')+' bodybg='+getComputedStyle(document.body).backgroundColor}
+window.addEventListener('load',function(){run();setTimeout(run,1500)})})();
+</script>
 </body>
 </html>
