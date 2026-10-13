@@ -20,7 +20,7 @@
     var st=document.getElementById('dark-mode-css'); if(!st) return;
     st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
     var fl=document.getElementById('force-light-css');
-    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root{color-scheme:light}'; document.head.appendChild(fl); } }
+    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root,html,body{color-scheme:only light !important}'; document.head.appendChild(fl); } }
     else if(fl){ fl.parentNode.removeChild(fl); }
     var cs=document.getElementById('cs-meta'); if(cs) cs.setAttribute('content', m==='dark'?'dark':(m==='light'?'only light':'light dark'));
     var td=document.getElementById('tc-dark');
@@ -5674,6 +5674,18 @@ function buildOudStatic(){
       if (!window.oudTheme) return;
       window.oudTheme.set(window.oudTheme.effective() === 'dark' ? 'light' : 'dark');
       refreshTheme();
+      // تشخيص: افتح الصفحة بإضافة ?debug لرابطها لعرض حالة المظهر بعد الضغط (بدون إعادة تحميل)
+      if (/[?&]debug/.test(location.search)) {
+        try {
+          const st = document.getElementById('dark-mode-css');
+          alert('stored=' + localStorage.getItem('oudTheme') + '\neff=' + window.oudTheme.effective() +
+            '\nmedia=' + (st && st.media) + '\nsheetDisabled=' + (st && st.sheet && st.sheet.disabled) +
+            '\nmatchDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
+            '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
+            '\ncs=' + (document.getElementById('cs-meta') || {}).content);
+        } catch (e) { alert('err ' + e); }
+        return;
+      }
     });
     try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshTheme); } catch(e) {}
   }
