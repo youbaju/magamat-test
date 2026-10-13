@@ -7,7 +7,34 @@
 <!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3ab4e8">
-<script>try{if(localStorage.getItem("oudTheme")==="dark"){document.documentElement.style.background="#171717"}}catch(e){}</script>
+<script>
+/* مظهر التطبيق: تلقائي (يتبع الجهاز) / داكن / فاتح — الاختيار محفوظ على الجهاز.
+   السبب: بعض المتصفحات (مثل Samsung Internet) تبلّغ الصفحة أن الجهاز فاتح حتى لو كان داكناً. */
+(function(){
+  var KEY='oudTheme';
+  function get(){ try{ var v=localStorage.getItem(KEY); return (v==='dark'||v==='light')?v:'auto'; }catch(e){ return 'auto'; } }
+  function apply(m){
+    var st=document.getElementById('dark-mode-css'); if(!st) return;
+    st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
+    var fl=document.getElementById('force-light-css');
+    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root{color-scheme:light}'; document.head.appendChild(fl); } }
+    else if(fl){ fl.parentNode.removeChild(fl); }
+    var tc=document.querySelector('meta[name="theme-color"]:not([media])');
+    if(tc) tc.setAttribute('content', m==='dark' ? '#141414' : '#3ab4e8');
+  }
+  function set(m){ try{ if(m==='auto') localStorage.removeItem(KEY); else localStorage.setItem(KEY,m); }catch(e){} apply(m); }
+  function effective(){ var m=get(); if(m==='dark'||m==='light') return m; try{ return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }catch(e){ return 'light'; } }
+  window.oudTheme={get:get,set:set,apply:apply,effective:effective};
+  apply(get());
+})();
+</script>
+<style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}</style>
+<script>
+/* يمنع وميض الأبيض عند فتح/إعادة تحميل الصفحة (مثل تبديل اللغة) بالوضع الداكن: نخفي المحتوى حتى يُحمَّل CSS الداكن بنهاية الصفحة */
+(function(){try{var t=null;try{t=localStorage.getItem("oudTheme")}catch(e){}
+var dark=(t==="dark")||(t!=="light"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+if(dark){document.documentElement.classList.add("pre-dark");setTimeout(function(){document.documentElement.classList.remove("pre-dark")},2500)}}catch(e){}})();
+</script>
 <meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="color-scheme" content="only light">
@@ -1543,6 +1570,8 @@ flex-shrink: 0;
   svg#shared-oudSvg #noteSystemToggleBtn{ pointer-events:auto !important; cursor:pointer; }
   svg#shared-oudSvg #noteSystemToggleBtn *{ pointer-events:auto !important; }
   svg#shared-oudSvg #svgRatingBtn text{ pointer-events:none; }
+  svg#shared-oudSvg #svgThemeBtn rect{ pointer-events:auto; cursor:pointer; }
+  svg#shared-oudSvg #svgThemeBtn text{ pointer-events:none; }
   svg#shared-oudSvg #oudNotesLayer rect{ pointer-events:auto; cursor:pointer; }
   svg#shared-oudSvg #chordHighlightLayer rect{ pointer-events:auto; cursor:pointer; }
   /* مكون مشغل الصوت (audio-player وملحقاته) معرّف مرة واحدة بالقسم المشترك بالأسفل */
@@ -4362,7 +4391,10 @@ function renderChordsList(){
     const btn = document.createElement('button');
     btn.className = 'c-chord-btn';
     btn.type = 'button';
-    btn.innerHTML = `<span class="c-chord-degree">${ch.roman}</span><span class="c-chord-namestr">${ch.name}</span>`;
+    // بالعربي: اسم الكورد أولاً (يمين) ثم الرمز اللاتيني (يسار)؛ بالإنجليزي الترتيب كما هو
+    btn.innerHTML = (window.oudLanguage === 'en')
+      ? `<span class="c-chord-degree">${ch.roman}</span><span class="c-chord-namestr">${ch.name}</span>`
+      : `<span class="c-chord-namestr">${ch.name}</span><span class="c-chord-degree">${ch.roman}</span>`;
     btn.addEventListener('click', () => selectChord(ch, btn));
     // نرجّع تعليم "مختار" لآخر كورد كان محدد (لو لسا ينتمي لنفس السلم الحالي)، عشان يبقى المستخدم يشوفه بعد ما يفتح/يسكر القائمة
     if (window.selectedChord && window.selectedChord.rootPC === ch.rootPC &&
@@ -5614,43 +5646,39 @@ function buildOudStatic(){
   ratingG.appendChild(ratingText);
   oudFooterGroup.appendChild(ratingG);
 
-  // زر مظهر التطبيق (تلقائي / داكن / فاتح) — بمكان شعار الرؤية السابق
+  // زر مظهر التطبيق (داكن / فاتح) — بمكان شعار الرؤية السابق، بنفس شكل زري التقييم وتواصل
   let themeParts = null;
+  // الزر يظهر بكل المتصفحات (بعضها مثل سامسونج لا يبلّغ الصفحة بوضع الجهاز الداكن)
   {
-    const tSize = 104;
-    const tX = visionX + (visionSize - tSize) / 2;
+    const tW = 160;
+    const tX = visionX + (visionSize - tW) / 2;
     const isEn = (window.oudLanguage === 'en');
-    const THEME_ICON = { auto: '\uD83C\uDF13', dark: '\uD83C\uDF19', light: '\u2600\uFE0F' };
-    const THEME_NAME = isEn ? { auto: 'Auto', dark: 'Dark', light: 'Light' } : { auto: 'تلقائي', dark: 'داكن', light: 'فاتح' };
     const themeG = el('g', { id:'svgThemeBtn', style:'cursor:pointer; pointer-events:auto;' });
-    const themeRect = el('rect', { x: tX, y: btnY, width: tSize, height: btnH, rx: btnR, fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5' });
-    const themeIcon = el('text', {
-      x: tX + tSize/2, y: btnY + btnH/2 - 6, 'text-anchor':'middle', 'dominant-baseline':'middle',
-      'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif", 'font-size':'50', 'font-weight':'800', fill:'#1b1410'
-    });
-    const themeLbl = el('text', {
-      x: tX + tSize/2, y: btnY + btnH - 24, 'text-anchor':'middle', 'dominant-baseline':'middle',
-      'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif", 'font-size':'24', 'font-weight':'800', fill:'#1b1410'
+    const themeRect = el('rect', { x: tX, y: btnY, width: tW, height: btnH, rx: btnR, fill:'#a3d0ec', stroke:'#3ab4e8', 'stroke-width':'5' });
+    const themeText = el('text', {
+      x: tX + tW/2, y: btnY + btnH/2 + 12, 'text-anchor':'middle', 'dominant-baseline':'middle',
+      'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif", 'font-size':'30', 'font-weight':'800', fill:'#0a2f52'
     });
     const refreshTheme = () => {
-      const m = (window.oudTheme ? window.oudTheme.get() : 'auto');
-      themeIcon.textContent = THEME_ICON[m]; themeLbl.textContent = THEME_NAME[m];
+      const m = (window.oudTheme ? window.oudTheme.effective() : 'light');
+      const w = isEn ? (m === 'dark' ? 'Dark' : 'Light') : (m === 'dark' ? 'داكن' : 'فاتح');
+      const ic = (m === 'dark') ? '\uD83C\uDF19' : '\u2600\uFE0F';
+      themeText.textContent = isEn ? (ic + ' ' + w) : (w + ' ' + ic);
     };
     refreshTheme();
-    themeParts = { rect: themeRect, icon: themeIcon, lbl: themeLbl, size: tSize };
-    themeG.appendChild(themeRect); themeG.appendChild(themeIcon); themeG.appendChild(themeLbl);
+    themeParts = { rect: themeRect, text: themeText, w: tW };
+    themeG.appendChild(themeRect); themeG.appendChild(themeText);
     oudFooterGroup.appendChild(themeG);
     themeG.addEventListener('click', () => {
       if (!window.oudTheme) return;
-      const order = ['auto', 'dark', 'light'];
-      const next = order[(order.indexOf(window.oudTheme.get()) + 1) % 3];
-      window.oudTheme.set(next);
+      window.oudTheme.set(window.oudTheme.effective() === 'dark' ? 'light' : 'dark');
       refreshTheme();
     });
+    try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshTheme); } catch(e) {}
   }
 
   // الكتابة تبدأ من أول موقع الحقوق الجديد (بدون إزاحات قديمة كانت محسوبة لتخطيط الثلاث عناصر السابق)
-  const cpHandOffset = window.isLeftHanded ? 322 : 0; // تعويض تجريبي خاص بوضع اليسار (الانعكاس يتصرف مختلف مع هالنص تحديداً)
+  const cpHandOffset = window.isLeftHanded ? 312 : 0; // تعويض تجريبي خاص بوضع اليسار (الانعكاس يتصرف مختلف مع هالنص تحديداً)
 
   const copyrightG = el('g', (window.oudLanguage === 'en') ? { direction: 'ltr' } : {});
 
@@ -5708,22 +5736,29 @@ function buildOudStatic(){
   // توزيع صف التذييل (نص الحقوق - تواصل - تقييم) بين الفريت 1 والفريت 7: أول عنصر يبدأ عند الفريت 1
   // وآخر عنصر ينتهي عند الفريت 7، والفراغات بين العناصر متساوية (إحداثيات الرسمة قبل الانعكاس؛ الانعكاس يحفظ المدى نفسه)
   {
-    const fA = OUD.fretX(1), fB = OUD.fretX(7);
+    const fA = OUD.VISUAL_NUT_X, fB = OUD.fretX(7.5); // من الفريت 0 (السرج) إلى الفريت 7.5
     const spanL = Math.min(fA, fB), spanW = Math.abs(fB - fA);
-    const gapFt = Math.max(24, (spanW - copyrightTextMaxW - 2 * btnW) / 2);
+    const tW4 = themeParts ? themeParts.w : 0; // عرض زر المظهر (٠ إن لم يوجد)
+    const nItems = themeParts ? 4 : 3;
+    const minGap = 20;
+    // إن لم تتسع العناصر بين الفريتين (مثلاً النص الإنجليزي أطول) نصغّر الأزرار وخطها بنسبة واحدة
+    let bw = btnW, tw = tW4, fsz = 30;
+    const room = spanW - copyrightTextMaxW - (nItems - 1) * minGap;
+    const need = 2 * bw + tw;
+    if (need > room) { const k = Math.max(0.6, room / need); bw = btnW * k; tw = tW4 * k; fsz = Math.round(30 * k); }
+    const gapFt = Math.max(minGap, (spanW - copyrightTextMaxW - 2 * bw - tw) / (nItems - 1));
     const nBtnX = spanL + copyrightTextMaxW + gapFt;
-    const nRatingX = nBtnX + btnW + gapFt;
-    btnRect.setAttribute('x', nBtnX);
-    btnText.setAttribute('x', nBtnX + btnW / 2);
-    ratingRect.setAttribute('x', nRatingX);
-    ratingText.setAttribute('x', nRatingX + btnW / 2);
+    const nRatingX = nBtnX + bw + gapFt;
+    btnRect.setAttribute('x', nBtnX); btnRect.setAttribute('width', bw);
+    btnText.setAttribute('x', nBtnX + bw / 2); btnText.setAttribute('font-size', fsz);
+    ratingRect.setAttribute('x', nRatingX); ratingRect.setAttribute('width', bw);
+    ratingText.setAttribute('x', nRatingX + bw / 2); ratingText.setAttribute('font-size', fsz);
     const nCpX = nBtnX - gapFt - copyrightTextMaxW + cpHandOffset;
     [cp1, cp2, cpName, cp3].forEach(t => t.setAttribute('x', nCpX));
     if (themeParts) { // زر المظهر: بعد زر التقييم مباشرة بفراغ ثابت (يقع بجانب الزند بعد الانعكاس)
-      const tx = nRatingX + btnW + 26;
-      themeParts.rect.setAttribute('x', tx);
-      themeParts.icon.setAttribute('x', tx + themeParts.size / 2);
-      themeParts.lbl.setAttribute('x', tx + themeParts.size / 2);
+      const tx = nRatingX + bw + gapFt;
+      themeParts.rect.setAttribute('x', tx); themeParts.rect.setAttribute('width', tw);
+      themeParts.text.setAttribute('x', tx + tw / 2); themeParts.text.setAttribute('font-size', fsz);
     }
   }
 
@@ -5732,7 +5767,7 @@ function buildOudStatic(){
     if (!window.isLeftHanded) {
       copyrightG.setAttribute('transform', `translate(${2 * gap * 3 + 68}, 0)`);
     } else {
-      copyrightG.setAttribute('transform', `translate(${-gap * 5.5}, 0)`);
+      copyrightG.setAttribute('transform', `translate(${-gap * 5.5 + 18}, 0)`);
     }
   }
 
@@ -10579,12 +10614,9 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
     <div class="help-section" id="help-sec-ar-20">
       <h3>٢٠. الوضع الليلي (مظهر التطبيق)</h3>
-      <p>يتوفر للتطبيق مظهر داكن مريح للعين في الإضاءة المنخفضة، ويمكنك التحكم به بثلاثة خيارات.</p>
-      <p>🔹 <strong>تلقائي:</strong> يتبع إعداد جهازك — داكن إذا كان جهازك على الوضع الداكن، وفاتح إذا كان على الوضع الفاتح.</p>
-      <p>🔹 <strong>داكن:</strong> يفرض المظهر الداكن دائماً مهما كان إعداد الجهاز.</p>
-      <p>🔹 <strong>فاتح:</strong> يفرض المظهر الفاتح دائماً مهما كان إعداد الجهاز.</p>
-      <p>🔹 <strong>زر المظهر:</strong> بأسفل الزند (بجانب زر "تقييم") — كل ضغطة تنقلك للخيار التالي: 🌓 تلقائي ← 🌙 داكن ← ☀️ فاتح، ويظهر على الزر اسم الخيار الحالي.</p>
-      <p>🔹 <strong>ملاحظة:</strong> بعض المتصفحات (مثل متصفح سامسونج) قد لا تُبلّغ التطبيق بأن الجهاز على الوضع الداكن، فإذا لم يتغير المظهر تلقائياً اضغط الزر واختر 🌙 داكن. اختيارك يُحفظ على جهازك.</p>
+      <p>يتوفر للتطبيق مظهر داكن مريح للعين في الإضاءة المنخفضة، بجانب المظهر الفاتح.</p>
+      <p>🔹 <strong>تلقائياً:</strong> يتبع التطبيق إعداد جهازك — داكن إذا كان جهازك على الوضع الداكن، وفاتح إذا كان على الوضع الفاتح.</p>
+      <p>🔹 <strong>زر المظهر:</strong> بأسفل الزند (بجانب زر "تقييم") ويعرض المظهر الحالي: <strong>"🌙 داكن"</strong> أو <strong>"☀️ فاتح"</strong>. اضغطه للتبديل بينهما في أي وقت، ويُحفظ اختيارك على جهازك.</p>
     </div>
 
 
@@ -10845,18 +10877,19 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
     <div class="help-section" id="help-sec-en-20">
       <h3>20. Dark mode (app appearance)</h3>
-      <p>The app has a dark appearance that is easier on the eyes in low light, with three options you can control.</p>
-      <p>🔹 <strong>Auto:</strong> follows your device setting — dark if your device is in dark mode, light if it is in light mode.</p>
-      <p>🔹 <strong>Dark:</strong> always uses the dark appearance, whatever your device setting.</p>
-      <p>🔹 <strong>Light:</strong> always uses the light appearance, whatever your device setting.</p>
-      <p>🔹 <strong>Appearance button:</strong> below the fretboard (beside the "Rate" button) — each tap moves to the next option: 🌓 Auto → 🌙 Dark → ☀️ Light, and the button shows the current option.</p>
-      <p>🔹 <strong>Note:</strong> some browsers (such as Samsung Internet) may not tell the app that the device is in dark mode. If the appearance does not change automatically, tap the button and choose 🌙 Dark. Your choice is saved on your device.</p>
+      <p>The app has a dark appearance that is easier on the eyes in low light, alongside the light appearance.</p>
+      <p>🔹 <strong>Automatic:</strong> the app follows your device setting — dark if your device is in dark mode, light if it is in light mode.</p>
+      <p>🔹 <strong>Appearance button:</strong> below the fretboard (beside the "Rate" button) it shows the current appearance: <strong>"🌙 Dark"</strong> or <strong>"☀️ Light"</strong>. Tap it to switch between them at any time; your choice is saved on your device.</p>
     </div>
 
 
     </div>
   </div>
 
+<style id="no-select-ui">
+.site-tab-btn,.site-tabs-toggle,.menu-toggle,.c-menu-toggle,.c-drawer-tab,.c-drawer-title,.c-chords-type-btn,.c-chord-btn,.scale-btn,.panel-title,.dropdown-label,.options-list li,.custom-select-option,.maqam-guide-btn,.maqam-intervals-btn,.ctrl-btn,.repeat-btn,.exercise-new-btn,.speed-step-btn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.site-tabs,.c-drawer-tabs,.c-panel,.panel{-webkit-tap-highlight-color:transparent}
+</style>
 <style id="dark-mode-css" media="(prefers-color-scheme: dark)">
 :root{color-scheme:dark;--ink:#e8e2dc}
 .help-search-input{background:#171717;border:1px solid #534935;color:#e6dccb}
@@ -11038,26 +11071,17 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 /* عناوين قوائم الفصائل والدائرة والكوردات */
 .panel-title,.dropdown-label,.c-drawer-title{background:#264050 !important;color:#bdd7f0 !important}
 .c-chords-type-btn-major.active{background:#2d4d5f !important;color:#e6f2fb !important;border-color:#3ab4e8 !important}
+/* ===== المقامات الغربية: أزرار نوع السلم/الكورد، قائمة الكوردات، الدائرة ===== */
+.c-chords-type-btn,.scale-btn{background:#264050 !important;color:#bdd7f0 !important;border:1px solid #3ab4e8 !important;box-shadow:none !important}
+.c-chords-type-btn:hover,.scale-btn:hover{background:#2d4d5f !important}
+.c-chords-type-btn.active,.scale-btn.active{background:#3a6a82 !important;color:#ffffff !important;border:2px solid #3ab4e8 !important}
+.c-chord-btn{border:1px solid #3a6a82 !important}
+.c-chord-btn.selected{background:#3a6a82 !important;border:2px solid #3ab4e8 !important;color:#ffffff !important}
+.c-chord-btn.selected .c-chord-degree{color:#ffffff !important}
+.c-selection-summary .now-playing{color:#bdd7f0 !important}
+#c-circleSvg .circle-segment:not(.active){filter:brightness(.88)}
+#c-circleSvg text[fill="#5a4a35"]{fill:#bdd7f0}
 </style>
-<script>
-/* مظهر التطبيق: تلقائي (يتبع الجهاز) / داكن / فاتح — الاختيار محفوظ على الجهاز.
-   السبب: بعض المتصفحات (مثل Samsung Internet) تبلّغ الصفحة أن الجهاز فاتح حتى لو كان داكناً. */
-(function(){
-  var KEY='oudTheme';
-  function get(){ try{ var v=localStorage.getItem(KEY); return (v==='dark'||v==='light')?v:'auto'; }catch(e){ return 'auto'; } }
-  function apply(m){
-    var st=document.getElementById('dark-mode-css'); if(!st) return;
-    st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
-    var fl=document.getElementById('force-light-css');
-    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root{color-scheme:light}'; document.head.appendChild(fl); } }
-    else if(fl){ fl.parentNode.removeChild(fl); }
-    var tc=document.querySelector('meta[name="theme-color"]:not([media])');
-    if(tc) tc.setAttribute('content', m==='dark' ? '#141414' : '#3ab4e8');
-  }
-  function set(m){ try{ if(m==='auto') localStorage.removeItem(KEY); else localStorage.setItem(KEY,m); }catch(e){} apply(m); }
-  window.oudTheme={get:get,set:set,apply:apply};
-  apply(get());
-})();
-</script>
+<script>if(window.oudTheme)window.oudTheme.apply(window.oudTheme.get());document.documentElement.classList.remove('pre-dark');</script>
 </body>
 </html>
