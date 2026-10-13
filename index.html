@@ -7,9 +7,10 @@
 <!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3ab4e8">
+<script>try{if(localStorage.getItem("oudTheme")==="dark"){document.documentElement.style.background="#171717"}}catch(e){}</script>
 <meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<!-- [تجربة] أُزيل "only light" لأنه قد يجعل Samsung Internet يبلّغ الصفحة أن الجهاز فاتح دائماً -->
+<meta name="color-scheme" content="only light">
 <!-- يمنع خاصية "Force Dark" التلقائية بمتصفحات أندرويد (زي Chrome) من محاولة تخمين/عكس
      ألوان الصفحة بنفسها لو المستخدم بوضع ليلي — يضمن بقاء التصميم بحالته الفاتحة الأصلية
      ثابتاً دائماً، بغض النظر عن إعدادات الجهاز أو المتصفح -->
@@ -5613,6 +5614,41 @@ function buildOudStatic(){
   ratingG.appendChild(ratingText);
   oudFooterGroup.appendChild(ratingG);
 
+  // زر مظهر التطبيق (تلقائي / داكن / فاتح) — بمكان شعار الرؤية السابق
+  let themeParts = null;
+  {
+    const tSize = 104;
+    const tX = visionX + (visionSize - tSize) / 2;
+    const isEn = (window.oudLanguage === 'en');
+    const THEME_ICON = { auto: '\uD83C\uDF13', dark: '\uD83C\uDF19', light: '\u2600\uFE0F' };
+    const THEME_NAME = isEn ? { auto: 'Auto', dark: 'Dark', light: 'Light' } : { auto: 'تلقائي', dark: 'داكن', light: 'فاتح' };
+    const themeG = el('g', { id:'svgThemeBtn', style:'cursor:pointer; pointer-events:auto;' });
+    const themeRect = el('rect', { x: tX, y: btnY, width: tSize, height: btnH, rx: btnR, fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5' });
+    const themeIcon = el('text', {
+      x: tX + tSize/2, y: btnY + btnH/2 - 6, 'text-anchor':'middle', 'dominant-baseline':'middle',
+      'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif", 'font-size':'50', 'font-weight':'800', fill:'#1b1410'
+    });
+    const themeLbl = el('text', {
+      x: tX + tSize/2, y: btnY + btnH - 24, 'text-anchor':'middle', 'dominant-baseline':'middle',
+      'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif", 'font-size':'24', 'font-weight':'800', fill:'#1b1410'
+    });
+    const refreshTheme = () => {
+      const m = (window.oudTheme ? window.oudTheme.get() : 'auto');
+      themeIcon.textContent = THEME_ICON[m]; themeLbl.textContent = THEME_NAME[m];
+    };
+    refreshTheme();
+    themeParts = { rect: themeRect, icon: themeIcon, lbl: themeLbl, size: tSize };
+    themeG.appendChild(themeRect); themeG.appendChild(themeIcon); themeG.appendChild(themeLbl);
+    oudFooterGroup.appendChild(themeG);
+    themeG.addEventListener('click', () => {
+      if (!window.oudTheme) return;
+      const order = ['auto', 'dark', 'light'];
+      const next = order[(order.indexOf(window.oudTheme.get()) + 1) % 3];
+      window.oudTheme.set(next);
+      refreshTheme();
+    });
+  }
+
   // الكتابة تبدأ من أول موقع الحقوق الجديد (بدون إزاحات قديمة كانت محسوبة لتخطيط الثلاث عناصر السابق)
   const cpHandOffset = window.isLeftHanded ? 322 : 0; // تعويض تجريبي خاص بوضع اليسار (الانعكاس يتصرف مختلف مع هالنص تحديداً)
 
@@ -5683,6 +5719,12 @@ function buildOudStatic(){
     ratingText.setAttribute('x', nRatingX + btnW / 2);
     const nCpX = nBtnX - gapFt - copyrightTextMaxW + cpHandOffset;
     [cp1, cp2, cpName, cp3].forEach(t => t.setAttribute('x', nCpX));
+    if (themeParts) { // زر المظهر: بعد زر التقييم مباشرة بفراغ ثابت (يقع بجانب الزند بعد الانعكاس)
+      const tx = nRatingX + btnW + 26;
+      themeParts.rect.setAttribute('x', tx);
+      themeParts.icon.setAttribute('x', tx + themeParts.size / 2);
+      themeParts.lbl.setAttribute('x', tx + themeParts.size / 2);
+    }
   }
 
   // تعويض مباشر ومبسّط لوضعي اليمين واليسار بالإنجليزي (كل وضع له قيمة منفصلة، حسب الاختبار الفعلي)
@@ -10308,6 +10350,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-17')">١٧. تثبيت الموقع كتطبيق على هاتفك</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-18')">١٨. التحقق من عزفك (باستخدام الميكروفون)</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-19')">١٩. المفضلة</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-ar-20')">٢٠. الوضع الليلي (مظهر التطبيق)</li>
       </ol>
     </div>
 
@@ -10449,7 +10492,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
     <div class="help-section" id="help-sec-ar-15">
       <h3>١٥. تقييم التطبيق</h3>
       <p>يمكن لأي زائر أن يقيّم التطبيق بنجوم من ١ إلى ٥، ويرى المعدل العام لكل التقييمات.</p>
-      <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (بجانب زر "تواصل" وشعار رؤية ٢٠٣٠).</p>
+      <p>🔹 <strong>فتح صفحة التقييم:</strong> اضغط زر <strong>"⭐ تقييم"</strong> بأسفل الصفحة (بجانب زر "تواصل").</p>
       <div class="help-svg-wrap"><img src="data:image/jpeg;base64,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" alt="زر تقييم بأسفل الصفحة" style="width:130px;border-radius:6px;display:block;margin:8px auto;"/></div>
       <p>🔹 <strong>إرسال تقييمك:</strong> اضغط على عدد النجوم التي تعبّر عن رأيك (يمكنك تغيير اختيارك قبل التأكيد بالضغط على نجمة ثانية)، ثم اضغط زر <strong>"✓ تأكيد التقييم"</strong> لإرسال تقييمك فعلياً — وبهذه الطريقة لا يُحفظ تقييم بالخطأ في حال الضغط على نجمة خاطئة. بعد التأكيد تظهر رسالة شكر تأكيدية.</p>
       <p>🔹 <strong>تقييم واحد لكل زائر:</strong> بعد إرسال تقييمك، لا يمكنك إرسال تقييم آخر من نفس الجهاز/المتصفح (تصبح النجوم مغلقة)، لكي يبقى المعدل العام دقيقاً ويعكس رأي كل زائر مرة واحدة فقط.</p>
@@ -10534,6 +10577,17 @@ document.getElementById('shared-playBtn').onclick = async function() {
       <p>🔹 هذه الميزة خاصة بالمقامات العربية فقط، وتُحفظ محلياً على جهازك.</p>
     </div>
 
+    <div class="help-section" id="help-sec-ar-20">
+      <h3>٢٠. الوضع الليلي (مظهر التطبيق)</h3>
+      <p>يتوفر للتطبيق مظهر داكن مريح للعين في الإضاءة المنخفضة، ويمكنك التحكم به بثلاثة خيارات.</p>
+      <p>🔹 <strong>تلقائي:</strong> يتبع إعداد جهازك — داكن إذا كان جهازك على الوضع الداكن، وفاتح إذا كان على الوضع الفاتح.</p>
+      <p>🔹 <strong>داكن:</strong> يفرض المظهر الداكن دائماً مهما كان إعداد الجهاز.</p>
+      <p>🔹 <strong>فاتح:</strong> يفرض المظهر الفاتح دائماً مهما كان إعداد الجهاز.</p>
+      <p>🔹 <strong>زر المظهر:</strong> بأسفل الزند (بجانب زر "تقييم") — كل ضغطة تنقلك للخيار التالي: 🌓 تلقائي ← 🌙 داكن ← ☀️ فاتح، ويظهر على الزر اسم الخيار الحالي.</p>
+      <p>🔹 <strong>ملاحظة:</strong> بعض المتصفحات (مثل متصفح سامسونج) قد لا تُبلّغ التطبيق بأن الجهاز على الوضع الداكن، فإذا لم يتغير المظهر تلقائياً اضغط الزر واختر 🌙 داكن. اختيارك يُحفظ على جهازك.</p>
+    </div>
+
+
     </div>
     </div>
 
@@ -10575,6 +10629,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-17')">17. Installing the Site as an App on Your Phone</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-18')">18. Verify Your Playing (via Microphone)</li>
         <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-19')">19. Favorites</li>
+        <li class="help-toc-item" onclick="scrollToHelpSection('help-sec-en-20')">20. Dark mode (app appearance)</li>
       </ol>
     </div>
 
@@ -10703,7 +10758,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
     <div class="help-section" id="help-sec-en-15">
       <h3>15. Rating the App</h3>
       <p>Any visitor can rate the app from 1 to 5 stars, and see the overall average of all ratings.</p>
-      <p>🔹 <strong>Opening the rating page:</strong> Press the <strong>"⭐ Rate"</strong> button at the bottom of the page (beside the "Contact" button and the Vision 2030 logo).</p>
+      <p>🔹 <strong>Opening the rating page:</strong> Press the <strong>"⭐ Rate"</strong> button at the bottom of the page (beside the "Contact" button).</p>
       <div class="help-svg-wrap"><img src="data:image/jpeg;base64,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" alt="Rate button at the bottom of the page" style="width:130px;border-radius:6px;display:block;margin:8px auto;"/></div>
       <p>🔹 <strong>Submitting your rating:</strong> Tap the number of stars that reflects your opinion (you can change your choice before confirming by tapping a different star), then press the <strong>"✓ Confirm Rating"</strong> button to actually submit it — this way a rating never gets saved by mistake if you tap the wrong star. A thank-you message appears after confirming.</p>
       <p>🔹 <strong>One rating per visitor:</strong> After submitting your rating, you can't submit another one from the same device/browser (the stars become locked), so the overall average stays accurate and reflects each visitor's opinion just once.</p>
@@ -10788,11 +10843,21 @@ document.getElementById('shared-playBtn').onclick = async function() {
       <p>🔹 This feature is specific to the Arabic maqamat side only, and is saved locally on your device.</p>
     </div>
 
+    <div class="help-section" id="help-sec-en-20">
+      <h3>20. Dark mode (app appearance)</h3>
+      <p>The app has a dark appearance that is easier on the eyes in low light, with three options you can control.</p>
+      <p>🔹 <strong>Auto:</strong> follows your device setting — dark if your device is in dark mode, light if it is in light mode.</p>
+      <p>🔹 <strong>Dark:</strong> always uses the dark appearance, whatever your device setting.</p>
+      <p>🔹 <strong>Light:</strong> always uses the light appearance, whatever your device setting.</p>
+      <p>🔹 <strong>Appearance button:</strong> below the fretboard (beside the "Rate" button) — each tap moves to the next option: 🌓 Auto → 🌙 Dark → ☀️ Light, and the button shows the current option.</p>
+      <p>🔹 <strong>Note:</strong> some browsers (such as Samsung Internet) may not tell the app that the device is in dark mode. If the appearance does not change automatically, tap the button and choose 🌙 Dark. Your choice is saved on your device.</p>
+    </div>
+
+
     </div>
   </div>
 
-<style id="dark-mode-css">
-@media (prefers-color-scheme: dark){
+<style id="dark-mode-css" media="(prefers-color-scheme: dark)">
 :root{color-scheme:dark;--ink:#e8e2dc}
 .help-search-input{background:#171717;border:1px solid #534935;color:#e6dccb}
 .help-search-results{background:#171717;border:1px solid #534935}
@@ -10973,15 +11038,26 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 /* عناوين قوائم الفصائل والدائرة والكوردات */
 .panel-title,.dropdown-label,.c-drawer-title{background:#264050 !important;color:#bdd7f0 !important}
 .c-chords-type-btn-major.active{background:#2d4d5f !important;color:#e6f2fb !important;border-color:#3ab4e8 !important}
-}
 </style>
-<div id="dbg-bar" style="position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#ffe066;color:#000;font:12px/1.4 monospace;padding:4px;direction:ltr;white-space:pre-wrap">DBG</div>
 <script>
-(function(){function bg(s){var e=document.querySelector(s);return e?getComputedStyle(e).backgroundColor:'none'}
-function run(){var m=window.matchMedia('(prefers-color-scheme: dark)').matches;
-var d=document.getElementById('dbg-bar');
-d.textContent='V2 dark='+m+' ua='+(navigator.userAgent.match(/SamsungBrowser\/[\d.]+|Chrome\/[\d.]+/g)||[]).join(' ')+'\nurl='+location.pathname+location.search+'\nmic='+bg('#micVerifyHtmlBtn')+' toggle='+bg('.site-tabs-toggle')+'\nmeta='+Array.from(document.querySelectorAll('meta[name=color-scheme]')).map(function(x){return x.content}).join('|')+' bodybg='+getComputedStyle(document.body).backgroundColor}
-window.addEventListener('load',function(){run();setTimeout(run,1500)})})();
+/* مظهر التطبيق: تلقائي (يتبع الجهاز) / داكن / فاتح — الاختيار محفوظ على الجهاز.
+   السبب: بعض المتصفحات (مثل Samsung Internet) تبلّغ الصفحة أن الجهاز فاتح حتى لو كان داكناً. */
+(function(){
+  var KEY='oudTheme';
+  function get(){ try{ var v=localStorage.getItem(KEY); return (v==='dark'||v==='light')?v:'auto'; }catch(e){ return 'auto'; } }
+  function apply(m){
+    var st=document.getElementById('dark-mode-css'); if(!st) return;
+    st.media = m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)');
+    var fl=document.getElementById('force-light-css');
+    if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root{color-scheme:light}'; document.head.appendChild(fl); } }
+    else if(fl){ fl.parentNode.removeChild(fl); }
+    var tc=document.querySelector('meta[name="theme-color"]:not([media])');
+    if(tc) tc.setAttribute('content', m==='dark' ? '#141414' : '#3ab4e8');
+  }
+  function set(m){ try{ if(m==='auto') localStorage.removeItem(KEY); else localStorage.setItem(KEY,m); }catch(e){} apply(m); }
+  window.oudTheme={get:get,set:set,apply:apply};
+  apply(get());
+})();
 </script>
 </body>
 </html>
