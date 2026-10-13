@@ -4983,8 +4983,9 @@ function buildOudStatic(){
   }
 
   // 4) الأوتار الخمسة (وتر فا مفرد، والأربعة الأسفل مزدوجة)
-  const stringColors = ['#5c3414','#9c5a18','#c98a2e','#7a7a7a','#3a3a3a','#2a2a2a'];
-  const stringWidths = [5.2, 4.6, 4.0, 3.4, 3.0, 2.6];
+  // مجموعتان موحّدتا اللون بلا تدرّج: نحاسي (فا، لا، ري) وفضي (صول، دو، والسادس). وتر الفا الأسمك بين الأوتار
+  const stringColors = ['#b87333','#b87333','#b87333','#7a7a7a','#7a7a7a','#7a7a7a'];
+  const stringWidths = [4.4, 3.4, 3.0, 2.6, 2.2, 2.0];
   const doubleOffset = [0, 5, 5, 5, 4, 4];
   window._doubleOffset = doubleOffset; // الإزاحة بين الوترين المزدوجين (0 = مفرد)
   const xStringStart = OUD.VISUAL_NUT_X;
@@ -5002,7 +5003,7 @@ function buildOudStatic(){
         x1:p1.x, y1:p1.y + offset, 
         x2:p2.x, y2:p2.y + offset, 
         stroke:stringColors[i], 
-        'stroke-width':stringWidths[i] * 0.85, 
+        'stroke-width':stringWidths[i], 
         'stroke-linecap':'round',
         id:`oudString${i}b`
       });
@@ -5036,7 +5037,7 @@ function buildOudStatic(){
     if (strEl2) {
       pathEl2 = document.createElementNS(ns2, 'path');
       pathEl2.setAttribute('stroke', stringColors[stringIdx]);
-      pathEl2.setAttribute('stroke-width', stringWidths[stringIdx] * 0.85);
+      pathEl2.setAttribute('stroke-width', stringWidths[stringIdx]);
       pathEl2.setAttribute('stroke-linecap', 'round');
       pathEl2.setAttribute('fill', 'none');
       parent.insertBefore(pathEl2, strEl2);
@@ -5501,14 +5502,14 @@ function buildOudStatic(){
     // الخط الرئيسي
     g2.appendChild(el('line', {
       x1: x1, y1: y1, x2: x2, y2: y2,
-      stroke: stringColors[i], 'stroke-width': stringWidths[i] * 0.7
+      stroke: stringColors[i], 'stroke-width': stringWidths[i]
     }));
 
     // الخط المزدوج للأوتار 1-4
     if (doubleOffset[i] > 0) {
       g2.appendChild(el('line', {
         x1: x1, y1: y1 + doubleOffset[i], x2: x2, y2: y2 + doubleOffset[i],
-        stroke: stringColors[i], 'stroke-width': stringWidths[i] * 0.6
+        stroke: stringColors[i], 'stroke-width': stringWidths[i]
       }));
     }
 
@@ -11050,13 +11051,9 @@ h1{color:#d6c4a0}
 [style*="color: rgb(26, 18, 12)"]{color:#eee6e0 !important}
 /* ===== زند العود (SVG يُبنى بالجافاسكربت) ===== */
 #shared-oudSvg line[stroke="#111"]{stroke:#d4d4d4}
-/* ألوان الأوتار بالداكن: أفتح من الفاتح حتى لا تختفي فوق خلفية الزند الداكنة (تشمل خطوط الوتر المهتزّ path وخطوط رأس الزند) */
-#shared-oudSvg line[stroke="#5c3414"],#shared-oudSvg path[stroke="#5c3414"]{stroke:#c08848}
-#shared-oudSvg line[stroke="#9c5a18"],#shared-oudSvg path[stroke="#9c5a18"]{stroke:#dc9a34}
-#shared-oudSvg line[stroke="#c98a2e"],#shared-oudSvg path[stroke="#c98a2e"]{stroke:#f2c468}
-#shared-oudSvg line[stroke="#7a7a7a"],#shared-oudSvg path[stroke="#7a7a7a"]{stroke:#b8b8b8}
-#shared-oudSvg line[stroke="#3a3a3a"],#shared-oudSvg path[stroke="#3a3a3a"]{stroke:#d6d6d6}
-#shared-oudSvg line[stroke="#2a2a2a"],#shared-oudSvg path[stroke="#2a2a2a"]{stroke:#ececec}
+/* ألوان الأوتار بالداكن: نحاسي موحّد وفضي موحّد، أفتح من الفاتح حتى لا تختفي فوق خلفية الزند الداكنة (تشمل الوتر المهتزّ path وخطوط رأس الزند) */
+#shared-oudSvg line[stroke="#b87333"],#shared-oudSvg path[stroke="#b87333"]{stroke:#d98a4a}
+#shared-oudSvg line[stroke="#7a7a7a"],#shared-oudSvg path[stroke="#7a7a7a"]{stroke:#d0d0d0}
 #shared-oudSvg text[fill="#111"],#shared-oudSvg text[fill="#222"]{fill:#e6e6e6}
 #shared-oudSvg text[fill="#000000"]{fill:#f4efe6}
 #shared-oudSvg text[fill="#1b1410"]{fill:#bdd7f0}
