@@ -1221,6 +1221,7 @@ flex-shrink: 0;
   .c-selection-summary { bottom: 130px !important; top: auto !important; }
 }
   .c-selection-summary > *{ pointer-events: auto; }
+  .c-selection-summary.cs-pending{ opacity:0 !important; }
 
   /* ===== أزرار اختيار نوع السلم ===== */
   .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
@@ -2264,7 +2265,7 @@ window.wireCustomSelect = wireCustomSelect;
       </div>
     </div>
     <div id="arHarfLabel" class="ar-harf-label" style="display:none; position:absolute; z-index:5; color:#1a8abf; font-family:'Cairo',Arial,sans-serif; font-weight:800; white-space:nowrap; pointer-events:none; text-align:center;"></div>
-    <div class="c-selection-summary" id="cSelectionSummary">
+    <div class="c-selection-summary cs-pending" id="cSelectionSummary">
       <div class="scale-buttons">
         <button class="scale-btn active" data-scale="major">ماجور</button>
         <button class="scale-btn" data-scale="naturalMinor">مينور طبيعي</button>
@@ -2681,6 +2682,9 @@ window.isArabicMode = false;
         window.exerciseActive = false;
         if(notesLayer) while(notesLayer.firstChild) notesLayer.removeChild(notesLayer.firstChild);
         setTimeout(() => { if(typeof renderAll === 'function') renderAll(); }, 50);
+        // نخفي صف أنواع السلم (بشفافية) لين تنحسب مكانه الصحيح، عشان ما يظهر لحظة بمكان CSS الافتراضي ثم يقفز
+        const _csPend = document.querySelector('.c-selection-summary');
+        if (_csPend) { _csPend.classList.add('cs-pending'); setTimeout(() => _csPend.classList.remove('cs-pending'), 700); }
         setTimeout(() => { if(typeof window.adjustWesternButtonsClearance === 'function') window.adjustWesternButtonsClearance(); }, 120);
       }
     }
@@ -6978,6 +6982,11 @@ function updateWesternGuideImage(){
 
 // نقيس فعلياً مكان زر الدليل ونحط صف أنواع السلم تحته - دايماً بالكمبيوتر (مو بس عند تصادم فعلي)، وعند التصادم بالجوال/الأيباد
 window.adjustWesternButtonsClearance = function(){
+  try { window._adjustWesternButtonsClearanceInner(); }
+  finally { const _s = document.querySelector('.c-selection-summary'); if (_s) _s.classList.remove('cs-pending'); }
+};
+setTimeout(() => { const _s0 = document.querySelector('.c-selection-summary'); if (_s0) _s0.classList.remove('cs-pending'); }, 1500); // طبقة أمان: ما يبقى مخفياً أبداً
+window._adjustWesternButtonsClearanceInner = function(){
   if (window.isArabicMode) return;
   const guideRow = document.getElementById('westernBtnsRow');
   const summary = document.querySelector('.c-selection-summary');
