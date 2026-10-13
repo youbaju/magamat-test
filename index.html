@@ -5510,7 +5510,8 @@ function buildOudStatic(){
   // ٤ عناصر متباعدة بالتساوي (نفس قيمة gap بين كل وحدة والثانية): [نصوص الحقوق] - [تواصل] - [تقييم] - [شعار الرؤية]
   // ملاحظة: صورة شعار الرؤية فيها هامش فاضي داخلي (الشعار الفعلي أصغر من الصندوق المعلن 280×280)، فنعوّض عنه هنا عشان تكون المسافة البصرية متساوية فعلياً لا المسافة النظرية بس
   const visionVisibleLeftMargin = 55; // بوحدات الرسمة، محسوبة من قياس الصورة الفعلية
-  const ratingBtnX2 = visionX + visionVisibleLeftMargin - gap - btnW;
+  // الشعار محذوف: زر التقييم يأخذ مكان بطاقة الشعار (نفس عرضها btnW ومركزها)، وباقي العناصر تتبعه بنفس الفراغات
+  const ratingBtnX2 = visionX + (visionSize - btnW) / 2;
   const btnX2 = ratingBtnX2 - gap - btnW;
 
   // --- قص الصورة على حدود الشعار الفعلي (قِسناها بالبكسل: يسار 236، أعلى 107، يمين 981، أسفل 605 من أصل 1191×734) ---
@@ -5537,7 +5538,7 @@ function buildOudStatic(){
     x: cardX, y: cardY, width: cardW, height: cardH,
     rx: 14, fill: '#ffffff'
   });
-  oudFooterGroup.appendChild(visionCard);
+  // [محذوف] oudFooterGroup.appendChild(visionCard);
 
   const visionClipId = 'visionLogoClip';
   const visionClipPath = el('clipPath', { id: visionClipId });
@@ -5545,7 +5546,7 @@ function buildOudStatic(){
     x: cardX + cardPad, y: cardY + cardPad, width: cropDisplayW, height: cropDisplayH, rx: 4
   });
   visionClipPath.appendChild(visionClipRect);
-  oudFooterGroup.appendChild(visionClipPath);
+  // [محذوف] oudFooterGroup.appendChild(visionClipPath);
 
   const visionImg = el('image', {
     x: cardX + cardPad - imgOffsetX, y: cardY + cardPad - imgOffsetY,
@@ -5555,7 +5556,7 @@ function buildOudStatic(){
   });
   visionImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', 'images/2030_vision.png');
   visionImg.setAttribute('href', 'images/2030_vision.png');
-  oudFooterGroup.appendChild(visionImg);
+  // [محذوف] oudFooterGroup.appendChild(visionImg);
 
   // ضبط الـviewBox
   let minX = Math.min(shoulderTopEnd.x, OUD.NECK_END_X, OUD.fretX(13) - 30);
@@ -5668,10 +5669,26 @@ function buildOudStatic(){
   const cpRightX = boxX2 + cpHandOffset;
   [cp1, cp2, cpName, cp3].forEach(t => t.setAttribute('x', cpRightX));
 
+  // توزيع صف التذييل (نص الحقوق - تواصل - تقييم) بين الفريت 1 والفريت 7: أول عنصر يبدأ عند الفريت 1
+  // وآخر عنصر ينتهي عند الفريت 7، والفراغات بين العناصر متساوية (إحداثيات الرسمة قبل الانعكاس؛ الانعكاس يحفظ المدى نفسه)
+  {
+    const fA = OUD.fretX(1), fB = OUD.fretX(7);
+    const spanL = Math.min(fA, fB), spanW = Math.abs(fB - fA);
+    const gapFt = Math.max(24, (spanW - copyrightTextMaxW - 2 * btnW) / 2);
+    const nBtnX = spanL + copyrightTextMaxW + gapFt;
+    const nRatingX = nBtnX + btnW + gapFt;
+    btnRect.setAttribute('x', nBtnX);
+    btnText.setAttribute('x', nBtnX + btnW / 2);
+    ratingRect.setAttribute('x', nRatingX);
+    ratingText.setAttribute('x', nRatingX + btnW / 2);
+    const nCpX = nBtnX - gapFt - copyrightTextMaxW + cpHandOffset;
+    [cp1, cp2, cpName, cp3].forEach(t => t.setAttribute('x', nCpX));
+  }
+
   // تعويض مباشر ومبسّط لوضعي اليمين واليسار بالإنجليزي (كل وضع له قيمة منفصلة، حسب الاختبار الفعلي)
   if (window.oudLanguage === 'en') {
     if (!window.isLeftHanded) {
-      copyrightG.setAttribute('transform', `translate(${2 * gap * 3}, 0)`);
+      copyrightG.setAttribute('transform', `translate(${2 * gap * 3 + 68}, 0)`);
     } else {
       copyrightG.setAttribute('transform', `translate(${-gap * 5.5}, 0)`);
     }
