@@ -5686,6 +5686,8 @@ function buildOudStatic(){
         } catch (e) { alert('err ' + e); }
         return;
       }
+      // عند التحويل للفاتح: إعادة تحميل الصفحة ليبدأ المتصفح بوسم only light من أول تحميل (يمنع تغميقه التلقائي)
+      if (window.oudTheme.get() === 'light') setTimeout(() => window.location.reload(), 60);
     });
     try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshTheme); } catch(e) {}
   }
