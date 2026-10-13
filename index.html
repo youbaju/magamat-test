@@ -1224,7 +1224,7 @@ flex-shrink: 0;
 }
   .c-selection-summary > *{ pointer-events: auto; }
   .c-selection-summary.cs-pending{ opacity:0 !important; }
-  .c-selection-summary.cs-tight .now-playing{ display:none !important; }
+  @media (max-height:540px) and (orientation:landscape){ .c-selection-summary.cs-tight .now-playing{ display:none !important; } }
 
   /* ===== أزرار اختيار نوع السلم ===== */
   .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
@@ -6999,6 +6999,7 @@ window._adjustWesternButtonsClearanceInner = function(){
   const guideRow = document.getElementById('westernBtnsRow');
   const summary = document.querySelector('.c-selection-summary');
   if (!guideRow || !summary || guideRow.style.display === 'none') return;
+  summary.classList.remove('cs-tight'); // دائماً نبدأ من الوضع العادي (حتى لو خرجنا مبكراً لاحقاً)
   // نرجع القيمة المضبوطة يدويًا (لو موجودة) قبل ما نعيد القياس
   summary.style.removeProperty('top');
   summary.style.removeProperty('bottom');
