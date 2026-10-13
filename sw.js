@@ -221,7 +221,7 @@ self.addEventListener('fetch', (event) => {
 // متصل بالنت، مع رجوع تلقائي للنسخة المخزنة لو قطع النت (يشتغل أوفلاين برضه)
 async function networkFirstShell(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: 'no-cache' });
     if (response && response.status === 200) {
       const cache = await caches.open(PRECACHE_NAME);
       cache.put(request, response.clone());
@@ -242,7 +242,7 @@ async function networkFirstShell(request) {
 // فوق بالضبط، بس للصور
 async function networkFirstImages(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: 'no-cache' });
     if (response && response.status === 200) {
       const cache = await caches.open(PRECACHE_NAME);
       cache.put(request, response.clone());
