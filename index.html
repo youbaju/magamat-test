@@ -6,7 +6,10 @@
 
 <!-- PWA: ربط ملف المانيفست (يفعّل "إضافة للشاشة الرئيسية" بشكل تطبيق حقيقي) -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#3ab4e8">
+<!-- المتصفح يأخذ أول وسم يطابق، لذلك الداكن (له شرط) يأتي أولاً ثم الفاتح العام -->
+<meta name="color-scheme" id="cs-meta" content="light dark">
+<meta name="theme-color" id="tc-dark" content="#141414" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="tc-light" content="#3ab4e8">
 <script>
 /* مظهر التطبيق: تلقائي (يتبع الجهاز) / داكن / فاتح — الاختيار محفوظ على الجهاز.
    السبب: بعض المتصفحات (مثل Samsung Internet) تبلّغ الصفحة أن الجهاز فاتح حتى لو كان داكناً. */
@@ -19,8 +22,9 @@
     var fl=document.getElementById('force-light-css');
     if(m==='light'){ if(!fl){ fl=document.createElement('style'); fl.id='force-light-css'; fl.textContent=':root{color-scheme:light}'; document.head.appendChild(fl); } }
     else if(fl){ fl.parentNode.removeChild(fl); }
-    var tc=document.querySelector('meta[name="theme-color"]:not([media])');
-    if(tc) tc.setAttribute('content', m==='dark' ? '#141414' : '#3ab4e8');
+    var cs=document.getElementById('cs-meta'); if(cs) cs.setAttribute('content', m==='dark'?'dark':(m==='light'?'only light':'light dark'));
+    var td=document.getElementById('tc-dark');
+    if(td) td.setAttribute('media', m==='dark' ? 'all' : (m==='light' ? 'not all' : '(prefers-color-scheme: dark)'));
   }
   function set(m){ try{ if(m==='auto') localStorage.removeItem(KEY); else localStorage.setItem(KEY,m); }catch(e){} apply(m); }
   function effective(){ var m=get(); if(m==='dark'||m==='light') return m; try{ return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }catch(e){ return 'light'; } }
@@ -35,9 +39,6 @@
 var dark=(t==="dark")||(t!=="light"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
 if(dark){document.documentElement.classList.add("pre-dark");setTimeout(function(){document.documentElement.classList.remove("pre-dark")},2500)}}catch(e){}})();
 </script>
-<meta name="theme-color" content="#141414" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
-<meta name="color-scheme" content="only light">
 <!-- يمنع خاصية "Force Dark" التلقائية بمتصفحات أندرويد (زي Chrome) من محاولة تخمين/عكس
      ألوان الصفحة بنفسها لو المستخدم بوضع ليلي — يضمن بقاء التصميم بحالته الفاتحة الأصلية
      ثابتاً دائماً، بغض النظر عن إعدادات الجهاز أو المتصفح -->
