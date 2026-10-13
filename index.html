@@ -28,7 +28,7 @@
   apply(get());
 })();
 </script>
-<style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}</style>
+<style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}html.pre-dark *,html.pre-dark *::before,html.pre-dark *::after{transition:none !important}</style>
 <script>
 /* يمنع وميض الأبيض عند فتح/إعادة تحميل الصفحة (مثل تبديل اللغة) بالوضع الداكن: نخفي المحتوى حتى يُحمَّل CSS الداكن بنهاية الصفحة */
 (function(){try{var t=null;try{t=localStorage.getItem("oudTheme")}catch(e){}
@@ -5614,13 +5614,13 @@ function buildOudStatic(){
   const contactG = el('g', { id:'svgContactBtn', style:'cursor:pointer; pointer-events:auto;' });
   const btnRect = el('rect', {
     x: btnX, y: btnY, width: btnW, height: btnH, rx: btnR,
-    fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
+    fill:'#a3d0ec', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const btnText = el('text', {
     x: btnX + btnW/2, y: btnY + btnH/2 + 12,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-size':'30', 'font-weight':'800', fill:'#1b1410'
+    'font-size':'30', 'font-weight':'800', fill:'#0a2f52'
   });
   btnText.textContent = (window.oudLanguage === 'en') ? 'Contact Us' : 'تواصل معنا';
   contactG.appendChild(btnRect);
@@ -5632,13 +5632,13 @@ function buildOudStatic(){
   const ratingG = el('g', { id:'svgRatingBtn', style:'cursor:pointer; pointer-events:auto;' });
   const ratingRect = el('rect', {
     x: ratingBtnX, y: btnY, width: btnW, height: btnH, rx: btnR,
-    fill:'#ffffff', stroke:'#3ab4e8', 'stroke-width':'5'
+    fill:'#a3d0ec', stroke:'#3ab4e8', 'stroke-width':'5'
   });
   const ratingText = el('text', {
     x: ratingBtnX + btnW/2, y: btnY + btnH/2 + 12,
     'text-anchor':'middle', 'dominant-baseline':'middle',
     'font-family':"'Cairo', 'Segoe UI', Tahoma, sans-serif",
-    'font-size':'30', 'font-weight':'800', fill:'#1b1410'
+    'font-size':'30', 'font-weight':'800', fill:'#0a2f52'
   });
   const ratingWord = (window.oudLanguage === 'en') ? 'Rate' : 'تقييم';
   ratingText.textContent = (window.oudLanguage === 'en') ? ('⭐ ' + ratingWord) : (ratingWord + ' ⭐');
@@ -11082,6 +11082,6 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 #c-circleSvg .circle-segment:not(.active){filter:brightness(.88)}
 #c-circleSvg text[fill="#5a4a35"]{fill:#bdd7f0}
 </style>
-<script>if(window.oudTheme)window.oudTheme.apply(window.oudTheme.get());document.documentElement.classList.remove('pre-dark');</script>
+<script>if(window.oudTheme)window.oudTheme.apply(window.oudTheme.get());requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.classList.remove('pre-dark')})});</script>
 </body>
 </html>
