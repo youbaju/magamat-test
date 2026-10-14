@@ -532,6 +532,7 @@ body.hand-left-mode .c-circle-drawer.open{ left:0; }
 }
 .shared-oud-wrapper > *{ pointer-events: auto; }
 .shared-oud-wrapper svg{ max-height: 100%; max-width: 100%; }
+#shared-oudSvg{ visibility: hidden; } /* يظهر بعد ما يصير الـviewBox نهائياً — يمنع وميض العود بحجم/مقياس خاطئ لحظة التحميل */
 #micVerifyHtmlBtn{
   visibility: hidden; /* يظهر بعد ما يصير الـviewBox نهائياً ويُحسب مكانه الصحيح (يمنع القفز أثناء التحميل) */
   position: absolute;
@@ -3585,6 +3586,7 @@ window.isArabicMode = false;
       rafId = requestAnimationFrame(() => {
         if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
         if (typeof window.positionNoteModeToggleBtn === 'function') window.positionNoteModeToggleBtn();
+        if (typeof window.adjustWesternButtonsClearance === 'function' && !window.isArabicMode) window.adjustWesternButtonsClearance();
       });
     };
     const settle = () => { repos(); [150, 400, 900, 1800].forEach(t => setTimeout(repos, t)); };
@@ -5647,7 +5649,8 @@ function buildOudStatic(){
   }
   oudSvg.setAttribute('viewBox', `${minX} ${minY} ${maxX-minX} ${maxY-minY}`);
   window._oudVBReady = true; // من هنا الـviewBox نهائي، فمواضع الأزرار صحيحة وتُظهَر
-  setTimeout(() => { ['micVerifyHtmlBtn','noteModeToggleBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.style.visibility = 'inherit'; }); }, 2000); // شبكة أمان
+  oudSvg.style.visibility = 'inherit';
+  setTimeout(() => { ['micVerifyHtmlBtn','noteModeToggleBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.style.visibility = 'inherit'; }); const _sv = document.getElementById('shared-oudSvg'); if (_sv) _sv.style.visibility = 'inherit'; }, 2000); // شبكة أمان
   // نعيد تموضع زر المايك وزر النغمة فوراً بعد تحديث الـviewBox (حسابهما الأول بأعلى الدالة يتم قبل تغيّر الـviewBox
   // فيستخدم مقياساً قديماً من وضع اليد السابق، وكان يظهر قفز الأزرار أو بقاؤها بمكان خاطئ أحياناً)
   if (typeof window.positionMicHtmlBtn === 'function') window.positionMicHtmlBtn();
@@ -6989,10 +6992,11 @@ function updateWesternGuideImage(){
 
 // نقيس فعلياً مكان زر الدليل ونحط صف أنواع السلم تحته - دايماً بالكمبيوتر (مو بس عند تصادم فعلي)، وعند التصادم بالجوال/الأيباد
 window.adjustWesternButtonsClearance = function(){
-  try { window._adjustWesternButtonsClearanceInner(); }
-  finally { const _s = document.querySelector('.c-selection-summary'); if (_s) _s.classList.remove('cs-pending'); }
+  let _ok = true;
+  try { _ok = window._adjustWesternButtonsClearanceInner(); }
+  finally { const _s = document.querySelector('.c-selection-summary'); if (_s && _ok !== false) _s.classList.remove('cs-pending'); }
 };
-setTimeout(() => { const _s0 = document.querySelector('.c-selection-summary'); if (_s0) _s0.classList.remove('cs-pending'); }, 1500); // طبقة أمان: ما يبقى مخفياً أبداً
+setTimeout(() => { const _s0 = document.querySelector('.c-selection-summary'); if (_s0) _s0.classList.remove('cs-pending'); }, 4000); // طبقة أمان: ما يبقى مخفياً أبداً
 window._adjustWesternButtonsClearanceInner = function(){
   if (window.isArabicMode) return;
   const guideRow = document.getElementById('westernBtnsRow');
@@ -7003,7 +7007,7 @@ window._adjustWesternButtonsClearanceInner = function(){
   summary.style.bottom = '';
   const isDesktop = window.innerWidth > 1024;
   const guideRect = guideRow.getBoundingClientRect();
-  if (guideRect.width === 0) return;
+  if (guideRect.width === 0) return false; // لسا ما اكتمل التخطيط — نعيد المحاولة لاحقاً
 
   if (isDesktop) {
     // بالكمبيوتر: دايماً تحت زر الدليل مباشرة (بمسافة مريحة، مو ملاصقة)، بغض النظر عن وجود تصادم أو لا
