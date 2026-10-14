@@ -5964,7 +5964,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v34 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v35 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11229,10 +11229,51 @@ document.getElementById('shared-playBtn').onclick = async function() {
   if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
 })();
 </script>
+<style id="ipad-guide-big">
+/* آيباد فقط (شاشة لمس كبيرة): نكبّر صورة دليل المقام/السلم وجدول الأبعاد بأكبر حجم يتسع بالشاشة بلا تمرير. الجوال والحاسوب ما يتأثران */
+@media (min-width:768px) and (min-height:700px) and (pointer:coarse){
+  .maqam-guide-container{ max-width:98vw; }
+  .maqam-intervals-table{ max-width:min(98vw,1100px); padding:14px; }
+  .mit-title{ font-size:1.3rem; }
+  .mit-close{ font-size:1.7rem; }
+  .mit-grid{ gap:8px; }
+  .mit-header-row,.mit-value-row{ gap:8px; }
+  .mit-cell{ font-size:1.05rem; padding:8px 4px; min-width:56px; }
+  .mit-cell.header{ font-size:1rem; min-height:72px; }
+  .mit-cell.value{ font-size:1.8rem; }
+}
+</style>
+<script>
+/* آيباد فقط: نضبط عرض نافذة الدليل حسب نسبة أبعاد الصورة بحيث تتسع كاملة بالشاشة (عرضاً وارتفاعاً) بأكبر حجم ممكن، بلا تمرير */
+(function(){
+  var mq = window.matchMedia ? window.matchMedia('(min-width:768px) and (min-height:700px) and (pointer:coarse)') : null;
+  function fit(modalId, imgId, closeRow, pad, titleH){
+    try{
+      var m=document.getElementById(modalId), img=document.getElementById(imgId); if(!m||!img) return;
+      var c=m.querySelector('.maqam-guide-container'); if(!c) return;
+      var on = mq && mq.matches && m.style.display!=='none' && img.naturalWidth>0 && img.offsetParent!==null;
+      if(!on){ c.style.removeProperty('width'); c.style.removeProperty('max-width'); return; }
+      var ar=img.naturalWidth/img.naturalHeight;
+      var availH=window.innerHeight*0.96-16-closeRow-titleH-6;
+      var maxInner=(availH-pad)*ar+pad;
+      var w=Math.min(window.innerWidth*0.98-16, maxInner);
+      if(w<300) return;
+      c.style.width=(w+16)+'px'; c.style.maxWidth=(w+16)+'px';
+    }catch(e){}
+  }
+  function all(){ fit('maqamGuideModal','maqamGuideImg',38,0,0); fit('westernGuideModal','westernGuideImg',38,20,52); }
+  ['maqamGuideModal','westernGuideModal'].forEach(function(id){
+    var m=document.getElementById(id); if(!m) return;
+    new MutationObserver(function(){ requestAnimationFrame(all); }).observe(m,{attributes:true,attributeFilter:['style']});
+  });
+  ['maqamGuideImg','westernGuideImg'].forEach(function(id){ var i=document.getElementById(id); if(i) i.addEventListener('load',all); });
+  window.addEventListener('resize',all); window.addEventListener('orientationchange',function(){ setTimeout(all,200); });
+})();
+</script>
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v34 (help-close-en)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v35 (ipad-guide-big)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
