@@ -4680,7 +4680,7 @@ function renderChordHighlight(positions, active){
     .sort((a, b) => a.freq - b.freq)
     .reduce((acc, item, rank) => { acc[item.i] = rank; return acc; }, {});
   positions.forEach((pos, chordNoteIdx) => {
-    const p = OUD.getPoint(pos.string, pos.fret);
+    const p = OUD.getNotePoint(pos.string, pos.fret);
     const boxW = 64, boxH = 32;
     const noteFreqNow = freqByOriginalIdx[chordNoteIdx];
     const pitchOrderIdx = pitchRank[chordNoteIdx];
@@ -5119,6 +5119,14 @@ const OUD = (function(){
     }
     return y;
   }
+  // إزاحة الخط الثاني بالوتر المزدوج (نسخة من doubleOffset أسفل) — مركز الوتر المزدوج = منتصف خطيه، ومنه نرسم صناديق النغمات
+  const DOUBLE_OFF = [0, 9, 8, 7.7, 7.4, 7];
+  function stringCenterY(i,x){ return stringY(i,x) + (DOUBLE_OFF[i]||0)/2; }
+  // نقطة النغمة: تتوسط الوتر (مركز الوتر المزدوج) عند الفريت — للصناديق فقط. أما getPoint فتعطي الخط الأول (لرسم الأوتار نفسها)
+  function getNotePoint(stringIndex, fret){
+    const x = fret===0 ? VISUAL_NUT_X : fretX(fret);
+    return {x, y: stringCenterY(stringIndex, x)};
+  }
   function getPoint(stringIndex, fret){
     const x = fret===0 ? VISUAL_NUT_X : fretX(fret);
     const y = stringY(stringIndex, x);
@@ -5145,14 +5153,14 @@ const OUD = (function(){
   return {
     NUT_X, VISUAL_NUT_X, NECK_END_X, NUT_TOP_Y, NUT_BOTTOM_Y, WIDEN,
     FRET7_INDEX, FRET_COUNT, STRING_COUNT, STRING_TUNING, STRING_OPEN_MIDI,
-    neckTopY, neckBottomY, fretX, stringY, getPoint, noteAt, frequencyAt, setStringCount
+    neckTopY, neckBottomY, fretX, stringY, stringCenterY, getPoint, getNotePoint, noteAt, frequencyAt, setStringCount
   };
 })();
 window.OUD = OUD; // نعرّضه لباقي الصفحة (بعكس الافتراض الأصلي) — يحتاجه مثلاً نص "الحرف الحالي" فوق الزند بـ<script> ثاني
 
 const oudSvg = document.getElementById('shared-oudSvg');
 // نجعل stringY و fretX متاحتين للمقامات العربية
-window._oudStringY = OUD.stringY;
+window._oudStringY = OUD.stringCenterY; // مركز الوتر (للنغمات العربية) — الخط الأول للمزدوج يتحول لمنتصف الخطين
 window._oudFretX = OUD.fretX;
 
 // الانعكاس الأفقي الكامل للعود (جسم + زند + فريتات + نغمات) - يُفعّل ليد اليمين، يُلغى لليسار
@@ -6000,7 +6008,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v37 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v39 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -6273,7 +6281,7 @@ function drawOudScale(root, scaleType, direction, stepDirections, currentIndex){
     const actualInterval = getIntervalForDirection(scaleType, scaleIdx, noteDirection);
     const pc = (root + actualInterval) % 12;
 
-    const p = OUD.getPoint(string, fret);
+    const p = OUD.getNotePoint(string, fret);
     const boxW = 64, boxH = 32;
     const letterIdx = (rootLetterIdx + scaleIdx) % 7;
     const correctName = getCorrectNoteName(pc, letterIdx);
@@ -11309,7 +11317,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v37 (string-spacing)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v39 (string-spacing)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
