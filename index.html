@@ -5662,6 +5662,14 @@ function buildOudStatic(){
     const t0 = Date.now();
     window._oudRevealTimer = setInterval(() => {
       const circleActive = !!document.querySelector('#page-circle.active') && !window.isArabicMode;
+      // أول ما يوصل خط Cairo نعيد رسم العود مرة وحدة: قياس عرض نص الحقوق (وتوزيع صف التذييل) كان يتم بخط بديل قبل وصول Cairo فتطلع المسافات غلط
+      if (window._oudVBReady && window._oudFontsReady && !window._oudFontRedone && typeof window.redrawOudEverything === 'function') {
+        window._oudFontRedone = true;
+        try { window.redrawOudEverything(); } catch(e) {}
+        window._oudAdjDone = false; // نعيد التأكد من موضع صف الأنواع بعد إعادة الرسم
+        if (typeof window.adjustWesternButtonsClearance === 'function') { try { window.adjustWesternButtonsClearance(); } catch(e) {} }
+        return;
+      }
       const ready = window._oudVBReady && window._oudFontsReady && (!circleActive || window._oudAdjDone);
       if (ready || Date.now() - t0 > 3000) {
         clearInterval(window._oudRevealTimer);
@@ -5752,7 +5760,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v25 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v26 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -5883,6 +5891,24 @@ function buildOudStatic(){
   });
 
   window.applyOudHorizontalMirror(oudStatic);
+
+  // تصحيح نهائي مقاس فعلياً: نجعل الفراغ بين نص الحقوق وزر تواصل = الفراغ بين تواصل والتقييم (أي لغة/يد)
+  try {
+    const rc = contactG.getBoundingClientRect(), rr = ratingG.getBoundingClientRect();
+    let L = Infinity, R = -Infinity;
+    [cp1, cp2, cpName, cp3].forEach(t => { const b = t.getBoundingClientRect(); L = Math.min(L, b.left); R = Math.max(R, b.right); });
+    const m = copyrightG.parentNode.getScreenCTM();
+    if (m && isFinite(L) && rc.width > 0 && rr.width > 0 && Math.abs(m.a) > 0) {
+      const target = (rr.left > rc.left) ? (rr.left - rc.right) : (rc.left - rr.right);
+      let deltaPx = 0;
+      if (R <= rc.left + 1) deltaPx = (rc.left - target) - R;
+      else if (L >= rc.right - 1) deltaPx = (rc.right + target) - L;
+      if (target > 0 && Math.abs(deltaPx) > 0.5 && Math.abs(deltaPx) < 200) {
+        const cur = copyrightG.getAttribute('transform') || '';
+        copyrightG.setAttribute('transform', `translate(${deltaPx / m.a}, 0) ` + cur);
+      }
+    }
+  } catch(e) {}
 }
 
 // خريطة: لكل نوتة طبيعية (pitch class)، رقم حرفها الموسيقي (0=دو، 1=رى، 2=مي... 6=سي)
@@ -11194,7 +11220,7 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v25 (cover+fonts)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v26 (footer+redraw)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
