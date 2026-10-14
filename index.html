@@ -36,7 +36,7 @@
 </script>
 <style>html.oud-booting{background:#fff}html.oud-booting body{visibility:hidden}</style>
 <script>/* غطاء تحميل: نخفي الصفحة لين يصير العود والأزرار بأماكنها/أحجامها النهائية، فتظهر كلها دفعة وحدة بدل ما تقفز قطعة قطعة */
-(function(){var d=document.documentElement;d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3500);})();</script>
+(function(){var d=document.documentElement;window._oudLastSize=Date.now();window._oudLastH=0;function eh(){var h=window.innerHeight,w=window.innerWidth;if(h>200)d.style.setProperty('--app-h',h+'px');if(h!==window._oudLastH||w!==window._oudLastW){window._oudLastH=h;window._oudLastW=w;window._oudLastSize=Date.now();}}eh();window._oudEarlyH=eh;window.addEventListener('resize',eh);if(window.visualViewport)window.visualViewport.addEventListener('resize',eh);d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3500);})();</script>
 <style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}html.pre-dark *,html.pre-dark *::before,html.pre-dark *::after{transition:none !important}</style>
 <script>
 /* يمنع وميض الأبيض عند فتح/إعادة تحميل الصفحة (مثل تبديل اللغة) بالوضع الداكن: نخفي المحتوى حتى يُحمَّل CSS الداكن بنهاية الصفحة */
@@ -5670,7 +5670,9 @@ function buildOudStatic(){
         if (typeof window.adjustWesternButtonsClearance === 'function') { try { window.adjustWesternButtonsClearance(); } catch(e) {} }
         return;
       }
-      const ready = window._oudVBReady && window._oudFontsReady && (!circleActive || window._oudAdjDone);
+      if (window._oudEarlyH) window._oudEarlyH();
+      const sizeStable = document.readyState === 'complete' && (Date.now() - (window._oudLastSize || 0) > 350);
+      const ready = window._oudVBReady && window._oudFontsReady && sizeStable && (!circleActive || window._oudAdjDone);
       if (ready || Date.now() - t0 > 3000) {
         clearInterval(window._oudRevealTimer);
         requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('oud-booting')));
@@ -5760,7 +5762,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v26 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v27 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11208,7 +11210,7 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 /* ارتفاع التطبيق الفعلي المرئي: بعض متصفحات الجوال (سامسونج) تحسب dvh/vh أكبر من المساحة المرئية بعد إعادة التحميل فيختفي جزء من المشغل بالأسفل */
 (function(){
   var de=document.documentElement;
-  function setH(){ var h=window.innerHeight; if (h>200) de.style.setProperty('--app-h', h+'px'); }
+  function setH(){ var h=window.innerHeight; if (h>200) de.style.setProperty('--app-h', h+'px'); if (window._oudEarlyH) window._oudEarlyH(); }
   setH();
   window.addEventListener('resize', setH);
   window.addEventListener('orientationchange', function(){ setTimeout(setH,150); setTimeout(setH,500); });
@@ -11220,7 +11222,7 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v26 (footer+redraw)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v27 (stable-size)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
