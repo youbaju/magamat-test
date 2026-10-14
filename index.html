@@ -36,7 +36,7 @@
 </script>
 <style>html.oud-booting{background:#fff}html.oud-booting body{visibility:hidden}</style>
 <script>/* غطاء تحميل: نخفي الصفحة لين يصير العود والأزرار بأماكنها/أحجامها النهائية، فتظهر كلها دفعة وحدة بدل ما تقفز قطعة قطعة */
-(function(){var d=document.documentElement;d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3000);})();</script>
+(function(){var d=document.documentElement;d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3500);})();</script>
 <style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}html.pre-dark *,html.pre-dark *::before,html.pre-dark *::after{transition:none !important}</style>
 <script>
 /* يمنع وميض الأبيض عند فتح/إعادة تحميل الصفحة (مثل تبديل اللغة) بالوضع الداكن: نخفي المحتوى حتى يُحمَّل CSS الداكن بنهاية الصفحة */
@@ -330,6 +330,11 @@ if(dark){document.documentElement.classList.add("pre-dark");setTimeout(function(
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Music&display=swap" rel="stylesheet">
+<script>/* نبدأ تحميل خط Cairo فوراً ونتتبّعه: الغطاء ما يُرفع إلا بعد وصوله (أو مهلة)، عشان ما يصير "تبديل خط" يغيّر أحجام النصوص بعد ظهور الصفحة */
+(function(){ window._oudFontsReady=false; function done(){window._oudFontsReady=true}
+  try { if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('400 16px Cairo'),document.fonts.load('600 16px Cairo'),document.fonts.load('700 16px Cairo'),document.fonts.load('800 16px Cairo')]).then(function(){ return document.fonts.ready; }).then(done,done); } else done(); } catch(e){ done(); }
+  setTimeout(done,2000);
+})();</script>
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-CSHSKLVNB5"></script>
 <script>
@@ -5657,8 +5662,8 @@ function buildOudStatic(){
     const t0 = Date.now();
     window._oudRevealTimer = setInterval(() => {
       const circleActive = !!document.querySelector('#page-circle.active') && !window.isArabicMode;
-      const ready = window._oudVBReady && (!circleActive || window._oudAdjDone);
-      if (ready || Date.now() - t0 > 2500) {
+      const ready = window._oudVBReady && window._oudFontsReady && (!circleActive || window._oudAdjDone);
+      if (ready || Date.now() - t0 > 3000) {
         clearInterval(window._oudRevealTimer);
         requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('oud-booting')));
       }
@@ -5747,7 +5752,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v24 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v25 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11189,7 +11194,7 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v24 (boot-cover)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v25 (cover+fonts)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
