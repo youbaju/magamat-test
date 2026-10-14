@@ -34,6 +34,11 @@
   apply(get());
 })();
 </script>
+<script>/* آيباد فقط: نلغي التكبير بإصبعين (الشاشة كبيرة أصلاً وكان يتلخبط معه ترتيب العناصر). الجوال يبقى كما هو */
+(function(){try{var ua=navigator.userAgent||'';var isIpad=/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);if(!isIpad)return;window._oudIpad=true;
+var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});
+}catch(e){}})();</script>
 <style>html.oud-booting{background:#fff}html.oud-booting.oud-boot-dark{background:#171717}html.oud-booting body{visibility:hidden}</style>
 <script>/* غطاء تحميل: نخفي الصفحة لين يصير العود والأزرار بأماكنها/أحجامها النهائية، فتظهر كلها دفعة وحدة بدل ما تقفز قطعة قطعة */
 (function(){var d=document.documentElement;window._oudLastSize=Date.now();window._oudLastH=0;function eh(){var h=window.innerHeight,w=window.innerWidth;if(h>200)d.style.setProperty('--app-h',h+'px');if(h!==window._oudLastH||w!==window._oudLastW){window._oudLastH=h;window._oudLastW=w;window._oudLastSize=Date.now();}}eh();window._oudEarlyH=eh;window.addEventListener('resize',eh);if(window.visualViewport)window.visualViewport.addEventListener('resize',eh);try{var _t=null;try{_t=localStorage.getItem('oudTheme')}catch(e){}if(_t==='dark'||(_t!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches))d.classList.add('oud-boot-dark')}catch(e){}try{if(sessionStorage.getItem('oudSoft')){sessionStorage.removeItem('oudSoft');window._oudSoft=true}}catch(e){}d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3500);})();</script>
@@ -5959,7 +5964,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v32 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v33 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11226,7 +11231,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v32 (soft-reload)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v33 (ipad-nozoom)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
