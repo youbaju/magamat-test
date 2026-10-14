@@ -5747,7 +5747,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v22 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v24 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11185,6 +11185,14 @@ body div[style*="z-index: 10001"]{background:#264050 !important;color:#bdd7f0 !i
   window.addEventListener('load', function(){ setH(); setTimeout(setH,300); setTimeout(setH,1000); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', setH);
 })();
+</script>
+<script>
+/* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
+(function(){ try { if (!/[?&]debug/.test(location.search)) return;
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v24 (boot-cover)';
+  d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
+  document.body.appendChild(d);
+} catch(e){} })();
 </script>
 <script>if(window.oudTheme)window.oudTheme.apply(window.oudTheme.get());requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.classList.remove('pre-dark')})});</script>
 </body>
