@@ -5964,7 +5964,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v33 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v34 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -6375,9 +6375,10 @@ document.addEventListener('click', function(e) {
   }
 });
 document.addEventListener('click', function(e) {
-  const closeEl = e.target.closest ? e.target.closest('#helpCloseBtn') : null;
+  const closeEl = e.target.closest ? e.target.closest('#helpCloseBtn, #helpCloseBtnEn') : null; // زر الإغلاق الإنجليزي كان ناقص هنا فما كانت الصفحة السابقة ترجع نشطة (تختفي أزرار دليل المقام والأبعاد)
   if (closeEl) {
     document.getElementById('page-help').classList.remove('active');
+    const _he = document.getElementById('page-help-en'); if (_he) _he.classList.remove('active');
     const lastPage = window._lastPage || 'page-circle';
     const target = document.getElementById(lastPage);
     if (target) target.classList.add('active');
@@ -11231,7 +11232,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v33 (ipad-nozoom)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v34 (help-close-en)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
