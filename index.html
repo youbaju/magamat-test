@@ -34,6 +34,9 @@
   apply(get());
 })();
 </script>
+<style>html.oud-booting{background:#fff}html.oud-booting body{visibility:hidden}</style>
+<script>/* غطاء تحميل: نخفي الصفحة لين يصير العود والأزرار بأماكنها/أحجامها النهائية، فتظهر كلها دفعة وحدة بدل ما تقفز قطعة قطعة */
+(function(){var d=document.documentElement;d.classList.add('oud-booting');window._oudBootStart=Date.now();setTimeout(function(){d.classList.remove('oud-booting')},3000);})();</script>
 <style>html.pre-dark{background:#171717}html.pre-dark body{visibility:hidden}html.pre-dark *,html.pre-dark *::before,html.pre-dark *::after{transition:none !important}</style>
 <script>
 /* يمنع وميض الأبيض عند فتح/إعادة تحميل الصفحة (مثل تبديل اللغة) بالوضع الداكن: نخفي المحتوى حتى يُحمَّل CSS الداكن بنهاية الصفحة */
@@ -1225,7 +1228,7 @@ flex-shrink: 0;
   .c-selection-summary { bottom: 130px !important; top: auto !important; }
 }
   .c-selection-summary > *{ pointer-events: auto; }
-  .c-selection-summary.cs-pending{ opacity:0 !important; }
+  @media (min-width:1025px){ .c-selection-summary.cs-pending{ opacity:0 !important; } }
 
   /* ===== أزرار اختيار نوع السلم ===== */
   .scale-buttons{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
@@ -5649,6 +5652,18 @@ function buildOudStatic(){
   }
   oudSvg.setAttribute('viewBox', `${minX} ${minY} ${maxX-minX} ${maxY-minY}`);
   window._oudVBReady = true; // من هنا الـviewBox نهائي، فمواضع الأزرار صحيحة وتُظهَر
+  (function(){ // نرفع غطاء التحميل لما يكتمل كل شي: الـviewBox نهائي + (لو التبويب الغربي) صف أنواع السلم أخذ موضعه
+    if (window._oudRevealTimer) return;
+    const t0 = Date.now();
+    window._oudRevealTimer = setInterval(() => {
+      const circleActive = !!document.querySelector('#page-circle.active') && !window.isArabicMode;
+      const ready = window._oudVBReady && (!circleActive || window._oudAdjDone);
+      if (ready || Date.now() - t0 > 2500) {
+        clearInterval(window._oudRevealTimer);
+        requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('oud-booting')));
+      }
+    }, 40);
+  })();
   oudSvg.style.visibility = 'inherit';
   setTimeout(() => { ['micVerifyHtmlBtn','noteModeToggleBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.style.visibility = 'inherit'; }); const _sv = document.getElementById('shared-oudSvg'); if (_sv) _sv.style.visibility = 'inherit'; }, 2000); // شبكة أمان
   // نعيد تموضع زر المايك وزر النغمة فوراً بعد تحديث الـviewBox (حسابهما الأول بأعلى الدالة يتم قبل تغيّر الـviewBox
@@ -6994,7 +7009,7 @@ function updateWesternGuideImage(){
 window.adjustWesternButtonsClearance = function(){
   let _ok = true;
   try { _ok = window._adjustWesternButtonsClearanceInner(); }
-  finally { const _s = document.querySelector('.c-selection-summary'); if (_s && _ok !== false) _s.classList.remove('cs-pending'); }
+  finally { const _s = document.querySelector('.c-selection-summary'); if (_s && _ok !== false) _s.classList.remove('cs-pending'); if (_ok !== false || window.innerWidth <= 1024) window._oudAdjDone = true; }
 };
 setTimeout(() => { const _s0 = document.querySelector('.c-selection-summary'); if (_s0) _s0.classList.remove('cs-pending'); }, 4000); // طبقة أمان: ما يبقى مخفياً أبداً
 window._adjustWesternButtonsClearanceInner = function(){
