@@ -4703,8 +4703,33 @@ function renderChordHighlight(positions, active){
     });
     label.style.pointerEvents = 'none'; // عشان الضغطة الفعلية توصل للمستطيل تحته، مو تنحبس بالنص فوقه
     const pc = OUD.noteAt(pos.string, pos.fret);
-    label.textContent = getCorrectNoteName(pc, pos.letterIdx !== undefined ? pos.letterIdx : 0);
-    chordHighlightLayer.appendChild(label);
+    const chordNoteName = getCorrectNoteName(pc, pos.letterIdx !== undefined ? pos.letterIdx : 0);
+    // بالإنجليزي: علامة التحويل (# ♭ x) لازم تجي بعد الحرف. النص الواحد داخل صفحة اتجاهها RTL يعرض العلامة قبل الحرف (#Sol)،
+    // فنرسم الحرف والعلامة كعنصرَين منفصلَين بنفس طريقة رسم السلم (يطابقها تماماً)
+    const chordParts = (window.oudLanguage === 'en') ? chordNoteName.match(/^(Do|Re|Mi|Fa|Sol|La|Si|C|D|E|F|G|A|B)(#|♭♭|♭|x)$/) : null;
+    if (chordParts) {
+      const letterEl = el('text', {
+        x: p.x - 8, y: p.y+7, fill:'#fff', 'font-size':'22',
+        'font-family':"'Cairo', Arial, sans-serif", 'font-weight':'700', 'text-anchor':'middle',
+        'data-scale-idx': pitchOrderIdx, 'data-x': p.x
+      });
+      letterEl.style.pointerEvents = 'none';
+      letterEl.textContent = chordParts[1];
+      chordHighlightLayer.appendChild(letterEl);
+      let accX = p.x + 12;
+      try { const bb = letterEl.getBBox(); accX = bb.x + bb.width + 8; } catch(e){}
+      const accEl = el('text', {
+        x: accX, y: (chordParts[2] === 'x') ? p.y+4 : p.y+7, fill:'#fff', 'font-size':'20',
+        'font-family':"Arial, 'Segoe UI', sans-serif", 'font-weight':'700', 'text-anchor':'middle',
+        'data-scale-idx': pitchOrderIdx, 'data-x': p.x
+      });
+      accEl.style.pointerEvents = 'none';
+      accEl.textContent = chordParts[2];
+      chordHighlightLayer.appendChild(accEl);
+    } else {
+      label.textContent = chordNoteName;
+      chordHighlightLayer.appendChild(label);
+    }
     // نخلي كل نوتة بالكورد تشتغل لحالها بالضغط عليها (نفس آلية النغمة المستمرة بنغمات السلم العادية)
     const noteIndex = positions.indexOf(pos);
     window.bindNoteRectPress(rect,
@@ -5081,7 +5106,18 @@ const OUD = (function(){
     const top=neckTopY(x)+margin;
     const bottom=neckBottomY(x)-margin;
     const idx = (window.isLeftHanded) ? (STRING_COUNT-1-i) : i;
-    return top+(bottom-top)*(idx/(STRING_COUNT-1));
+    let y = top+(bottom-top)*(idx/(STRING_COUNT-1));
+    // وتر الفا مفرد بينما اللا/الري/... مزدوجة (الخط الثاني ينزل تحت الأول)، فكان الفراغ الظاهر بين الفا واللا أكبر من بقية الفراغات.
+    // نزيح الفا بمقدار الفرق بين الفراغين (حافة إلى حافة) عشان يتساوى الفراغ فا↔لا مع لا↔ري. القيم نسخة من سماكات الأوتار (stringWidths) وإزاحات المزدوج (doubleOffset) أسفل.
+    if (i === 0) {
+      const W = [7.2, 4.8, 4.3], D = [0, 9, 8];
+      const top_ = k => -W[k]/2, bot_ = k => D[k] + W[k]/2;
+      const delta = (window.isLeftHanded)
+        ? ((top_(0) - bot_(1)) - (top_(1) - bot_(2)))   // اليد اليسرى: ترتيب الأوتار معكوس
+        : ((top_(1) - bot_(0)) - (top_(2) - bot_(1)));
+      y += (window.isLeftHanded ? -delta : delta);
+    }
+    return y;
   }
   function getPoint(stringIndex, fret){
     const x = fret===0 ? VISUAL_NUT_X : fretX(fret);
@@ -5964,7 +6000,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v35 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v37 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11273,7 +11309,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v35 (ipad-guide-big)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v37 (string-spacing)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
