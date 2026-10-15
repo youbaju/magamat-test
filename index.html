@@ -6008,7 +6008,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v42 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v43 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11280,6 +11280,9 @@ document.getElementById('shared-playBtn').onclick = async function() {
   .site-tabs-toggle, .menu-toggle, .c-menu-toggle, #page-maqamat .menu-toggle, #favBtn{ top:34px !important; }
   /* شريط التبويبات المنسدل (العربية/الغربية): نزيح أزراره تحت المنطقة الباهتة بدل ما تنطبع عليها */
   .site-tabs{ padding-top:40px !important; }
+  /* القوائم الجانبية (دائرة الرابعات/الخامسات والكوردات، وفصائل المقامات): نبدأها تحت المنطقة الباهتة */
+  .c-circle-drawer{ padding-top:50px !important; }
+  .panel{ padding-top:34px !important; }
 }
 </style>
 <style id="ipad-guide-big">
@@ -11326,7 +11329,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v42 (ipad-top)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v43 (ipad-top)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
