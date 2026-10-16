@@ -6008,7 +6008,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v44 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v45 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -10972,11 +10972,11 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
     <div class="help-section" id="help-sec-ar-19">
       <h3>١٩. المفضلة</h3>
-      <p>ميزة تتيح لك حفظ أي مقام (فصيلة + مقام + حرف) تستخدمه بشكل متكرر، للرجوع إليه لاحقاً بضغطة واحدة بدل تصفّح القائمة كل مرة.</p>
+      <p>ميزة تتيح لك حفظ أي مقام مع حرفه تستخدمه بشكل متكرر، للرجوع إليه لاحقاً بضغطة واحدة بدل تصفّح القائمة كل مرة.</p>
       <p>🔹 <strong>موقع الزر:</strong> أيقونة ⭐ صغيرة بجانب زر "☰ اختيار المقام" (أعلى الشاشة).</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_20.png" style="border-radius:6px;display:block;margin:8px auto;width:44px;height:auto;" alt="أيقونة المفضلة"/></div>
       <p>🔹 <strong>الإضافة:</strong> بعد اختيار المقام المطلوب على الزند، اضغط زر ⭐ المفضلة، ثم اختر "➕ إضافة الحالي للمفضلة" — يظهر تأكيد فوري بنجاح الإضافة.</p>
-      <p>🔹 <strong>الفتح والانتقال:</strong> اضغط زر ⭐ المفضلة، ثم اختر "📂 فتح المفضلة" لعرض قائمة كل المحفوظات (الفصيلة، المقام، الحرف لكل عنصر). اضغط على أي عنصر للانتقال مباشرة إليه على الزند.</p>
+      <p>🔹 <strong>الفتح والانتقال:</strong> اضغط زر ⭐ المفضلة، ثم اختر "📂 فتح المفضلة" لعرض قائمة كل المحفوظات (المقام والحرف لكل عنصر). اضغط على أي عنصر للانتقال مباشرة إليه على الزند.</p>
       <p>🔹 <strong>الحذف:</strong> اضغط ✕ بجانب أي عنصر داخل قائمة المفضلة لحذفه.</p>
       <p>🔹 هذه الميزة خاصة بالمقامات العربية فقط، وتُحفظ محلياً على جهازك.</p>
     </div>
@@ -11235,11 +11235,11 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
     <div class="help-section" id="help-sec-en-19">
       <h3>19. Favorites</h3>
-      <p>A feature that lets you save any maqam (family + maqam + letter) you use often, so you can jump back to it later with one tap instead of browsing the list every time.</p>
+      <p>A feature that lets you save any maqam together with its letter that you use often, so you can jump back to it later with one tap instead of browsing the list every time.</p>
       <p>🔹 <strong>Where to find it:</strong> a small ⭐ icon next to the "☰ Choose Maqam" button (top of the screen).</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_20.png" style="border-radius:6px;display:block;margin:8px auto;width:44px;height:auto;" alt="Favorites icon"/></div>
       <p>🔹 <strong>Adding:</strong> after choosing the maqam you want on the fretboard, tap the ⭐ Favorites button, then choose "➕ Add current to favorites" — a quick confirmation appears once it's saved.</p>
-      <p>🔹 <strong>Opening and jumping to one:</strong> tap the ⭐ Favorites button, then choose "📂 Open favorites" to see a list of everything saved (family, maqam, and letter for each item). Tap any item to jump straight to it on the fretboard.</p>
+      <p>🔹 <strong>Opening and jumping to one:</strong> tap the ⭐ Favorites button, then choose "📂 Open favorites" to see a list of everything saved (maqam and letter for each item). Tap any item to jump straight to it on the fretboard.</p>
       <p>🔹 <strong>Deleting:</strong> tap ✕ next to any item in the favorites list to remove it.</p>
       <p>🔹 This feature is specific to the Arabic maqamat side only, and is saved locally on your device.</p>
     </div>
@@ -11331,7 +11331,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v44 (ipad-top)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v45 (help-fav)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
