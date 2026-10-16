@@ -2632,7 +2632,7 @@ html, body{background:#171717}
 .exercise-new-btn:disabled{background:#23292f}
 .exercise-mode-toggle{color:#8fb7e2}
 .tuning-row label{color:#bfbfbf}
-.tuning-select{background:#171717;border:1px solid #304554;color:#e8e8e8}
+.tuning-select{background:#171717;border:1px solid #304554;color:#e8e8e8;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%23ffffff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:left 6px center;background-size:12px 8px}
 .speed-step-btn{background:#171717;border:1px solid #304554;color:#a0c6d9}
 .speed-step-btn:hover{background:#152127}
 .speed-step-btn:active{background:#1a2a31}
@@ -2685,7 +2685,7 @@ h1{color:#d6c4a0}
 .panel{background:#171717;border:1px solid #4d4d4d}
 .options-list li{color:#e8e8e8;border-bottom:1px solid #343434}
 .sep{background:#383838}
-.dropdown-select{background:#1b1b1b;border-bottom:1px solid #454545;color:#d4d4d4}
+.dropdown-select{background:#1b1b1b;border-bottom:1px solid #454545;color:#d4d4d4;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%23ffffff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:left 8px center;background-size:14px 9px}
 .custom-select-list{background:#171717;border:1px solid #454545}
 .custom-select-option{color:#bdd7f0;border-bottom:1px solid #343434}
 .custom-select-option:hover, .custom-select-option:active{background:#11222c}
@@ -6008,7 +6008,7 @@ function buildOudStatic(){
             box.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;z-index:2147483647;background:#ffe066;color:#000;font:14px/1.5 monospace;padding:8px;border:2px solid #000;direction:ltr;text-align:left;pointer-events:none;white-space:pre';
             document.body.appendChild(box); }
           const cs = getComputedStyle(document.documentElement);
-          box.textContent = 'build=v45 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
+          box.textContent = 'build=v46 n=' + (window.__dbgN = (window.__dbgN || 0) + 1) +
             '\nstored=' + localStorage.getItem('oudTheme') + ' eff=' + window.oudTheme.effective() +
             '\nmedia=' + (st && st.media) + ' phoneDark=' + matchMedia('(prefers-color-scheme: dark)').matches +
             '\nbodyBg=' + getComputedStyle(document.body).backgroundColor +
@@ -11331,7 +11331,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
 <script>
 /* ?debug: شارة صغيرة تبيّن رقم النسخة المحمّلة فعلاً (للتأكد إن الجوال ما يعرض نسخة قديمة مخزنة) */
 (function(){ try { if (!/[?&]debug/.test(location.search)) return;
-  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v45 (help-fav)';
+  var d=document.createElement('div'); d.id='oudBuildTag'; d.textContent='build v46 (dark-arrow)';
   d.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99999;background:#ffe066;color:#000;font:700 11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:.9';
   document.body.appendChild(d);
 } catch(e){} })();
