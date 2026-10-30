@@ -2663,7 +2663,45 @@ window.wireCustomSelect = wireCustomSelect;
   .rating-star-wrap.locked { cursor:default; }
   .rating-star-num { font-size:.8rem; color:#777; font-weight:700; font-family:'Cairo',sans-serif; }
 </style>
+<style id="mq-search-css">
+#panel .panel-title{position:relative}
+.mq-srch-btn{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:26px;height:26px;padding:0;border-radius:8px;border:1px solid rgba(255,255,255,.75);background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mq-srch-btn svg{width:15px;height:15px}
+#mqSearch{position:fixed;inset:0;z-index:100000;background:#fff;color:#1a120c;display:none;flex-direction:column;font-family:'Cairo','Segoe UI',Tahoma,sans-serif}
+#mqSearch.open{display:flex}
+#mqSearch .mq-bar{background:#3ab4e8;color:#fff;display:flex;align-items:center;gap:10px;padding:10px 12px;direction:rtl}
+#mqSearch .mq-bar .mq-t{flex:1;text-align:center;font-weight:700;font-size:1.05rem}
+#mqSearch .mq-back{width:40px;height:40px;border-radius:12px;border:2px solid #fff;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#mqSearch .mq-spacer{width:40px}
+#mqSearch .mq-box{margin:12px;border:2px solid #3ab4e8;border-radius:14px;background:#fff;display:flex;align-items:center;gap:8px;padding:6px 12px}
+#mqSearch .mq-box input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:inherit;font:inherit;font-size:1.1rem;padding:6px 0}
+#mqSearch .mq-x{border:0;background:transparent;color:#888;font-size:1.2rem;cursor:pointer;padding:4px 8px;visibility:hidden}
+#mqSearch .mq-hint{color:#667;font-size:.85rem;margin:0 16px 6px}
+#mqSearch .mq-list{flex:1;overflow-y:auto;padding:0 12px 20px;-webkit-overflow-scrolling:touch}
+#mqSearch .mq-head,#mqSearch .mq-row{display:grid;grid-template-columns:1.7fr 1fr .7fr;align-items:center;gap:8px;padding:10px 12px}
+#mqSearch .mq-head{background:#3ab4e8;color:#fff;font-weight:700;font-size:.9rem;border-radius:12px 12px 0 0}
+#mqSearch .mq-row{border:1px solid #cfe3ef;border-top:0;background:#fff;cursor:pointer;width:100%;text-align:inherit;font:inherit;color:inherit}
+#mqSearch .mq-row:last-child{border-radius:0 0 12px 12px}
+#mqSearch .mq-row:active,#mqSearch .mq-row:hover{background:#e6f4fb}
+#mqSearch .mq-n{font-weight:700;font-size:1.05rem}
+#mqSearch .mq-f,#mqSearch .mq-r,#mqSearch .mq-head div:nth-child(n+2){text-align:center}
+#mqSearch .mq-f{color:#1a8abf;font-weight:700}
+#mqSearch .mq-r{color:#9a6b00;font-weight:700}
+#mqSearch .mq-empty{text-align:center;color:#778;font-size:1.15rem;padding:60px 10px}
+</style>
 <style id="dark-mode-css" media="(prefers-color-scheme: dark)">
+.mq-srch-btn{background:#14212c;border-color:#3ab4e8}
+#mqSearch{background:#141414;color:#e8e2dc}
+#mqSearch .mq-bar{background:#264050;color:#bdd7f0}
+#mqSearch .mq-back{background:#14212c;border-color:#3ab4e8}
+#mqSearch .mq-box{background:#0f1a22}
+#mqSearch .mq-hint{color:#8fa6b5}
+#mqSearch .mq-head{background:#264050;color:#bdd7f0}
+#mqSearch .mq-row{background:#1b252d;border-color:#2f4452}
+#mqSearch .mq-row:active,#mqSearch .mq-row:hover{background:#243844}
+#mqSearch .mq-f{color:#9fd3f0}
+#mqSearch .mq-r{color:#ffd36a}
+#mqSearch .mq-empty{color:#8fa6b5}
 :root{color-scheme:dark;--ink:#e8e2dc}
 .help-search-input{background:#171717;border:1px solid #534935;color:#e6dccb}
 .help-search-results{background:#171717;border:1px solid #534935}
@@ -8217,6 +8255,126 @@ window.wxResume = wxResume;
       closeFavList();
       closePanel();
     }
+    // ===== البحث في المقامات العربية (بالاسم فقط، عربي/إنجليزي) =====
+    (function setupMaqamSearch(){
+      const SRCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:#fff"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>';
+      const BACK_SVG = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>';
+      const isEn = () => window.oudLanguage === 'en';
+      const hasAr = s => /[؀-ۿ]/.test(s);
+      const normAr = s => s.replace(/[ً-ٟـٰ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/[ىئ]/g,'ي').replace(/ؤ/g,'و').replace(/\s+/g,' ').trim();
+      const normEn = s => s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+      const stripAl = s => s.replace(/^ال/,'');
+      function rootKey(m){
+        const idx = defaultHarf[m];
+        const o = (idx !== undefined) ? harfSelect.options[idx] : null;
+        return o ? o.value : null;
+      }
+      function rootLabel(m, arQuery){
+        const k = rootKey(m); if (!k) return '—';
+        const letter = (window.oudNoteSystem === 'letter');
+        const t = letter ? (arQuery ? window.HARF_DISPLAY_LETTER_AR : window.HARF_DISPLAY_LETTER)
+                         : (arQuery ? window.HARF_DISPLAY : window.HARF_DISPLAY_EN);
+        return (t && t[k]) || '—';
+      }
+      function search(q){
+        const ar = hasAr(q);
+        const nq = ar ? normAr(q) : normEn(q);
+        if (!nq) return {ar, rows:[]};
+        const hits = [];
+        let order = 0;
+        Object.keys(maqamat).forEach(f => maqamat[f].forEach(m => {
+          order++;
+          let nm;
+          if (ar) nm = normAr(m);
+          else { const en = MAQAM_NAME_EN[m]; if (!en) return; nm = normEn(en); }
+          const pos = nm.indexOf(nq);
+          if (pos < 0) return;
+          const starts = ar ? (stripAl(nm).startsWith(stripAl(nq)) || nm.startsWith(nq)) : (nm.startsWith(nq) || nm.split(' ').some(w => w.startsWith(nq)));
+          hits.push({m, f, starts, order, len:nm.length});
+        }));
+        hits.sort((a,b) => (b.starts - a.starts) || (a.len - b.len) || (a.order - b.order));
+        return {ar, rows:hits};
+      }
+      const scr = document.createElement('div');
+      scr.id = 'mqSearch';
+      scr.innerHTML = '<div class="mq-bar"><button type="button" class="mq-back" aria-label="back">'+BACK_SVG+'</button><div class="mq-t"></div><div class="mq-spacer"></div></div>'
+        + '<div class="mq-box"><input type="text" id="mqInput" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search"><button type="button" class="mq-x" aria-label="clear">✕</button></div>'
+        + '<div class="mq-hint" id="mqHint"></div><div class="mq-list" id="mqList"></div>';
+      document.body.appendChild(scr);
+      const inp = scr.querySelector('#mqInput'), hint = scr.querySelector('#mqHint'), list = scr.querySelector('#mqList'), xbtn = scr.querySelector('.mq-x');
+      function labels(){
+        scr.querySelector('.mq-t').textContent = isEn() ? 'Search Maqamat' : 'البحث في المقامات';
+        inp.placeholder = isEn() ? 'Type a maqam name…' : 'اكتب اسم المقام…';
+      }
+      function render(){
+        const q = inp.value.trim();
+        xbtn.style.visibility = q ? 'visible' : 'hidden';
+        if (!q) { hint.textContent = isEn() ? 'Search by maqam name' : 'ابحث باسم المقام'; hint.style.direction = isEn() ? 'ltr' : 'rtl'; hint.style.textAlign = isEn() ? 'left' : 'right'; list.innerHTML = ''; return; }
+        const {ar, rows} = search(q);
+        const dir = ar ? 'rtl' : 'ltr';
+        list.style.direction = dir; hint.style.direction = dir; hint.style.textAlign = ar ? 'right' : 'left';
+        if (!rows.length) {
+          hint.textContent = '';
+          list.innerHTML = '<div class="mq-empty">' + (ar ? 'لا توجد نتائج' : 'No results') + '</div>';
+          return;
+        }
+        hint.textContent = ar ? ('نتائج «' + q + '» من كل الفصائل') : ('Results for “' + q + '” from all families');
+        let h = '<div class="mq-head"><div>' + (ar ? 'المقام' : 'Maqam') + '</div><div>' + (ar ? 'الفصيلة' : 'Family') + '</div><div>' + (ar ? 'المحط' : 'Root') + '</div></div>';
+        rows.forEach((r,i) => {
+          const nm = ar ? r.m : MAQAM_NAME_EN[r.m];
+          const fm = ar ? r.f : (FAMILY_NAME_EN[r.f] || r.f);
+          h += '<button type="button" class="mq-row" data-i="'+i+'"><div class="mq-n"></div><div class="mq-f"></div><div class="mq-r"></div></button>';
+        });
+        list.innerHTML = h;
+        const btns = list.querySelectorAll('.mq-row');
+        rows.forEach((r,i) => {
+          const b = btns[i];
+          b.querySelector('.mq-n').textContent = ar ? r.m : MAQAM_NAME_EN[r.m];
+          b.querySelector('.mq-f').textContent = ar ? r.f : (FAMILY_NAME_EN[r.f] || r.f);
+          b.querySelector('.mq-r').textContent = rootLabel(r.m, ar);
+          b.addEventListener('click', () => goToSearchResult(r.f, r.m));
+        });
+        list.scrollTop = 0;
+      }
+      function openSearch(){
+        labels(); inp.value = ''; render();
+        scr.classList.add('open');
+        setTimeout(() => { try { inp.focus(); } catch(e){} }, 60);
+      }
+      function closeSearch(){ scr.classList.remove('open'); try { inp.blur(); } catch(e){} }
+      function goToSearchResult(fasila, m){
+        window.exerciseActive = false;
+        if (typeof window.exStopPlayback === 'function') window.exStopPlayback();
+        updateMaqam(fasila);
+        document.querySelectorAll('input[name="maqam"]').forEach(r => { r.checked = (r.value === fasila); });
+        if (maqamat[fasila].includes(m)) { maqamSelect.value = m; setDefaultHarf(m); }
+        if (maqamSelect._customSelectApi) maqamSelect._customSelectApi.refresh();
+        if (harfSelect._customSelectApi) harfSelect._customSelectApi.refresh();
+        if (typeof window.arResetPlayer === 'function') window.arResetPlayer();
+        showMaqam();
+        closeSearch();
+        closePanel();
+      }
+      inp.addEventListener('input', () => {
+        // الخانة تقبل لغة الواجهة فقط: عربي بالواجهة العربية، وإنجليزي بالواجهة الإنجليزية
+        const bad = isEn() ? /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g : /[A-Za-z]/g;
+        if (bad.test(inp.value)) inp.value = inp.value.replace(bad, '');
+        render();
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { try { inp.blur(); } catch(_){} } });
+      xbtn.addEventListener('click', () => { inp.value = ''; render(); inp.focus(); });
+      scr.querySelector('.mq-back').addEventListener('click', closeSearch);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && scr.classList.contains('open')) closeSearch(); });
+      const title = document.querySelector('#panel .panel-title');
+      if (title) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'mq-srch-btn'; b.innerHTML = SRCH_SVG;
+        b.setAttribute('aria-label', isEn() ? 'Search maqamat' : 'بحث في المقامات');
+        b.addEventListener('click', e => { e.stopPropagation(); openSearch(); });
+        title.appendChild(b);
+      }
+    })();
+
     function addCurrentToFavorites() {
       const isEn = window.oudLanguage === 'en';
       const kindNow = favKind();
@@ -11134,20 +11292,25 @@ document.getElementById('shared-playBtn').onclick = async function() {
     <div class="help-section" id="help-sec-ar-4">
       <h3>٥. اختيار المقامات العربية</h3>
       <p>اضغط على زر <strong>☰ اختيار المقام</strong> لفتح القائمة. اختر الفصيلة ثم المقام ثم الحرف. عند اختيار المقام سيظهر محطه بشكل افتراضي في قائمة الحروف.</p>
-      <p>يدعم التطبيق تمثيل العود بـ5 أو 6 أوتار، ويختلف عدد الحروف المتاحة لاختيار حرف التصوير حسب الوضع المختار:</p>
+      <p>🔍 <strong>البحث عن مقام:</strong> إن كنت لا تعرف فصيلة المقام، اضغط زر البحث بجانب عنوان «فصائل المقامات» في أعلى القائمة، ثم اكتب اسم المقام (ولو جزءاً من الاسم) بلغة التطبيق الحالية، فخانة البحث تقبل العربي في الواجهة العربية والإنجليزي في الواجهة الإنجليزية. تظهر النتائج في جدول: المقام والفصيلة والمحط. اضغط على النتيجة لينتقل التطبيق إلى فصيلتها ومقامها ومحطه مباشرة. البحث بأسماء المقامات فقط وليس بأسماء الفصائل.</p>
+      <p>تظهر قائمة الحروف (المحط) على كل الآلات الثلاث، لكن الحروف المتاحة فيها تختلف حسب الآلة:</p>
+      <p>🔹 <strong>العود:</strong> يدعم التطبيق تمثيل العود بـ5 أو 6 أوتار، ويختلف عدد الحروف المتاحة لاختيار حرف التصوير حسب الوضع المختار:</p>
       <p>بوضع 5 أوتار، يوفر التطبيق <strong>35 حرفاً</strong> مقسمة إلى أرباع التون — من <strong>صول قرار</strong> إلى <strong>دو جواب</strong> (الوتر الأول من الأسفل للعازف اليمين، والوتر الأول من الأعلى للعازف اليسار) — لتصوير أي مقام عربي عليه.</p>
       <p>وبوضع 6 أوتار، يوفر التطبيق <strong>٤٥ حرفاً</strong> مقسمة إلى أرباع التون — من <strong>صول قرار</strong> إلى <strong>فا جواب</strong> (وتر الفا الشرار، الوتر الأول من الأسفل للعازف اليمين، والوتر الأول من الأعلى للعازف اليسار) — لتصوير أي مقام عربي عليه.</p>
+      <p>🔹 <strong>الأورغ:</strong> تعرض قائمة الحروف كل الحروف دائماً، وتُضاء مفاتيح الأورغ بنغمات المقام المختار من المحط الذي تختاره.</p>
+      <p>🔹 <strong>القانون:</strong> تُعرض الحروف التي تناسب المقام المختار فقط؛ فقد تختفي بعض الحروف في مقام معين لعدم وجود وتر مناسب لها أو لتعارض وضعي العرب (مشروح في قسم «الآلات»)، وتبقى ظاهرة في المقامات الأخرى.</p>
+      <p>🔹 <strong>أزرار العود فقط:</strong> زرّا اليد (يمين/يسار) وعدد الأوتار (5 أو 6) خاصان بالعود فقط (مشروحان في قسميهما).</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_03.png" style="width:55%;border-radius:6px;display:block;margin:0 auto;" alt="قائمة المقامات"/></div>
     </div>
 
     <div class="help-section" id="help-sec-ar-5">
       <h3>٦. دليل المقام وأبعاده</h3>
-      <p>بعد اختيار المقام ستظهر زران فوق الزند:</p>
+      <p>بعد اختيار المقام ستظهر زران فوق الآلة المعروضة (الزند أو الأورغ أو القانون):</p>
       <p>🔹 <strong>دليل مقام [الاسم]</strong> — يعرض صورة توضيحية للمقام على المدرج الموسيقي مع شرح أجناسه.</p>
       <p>🔹 <strong>أبعاد مقام [الاسم]</strong> — يعرض جدولاً بأبعاد المقام بأرباع التون بين كل درجة والتالية.</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_04.png" style="width:70%;border-radius:6px;display:block;margin:8px auto;" alt="أزرار دليل وأبعاد المقام"/></div>
       <p style="font-size:0.85rem;color:#555;text-align:center">يعرضان دليل وأبعاد المقام المعروض على الشاشة</p>
-      <p>🔹 <strong>ملاحظة مهمة:</strong> صورة "دليل المقام" تعرض المقام دائماً بموضعه/محطّه <strong>الأساسي</strong> (مثلاً مقام الراست يظهر دائماً على الدو)، بغض النظر عن الحرف (التصوير) الذي اخترته فعلياً على الزند.</p>
+      <p>🔹 <strong>ملاحظة مهمة:</strong> صورة "دليل المقام" تعرض المقام دائماً بموضعه/محطّه <strong>الأساسي</strong> (مثلاً مقام الراست يظهر دائماً على الدو)، بغض النظر عن الحرف (التصوير) الذي اخترته فعلياً على الآلة المعروضة.</p>
       <p>🔹 <strong>لغة الصورة:</strong> صورة "دليل المقام" تتبع لغة التطبيق — عربية عند اختيار العربية، وإنجليزية عند اختيار الإنجليزية.</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_05.jpg" alt="دليل مقام الراست" style="width:80%;border-radius:6px;display:block;margin:8px auto;"/></div>
     </div>
@@ -11179,8 +11342,8 @@ document.getElementById('shared-playBtn').onclick = async function() {
 
     <div class="help-section" id="help-sec-ar-9">
       <h3>١٠. دليل السلم الغربي</h3>
-      <p>بعد اختيار مفتاح ونوع سلم من دائرة الخامسات، سيظهر زر <strong>دليل [اسم السلم]</strong> فوق زند العود (بنفس مكان زر دليل المقام العربي بالضبط).</p>
-      <p>🔹 الضغط عليه يفتح نافذة منبثقة تعرض <strong>نوتة السلم المختار على المدرج الموسيقي التقليدي</strong> (صعوداً ونزولاً)، بنفس الأوكتاف المطابق لصوته الفعلي على العود.</p>
+      <p>بعد اختيار مفتاح ونوع سلم من دائرة الخامسات، سيظهر زر <strong>دليل [اسم السلم]</strong> فوق الآلة المعروضة (بنفس مكان زر دليل المقام العربي بالضبط).</p>
+      <p>🔹 الضغط عليه يفتح نافذة منبثقة تعرض <strong>نوتة السلم المختار على المدرج الموسيقي التقليدي</strong> (صعوداً ونزولاً)، بنفس الأوكتاف المطابق لصوته الفعلي على جميع آلات التطبيق (العود والأورغ والقانون).</p>
       <p>🔹 اسم الزر يتحدث تلقائياً مع كل مفتاح أو نوع سلم تختاره.</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_09.jpg" style="width:55%;border-radius:6px;display:block;margin:8px auto;" alt="دليل السلم الغربي"/></div>
     </div>
@@ -11434,19 +11597,24 @@ document.getElementById('shared-playBtn').onclick = async function() {
     <div class="help-section" id="help-sec-en-4">
       <h3>5. Choosing an Arabic Maqam</h3>
       <p>Press the <strong>☰ Choose Maqam</strong> button to open the menu. Pick the family, then the maqam, then the letter (root). Selecting a maqam will show its default root automatically in the letter list.</p>
-      <p>The site supports representing the oud with 5 or 6 strings, and the number of available letters for the root depends on the mode:</p>
+      <p>🔍 <strong>Searching for a maqam:</strong> if you don't know a maqam's family, press the search button next to the “Magamat Families” title at the top of the menu, then type the maqam's name (even part of it) in the app's current language — the search box accepts only English in the English interface and only Arabic in the Arabic interface. Results appear in a table: Maqam, Family and Root. Tap a result and the app jumps straight to its family, maqam and root. Search works on maqam names only, not family names.</p>
+      <p>The letter (root) list appears on all three instruments, but the available letters differ by instrument:</p>
+      <p>🔹 <strong>Oud:</strong> the site supports representing the oud with 5 or 6 strings, and the number of available letters for the root depends on the mode:</p>
       <p>In 5-string mode, the app offers <strong>35 letters</strong> divided into quarter-tones — from <strong>Sol (low)</strong> to <strong>Do Jawab</strong> (the bottom-most string for a right-handed player, the top-most for a left-handed player) — to represent any Arabic maqam.</p>
       <p>In 6-string mode, the app offers <strong>45 letters</strong> divided into quarter-tones — from <strong>Sol (low)</strong> to <strong>Fa Jawab</strong> (the "Sharrar" string, the bottom-most string for a right-handed player, the top-most for a left-handed player) — to represent any Arabic maqam.</p>
+      <p>🔹 <strong>Organ:</strong> the letter list always shows all letters, and the organ keys light up with the notes of the selected maqam from the root you choose.</p>
+      <p>🔹 <strong>Qanun:</strong> only the letters that suit the selected maqam are listed; some letters may disappear for a particular maqam because no suitable string exists for them or two lever positions would conflict (explained in the "Instruments" section), and they stay visible in other maqamat.</p>
+      <p>🔹 <strong>Oud-only buttons:</strong> the hand (right/left) and string-count (5 or 6) buttons are for the oud only (explained in their own sections).</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_23.jpg" style="width:55%;border-radius:6px;display:block;margin:8px auto;" alt="Maqam families menu"/></div>
     </div>
 
     <div class="help-section" id="help-sec-en-5">
       <h3>6. Maqam Guide and Intervals</h3>
-      <p>After choosing a maqam, two buttons appear above the fretboard:</p>
+      <p>After choosing a maqam, two buttons appear above the displayed instrument (fretboard, organ or qanun):</p>
       <p>🔹 <strong>Guide for [name]</strong> — shows an illustration of the maqam on the musical staff along with its constituent jins (tetrachords).</p>
       <p>🔹 <strong>Intervals of [name]</strong> — shows a table of the maqam's intervals in quarter-tones between each degree and the next.</p>
       <p style="font-size:0.85rem;color:#555;text-align:center">These display the guide and intervals of the maqam currently shown.</p>
-      <p>🔹 <strong>Important note:</strong> The "Maqam Guide" image always shows the maqam at its <strong>basic/default</strong> root (for example, Rast always appears on Do), regardless of which letter (transposition) you've actually selected on the fretboard.</p>
+      <p>🔹 <strong>Important note:</strong> The "Maqam Guide" image always shows the maqam at its <strong>basic/default</strong> root (for example, Rast always appears on Do), regardless of which letter (transposition) you've actually selected on the displayed instrument.</p>
       <p>🔹 <strong>Image language:</strong> The "Maqam Guide" image follows the app language — Arabic when the app is in Arabic, English when it is in English.</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_24.jpg" style="width:70%;border-radius:6px;display:block;margin:8px auto;" alt="Guide of Rast"/></div>
     </div>
@@ -11474,7 +11642,7 @@ document.getElementById('shared-playBtn').onclick = async function() {
     <div class="help-section" id="help-sec-en-9">
       <h3>10. Western Scale Guide</h3>
       <p>After choosing a key and scale type from the circle of fifths, a <strong>Guide for [scale name]</strong> button appears above the fretboard (in the same spot as the Arabic maqam guide button).</p>
-      <p>🔹 Pressing it opens a popup showing <strong>the scale's notes on a traditional musical staff</strong> (ascending and descending), in the same octave matching its actual pitch on the oud.</p>
+      <p>🔹 Pressing it opens a popup showing <strong>the scale's notes on a traditional musical staff</strong> (ascending and descending), in the same octave matching its actual pitch on all the app's instruments (oud, organ and qanun).</p>
       <p>🔹 The button's label updates automatically with each key or scale type you choose.</p>
       <div class="help-svg-wrap"><img loading="lazy" decoding="async" src="images/help/help_28.jpg" style="width:55%;border-radius:6px;display:block;margin:8px auto;" alt="Western scale guide"/></div>
     </div>
