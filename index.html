@@ -8406,6 +8406,17 @@ window.wxResume = wxResume;
       const phone = !!(window.matchMedia && window.matchMedia('(max-width: 600px) and (orientation: portrait), (max-width: 1023px) and (orientation: landscape)').matches);
       return phone ? phoneVal : largeVal;
     }
+    // نبقي القائمة المصغّرة والإشعار داخل حدود الشاشة (زر المفضلة صار بمنتصف صف الأزرار فكانت القائمة تنقص من الحافة)
+    function favClampToViewport(el) {
+      try {
+        const m = 8, vw = document.documentElement.clientWidth || window.innerWidth;
+        const r = el.getBoundingClientRect();
+        let left = r.left;
+        if (r.width > vw - 2 * m) { el.style.maxWidth = (vw - 2 * m) + 'px'; el.style.boxSizing = 'border-box'; left = m; }
+        else { if (left + r.width > vw - m) left = vw - m - r.width; if (left < m) left = m; }
+        el.style.left = left + 'px'; el.style.right = 'auto';
+      } catch (e) {}
+    }
     function showFavToast(msg) {
       const isEn = window.oudLanguage === 'en';
       const btn = document.getElementById('favBtn');
@@ -8414,8 +8425,9 @@ window.wxResume = wxResume;
       const toast = document.createElement('div');
       toast.textContent = msg;
       toast.style.cssText = 'position:fixed; z-index:10001; background:#1a8abf; color:#fff; padding:8px 14px; border-radius:8px; font-size:' + favPx(13, 16) + 'px; font-family:Cairo,sans-serif; direction:' + (isEn ? 'ltr' : 'rtl') + ';box-shadow:0 3px 10px rgba(0,0,0,.25);'
-        + ' top:' + (rect.bottom + 6) + 'px; ' + (document.body.classList.contains('hand-left-mode') ? ('left:' + rect.left + 'px;') : ('right:' + (window.innerWidth - rect.right) + 'px;'));
+        + ' top:' + (rect.bottom + 6) + 'px; ' + ('left:' + rect.left + 'px;');
       document.body.appendChild(toast);
+      favClampToViewport(toast);
       setTimeout(() => toast.remove(), 1800);
     }
     let favMiniMenu = null;
@@ -8425,6 +8437,7 @@ window.wxResume = wxResume;
       if (menuToggleEl) menuToggleEl.style.visibility = 'visible';
     }
     function openFavMiniMenu() {
+      if (favMiniMenu) { closeFavMiniMenu(); return; }   // ضغطة ثانية على الزر تُخفي القائمة
       closeFavMiniMenu();
       if (document.getElementById('favBtn').classList.contains('fav-disabled')) return;
       // نفس سلوك زر اختيار المقام وزر التبويبات بالضبط: أي ضغطة على زر المفضلة توقف فوراً
@@ -8436,7 +8449,7 @@ window.wxResume = wxResume;
       const rect = btn.getBoundingClientRect();
       const menu = document.createElement('div');
       menu.style.cssText = 'position:fixed; z-index:10000; background:#eaf6fc; border:1.5px solid #3ab4e8; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,.25); overflow:hidden; min-width:200px; direction:' + (isEn ? 'ltr' : 'rtl') + '; font-family:Cairo,sans-serif;'
-        + ' top:' + (rect.bottom + 6) + 'px; ' + (document.body.classList.contains('hand-left-mode') ? ('left:' + rect.left + 'px;') : ('right:' + (window.innerWidth - rect.right) + 'px;'));
+        + ' top:' + (rect.bottom + 6) + 'px; ' + ('left:' + rect.left + 'px;');
       const opt1 = document.createElement('div');
       const kindMenu = favKind();
       opt1.textContent = kindMenu === 'ch' ? (isEn ? '➕ Add current chord to favorites' : '➕ إضافة الكورد الحالي للمفضلة')
@@ -8455,6 +8468,7 @@ window.wxResume = wxResume;
       menu.appendChild(opt1);
       menu.appendChild(opt2);
       document.body.appendChild(menu);
+      favClampToViewport(menu);
       favMiniMenu = menu;
       setTimeout(() => {
         document.addEventListener('click', function onDocClick(e) {
