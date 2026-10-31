@@ -12363,6 +12363,9 @@ function placeToggle() {
 }
 tg.addEventListener('click', () => {
   const nxt = !organMode ? 'organ' : (qanunMode ? 'oud' : 'qanun');
+  // تبديل حي بدون إعادة تحميل (يُلغي وميض الصفحة)؛ عند أي خطأ نرجع لإعادة التحميل القديمة كاحتياط
+  try { if (softSwitchInstrument(nxt)) return; } catch (eSoft) { try { console.warn('soft switch failed, reloading', eSoft); } catch (e0) {} }
+
   organMode = nxt !== 'oud'; qanunMode = nxt === 'qanun';
   try {
     localStorage.setItem('oudInstrument', nxt);
@@ -12378,6 +12381,54 @@ tg.addEventListener('click', () => {
   if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
   window.location.reload();
 });
+
+// ===== التبديل الحي بين العود والأورغ والقانون (بدون إعادة تحميل) =====
+function softSwitchInstrument(nxt) {
+  if (!window.OUD || typeof window.redrawOudEverything !== 'function' || typeof OUD.setStringCount !== 'function') return false;
+  const prevQ = qanunMode;
+  // نوقف كل ما يعمل (مثل ما كانت تفعل إعادة التحميل)
+  window.exerciseActive = false;
+  if (typeof window.exStopPlayback === 'function') window.exStopPlayback();
+  if (typeof window.stopAllOudPlayback === 'function') window.stopAllOudPlayback();
+  if (typeof window.stopAnySustainedNote === 'function') window.stopAnySustainedNote();
+  if (typeof window.resetChordPlayer === 'function') window.resetChordPlayer();
+  if (typeof window.arResetPlayer === 'function') window.arResetPlayer();
+  try { const pn = document.getElementById('panel'); if (pn && pn.classList.contains('open') && typeof closePanel === 'function') closePanel(); } catch (e1) {}
+  organMode = nxt !== 'oud'; qanunMode = nxt === 'qanun';
+  localStorage.setItem('oudInstrument', nxt);
+  // عدد أوتار العود: الأورغ والقانون يفرضان ٦ داخلياً، والعود يرجع لاختيار المستخدم المحفوظ (٥ افتراضياً)
+  if (!organMode && localStorage.getItem('oudStringCountPref') !== '6') {
+    try {
+      const roots = collect(document.getElementById('oudNotesLayer')).filter(n => n.idx === '0').map(n => n.midi);
+      if (roots.length && Math.min.apply(null, roots) > 72) localStorage.setItem('oudStringCountPref', '6');
+    } catch (e2) {}
+  }
+  const want = organMode ? 6 : (localStorage.getItem('oudStringCountPref') === '6' ? 6 : 5);
+  if (OUD.STRING_COUNT !== want) OUD.setStringCount(want);
+  window.redrawOudEverything();
+  // قائمة الحروف: العود يعرض حروفه حسب عدد الأوتار (٣٥ أو ٤٥) ونلغي إخفاء القانون/الأورغ
+  const hs = document.getElementById('harf-select');
+  if (!organMode && hs && window._harfList) { const maxIdx = (window.oudCurrentStringCount === 6) ? 44 : 34; Array.from(hs.options).forEach(o => { const ix = window._harfList.indexOf(o.value); o.style.display = (ix >= 0 && ix > maxIdx) ? 'none' : ''; }); }
+  render(); placeToggle(); layoutFooter();
+  if (typeof window.applyBtnIcons === 'function') window.applyBtnIcons();
+  if (organMode && typeof filterRoots === 'function') { setTimeout(filterRoots, 0); setTimeout(filterRoots, 300); }
+  if (hs && hs._customSelectApi) hs._customSelectApi.refresh();
+  // الخروج من القانون: نسترجع اختيار المستخدم الأصلي الذي حفظناه عند الدخول (نفس منطق التحميل)
+  if (prevQ && !qanunMode) {
+    let sv = null; try { sv = JSON.parse(localStorage.getItem('qanunSavedSel') || 'null'); localStorage.removeItem('qanunSavedSel'); } catch (e3) {}
+    const ms = document.getElementById('maqam-select');
+    if (sv && ms && hs) {
+      setTimeout(() => {
+        const r = document.getElementById(sv.r); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+        setTimeout(() => {
+          const op = Array.from(ms.options).find(x => x.textContent.trim() === sv.m); if (op) { ms.value = op.value; ms.dispatchEvent(new Event('change', { bubbles: true })); }
+          setTimeout(() => { hs.value = sv.h; hs.dispatchEvent(new Event('change', { bubbles: true })); if (hs._customSelectApi) hs._customSelectApi.refresh(); }, 150);
+        }, 150);
+      }, 50);
+    }
+  }
+  return true;
+}
 
 // ===== توزيع أزرار التذييل: استُبدل بـ layoutBottomRow (صف واحد بجانب زر اللغة) =====
 function layoutFooter() { layoutBottomRow(); }
